@@ -2,14 +2,14 @@
 
 import { z } from "zod";
 import axios from "axios";
-import { createSession } from "../lib/session";
+import { createSession, storeTokenBackend } from "../lib/session";
 import { redirect } from "next/navigation";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }).trim(),
   password: z
     .string()
-    .min(8, { message: "Password must be at least 8 characters" })
+    .min(6, { message: "Password must be at least 6 characters" })
     .trim(),
 });
 
@@ -20,6 +20,7 @@ type LoginResult = {
     server?: string;
   };
   user?: any;
+  token?: string;
 };
 
 export async function login(prevState: any, formData: FormData): Promise<LoginResult> {
@@ -34,14 +35,16 @@ export async function login(prevState: any, formData: FormData): Promise<LoginRe
   const { email, password } = result.data;
 
   let user;
+  let token;
 
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/login`, {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login`, {
       email,
       password,
     }, { withCredentials: true });
 
     user = response.data.user;
+    token = response.data.token;
   } catch (error) {
     return {
       errors: {
@@ -50,7 +53,8 @@ export async function login(prevState: any, formData: FormData): Promise<LoginRe
     };
   };
 
-  await createSession(user.id, user.role);
+  await createSession(user.id, user.role, user.first_name, user.last_name);
+  await storeTokenBackend(token);
 
   redirect("/dashboard");
 }

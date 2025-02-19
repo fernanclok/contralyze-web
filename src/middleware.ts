@@ -6,24 +6,28 @@ const protectedRoutes = {
   "/dashboard": ["admin", "user"],
   "/admin": ["admin"], 
 };
-const publicRoutes = ["/login", "/register"];
+const publicRoutes = ["/", "/register"]; // Cambié "/login" por "/"
 
 export default async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const isProtectedRoute = Object.keys(protectedRoutes).includes(path);
   const isPublicRoute = publicRoutes.includes(path);
 
+  const cookie = (await cookies()).get("session")?.value;
+  const session = await decrypt(cookie);
+
+  if (path === "/" && session?.userId) {
+    return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
+  }
+
   // Bypass middleware for public routes
   if (isPublicRoute) {
     return NextResponse.next();
   }
 
-  const cookie = (await cookies()).get("session")?.value;
-  const session = await decrypt(cookie);
-
   if (isProtectedRoute) {
     if (!session?.userId) {
-      return NextResponse.redirect(new URL("/login", req.nextUrl));
+      return NextResponse.redirect(new URL("/", req.nextUrl)); // Redirige a "/"
     }
 
     const userRole = session.role; // Assuming the role is stored in the session
@@ -35,12 +39,12 @@ export default async function middleware(req: NextRequest) {
   }
 
   if (!session) {
-    return NextResponse.redirect(new URL("/login", req.nextUrl));
+    return NextResponse.redirect(new URL("/", req.nextUrl)); // Redirige a "/"
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard', '/admin', '/login', '/register'],
+  matcher: ['/dashboard', '/admin', '/', '/register'], // Actualizado
 };

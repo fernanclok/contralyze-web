@@ -1,11 +1,15 @@
-"use client";
+import AuthenticatedLayout from "@/components/layouts/authenticatedLayout";
+import { getSession } from "@/app/lib/session";
 
-const Dashboard = () => {
-    return (
-        <div>
-            <h1>Dashboard Page</h1>
-        </div>
-    );
-};
+export default async function DashboardPage({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
 
-export default Dashboard;
+  const userRole = session?.role || "user";
+  const userName = session? `${session.userFirstName} ${session.userLastName}`.trim() : "Guest";
+  return (
+    <AuthenticatedLayout userRole={userRole} userName={userName}>
+      <h1 className="text-2xl font-bold">Bienvenido al Dashboard</h1>
+      <p>Esta es la página principal del dashboard.</p>
+    </AuthenticatedLayout>
+  );
+}
