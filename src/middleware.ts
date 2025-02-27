@@ -4,7 +4,9 @@ import { decrypt } from "./app/lib/session";
 
 const protectedRoutes = {
   "/dashboard": ["admin", "user"],
-  "/admin": ["admin"], 
+  "/clients": ["admin", "user"],
+  "/suppliers": ["admin", "user"],
+  "/manage-company": ["admin"], 
 };
 const publicRoutes = ["/", "/register"]; // Cambié "/login" por "/"
 
@@ -46,5 +48,5 @@ export default async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard', '/admin', '/', '/register'], // Actualizado
+  matcher: ['/dashboard', '/admin', '/', '/manage-company'], // Actualizado
 };

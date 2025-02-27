@@ -28,9 +28,11 @@ export async function createSession(
 }
 
 export async function storeTokenBackend(token: string) {
+  const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours
   (await cookies()).set("access_token", token, {
     httpOnly: true,
     secure: true,
+    expires: expiresAt,
   });
 }
 
@@ -66,7 +68,7 @@ export async function decrypt(session: string | undefined = "") {
     return null;
   }
 }
-
+ 
 export async function getSession() {
   const cookie = await decrypt((await cookies()).get("session")?.value);
   if (!cookie) return null; // Si no hay cookie, retornamos null
