@@ -9,7 +9,7 @@ export default function LoginPage() {
         <div className="mb-4 text-center">
           <Link href="/" className="inline-flex items-center space-x-2">
           <Image src="/img/Contralyze.png" alt="Contralyze Logo" width={100} height={100} className="text-white" />
-            <span className="text-3xl font-bold text-white">Centralyze</span>
+            <span className="text-3xl font-bold text-white">Contralyze</span>
           </Link>
         </div>
         <div className="bg-white rounded-lg shadow-xl p-8">

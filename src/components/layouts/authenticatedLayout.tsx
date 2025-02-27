@@ -1,15 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { logout } from "./actions";
 import Icon from "@mdi/react";
-import {
-  mdiViewDashboard,
-  mdiAccountBoxMultiple,
-  mdiTruck,
-} from "@mdi/js";
+import { mdiViewDashboard, mdiAccountBoxMultiple, mdiTruck } from "@mdi/js";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -47,6 +43,7 @@ const AuthenticatedLayout = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     setAllowedRoutes(menuItems[userRole as "admin" | "user"] || []);
@@ -74,17 +71,24 @@ const AuthenticatedLayout = ({
       <aside className="fixed top-0 left-0 z-40 w-54 h-screen bg-gray-50 flex flex-col justify-between">
         <div className="px-3 py-4 overflow-y-auto flex-1">
           <ul className="space-y-2 font-medium">
-            {allowedRoutes.map((item) => (
-              <li key={item.path}>
-                <a
-                  href={item.path}
-                  className="flex items-center p-2 text-gray-900 rounded-lg hover:bg-primary hover:text-primary-foreground"
-                >
-                  <Icon path={item.icon} size={1} className="mr-3" />
-                  <span className="ml-3">{item.label}</span>
-                </a>
-              </li>
-            ))}
+            {allowedRoutes.map((item) => {
+              const isActive = pathname === item.path;
+              return (
+                <li key={item.path}>
+                  <a
+                    href={item.path}
+                    className={`flex items-center p-2 rounded-lg ${
+                      isActive
+                        ? "bg-primary text-primary-foreground" // Estilo para la página actual
+                        : "text-gray-900 hover:bg-primary hover:text-primary-foreground"
+                    }`}
+                  >
+                    <Icon path={item.icon} size={1} className="mr-3" />
+                    <span className="ml-3">{item.label}</span>
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -110,10 +114,10 @@ const AuthenticatedLayout = ({
                 {userRole === "admin" && (
                   <li>
                     <a
-                      href="/manage-users"
+                      href="/manage-company"
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
-                      Manage Users
+                      Manage Company
                     </a>
                   </li>
                 )}

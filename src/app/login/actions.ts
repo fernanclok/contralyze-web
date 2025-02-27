@@ -43,8 +43,10 @@ export async function login(prevState: any, formData: FormData): Promise<LoginRe
       password,
     }, { withCredentials: true });
 
+    console.log(response.data);
+
     user = response.data.user;
-    token = response.data.token;
+    token = response.data.token.original.access_token;
   } catch (error) {
     return {
       errors: {

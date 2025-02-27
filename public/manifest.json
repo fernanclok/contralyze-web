@@ -1,6 +1,6 @@
 {
-    "name": "My awesome PWA app",
-    "short_name": "PWA App",
+    "name": "Contralyze",
+    "short_name": "Contralyze",
     "icons": [
       {
         "src": "/web-app-manifest-192x192.png",
