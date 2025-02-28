@@ -88,7 +88,7 @@ export function EditUserSheet({
           Edit
         </button>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Edit User</SheetTitle>
           <SheetDescription>
