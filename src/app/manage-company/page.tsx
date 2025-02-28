@@ -14,7 +14,6 @@ import { EditDepartmentSheet } from "./department/editDepartmentSheet";
 import { DeleteDepartmentSheet } from "./department/deleteDepartmentSheet";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
 import RefreshButton from "@/components/ui/RefreshButton";
 
 export default async function ManageCompanyPage({
