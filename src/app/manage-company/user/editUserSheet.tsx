@@ -29,7 +29,7 @@ export function EditUserSheet({
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState("");
   const [department, setDepartment] = useState("");
-  const [status, setStatus] = useState(user.status);
+  const [isActive, setIsActive] = useState(user.isActive);
   const [filteredDepartments, setFilteredDepartments] = useState(departments);
   const [state, setState] = useState<any>(null);
   const router = useRouter();
@@ -193,30 +193,30 @@ export function EditUserSheet({
           </div>
 
           <div className="mt-4 space-y-2">
-            <Label htmlFor="status">Status</Label>
+            <Label htmlFor="isActive">Status</Label>
             {user.is_first_user ? (
               <Input
                 type="text"
-                name="status"
-                id="status"
-                value={status}
+                name="isActive"
+                id="isActive"
+                value={isActive ? "Active" : "Inactive"}
                 readOnly
                 className="bg-neutral-100"
               />
             ) : (
               <select
-                name="status"
-                id="status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                name="isActive"
+                id="isActive"
+                value={isActive ? "true" : "false"}
+                onChange={(e) => setIsActive(e.target.value === "true")}
                 className="border border-neutral-200 text-gray-900 text-sm rounded-md focus:ring-primary focus:border-primary block w-full p-2.5"
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
               </select>
             )}
           </div>
-          {status === "inactive" && (
+          {!isActive && (
             <div className="mt-2 text-red-600">
               The user will lose access to the system.
             </div>
