@@ -1,15 +1,15 @@
 import AuthenticatedLayout from "@/components/layouts/authenticatedLayout";
 import { getSession } from "@/app/lib/session";
-import { getClients } from "@/app/clients/actions";
+import { getSuppliers } from "@/app/suppliers/actions";
 
-import ManageClientsClient from "../clients/manageClientsClient";
+import ManageSuppliersClient from "./manageSuppliersClient";
 
-export default async function ClientPage({
+export default async function SuppliersPage({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  let session, clients;
+  let session, suppliers;
 
   try {
     session = await getSession();
@@ -19,21 +19,19 @@ export default async function ClientPage({
   }
 
   try {
-    clients = await getClients();
-  }
-  catch (error) {
-    console.error("Error fetching clients:", error);
-    clients = { error: "Error fetching clients", clients: [] };
+    suppliers = await getSuppliers();
+  } catch (error) {
+    console.error("Error fetching suppliers:", error);
+    suppliers = { error: "Error fetching suppliers", suppliers: [] };
   }
 
-  const user = session || null;
   const userRole = session?.role || "user";
   const userName = session
     ? `${session.userFirstName} ${session.userLastName}`.trim()
     : "Guest";
   return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
-      <ManageClientsClient clients={clients} user={user}/>
+        <ManageSuppliersClient suppliers={suppliers} />
     </AuthenticatedLayout>
   );
 }

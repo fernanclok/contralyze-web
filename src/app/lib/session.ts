@@ -74,6 +74,7 @@ export async function getSession() {
   if (!cookie) return null; // Si no hay cookie, retornamos null
 
   return {
+    id: cookie.userId,
     role: typeof cookie.role === "string" ? cookie.role : "guest",
     userFirstName: cookie.userFirstName || "",
     userLastName: cookie.userLastName || "",

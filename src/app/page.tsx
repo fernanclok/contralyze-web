@@ -15,13 +15,13 @@ export default function LoginPage() {
         <div className="bg-white rounded-lg shadow-xl p-8">
           <h1 className="text-2xl font-bold text-center mb-8 text-gray-900">Welcome back</h1>
           <LoginForm />
-          <div className="mt-6 text-center text-sm">
+          {/* <div className="mt-6 text-center text-sm">
             <span className="text-gray-600">Don&apos;t have an account? </span>
             <Link href="/sign-up" className="text-primary hover:text-primary-light font-semibold hover:underline"
             >
               Sign up
             </Link>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
