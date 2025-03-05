@@ -8,11 +8,9 @@ import {
 
 import ManageCompanyClient from "./manageCompanyClient";
 
-export default async function ManageCompanyPage({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const dynamic = 'force-dynamic';
+
+export default async function ManageCompanyPage() {
   let session, users, departments, company;
 
   // Obtener sesión

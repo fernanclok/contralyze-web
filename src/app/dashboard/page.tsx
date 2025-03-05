@@ -1,7 +1,7 @@
 import AuthenticatedLayout from "@/components/layouts/authenticatedLayout";
 import { getSession } from "@/app/lib/session";
 
-export default async function DashboardPage({ children }: { children: React.ReactNode }) {
+export default async function DashboardPage() {
   const session = await getSession();
 
   const userRole = session?.role || "user";

@@ -4,11 +4,9 @@ import { getClients } from "@/app/clients/actions";
 
 import ManageClientsClient from "../clients/manageClientsClient";
 
-export default async function ClientPage({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const dynamic = 'force-dynamic';
+
+export default async function ClientPage() {
   let session, clients;
 
   try {

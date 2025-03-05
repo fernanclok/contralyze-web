@@ -44,7 +44,6 @@ const clientSchema = z.object({
     .string()
     .min(10, { message: "Address must be at least 10 characters long" })
     .trim(),
-  isActive: z.string().nonempty(),
 });
 
 type ClientResult = {
@@ -53,7 +52,6 @@ type ClientResult = {
     email?: string[];
     phone?: string[];
     address?: string[];
-    isActive?: string[];
     server?: string;
   };
   client?: any;
@@ -69,7 +67,7 @@ export async function addClient(
     return { errors: result.error.flatten().fieldErrors };
   }
 
-  const { name, email, phone, address, isActive } = result.data;
+  const { name, email, phone, address } = result.data;
 
   try {
     const token = (await cookies()).get("access_token")?.value;
@@ -89,7 +87,6 @@ export async function addClient(
         email,
         phone,
         address,
-        isActive ,
       },
       {
         headers,
@@ -107,8 +104,25 @@ export async function addClient(
   }
 }
 
+const editClientSchema = z.object({
+  name: z
+    .string()
+    .min(3, { message: "Client name must be at least 3 characters long" })
+    .trim(),
+  email: z.string().email({ message: "Invalid email address" }).trim(),
+  phone: z
+    .string()
+    .min(10, { message: "Phone number must be at least 10 characters long" })
+    .trim(),
+  address: z
+    .string()
+    .min(10, { message: "Address must be at least 10 characters long" })
+    .trim(),
+  isActive: z.string().nullable(),
+});
+
 export async function editClient(prevState: any, formData: FormData) {
-    const result = clientSchema.safeParse(Object.fromEntries(formData));
+    const result = editClientSchema.safeParse(Object.fromEntries(formData));
     
     if (!result.success) {
         return { errors: result.error.flatten().fieldErrors };

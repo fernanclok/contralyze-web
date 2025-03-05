@@ -1,7 +1,9 @@
 import AuthenticatedLayout from "@/components/layouts/authenticatedLayout";
 import { getSession } from "@/app/lib/session";
 
-export default async function TransactionsPage({ children }: { children: React.ReactNode }) {
+export const dynamic = 'force-dynamic';
+
+export default async function TransactionsPage() {
   const session = await getSession();
 
   const userRole = session?.role || "user";
