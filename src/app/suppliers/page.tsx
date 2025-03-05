@@ -4,11 +4,9 @@ import { getSuppliers } from "@/app/suppliers/actions";
 
 import ManageSuppliersClient from "./manageSuppliersClient";
 
-export default async function SuppliersPage({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const dynamic = 'force-dynamic';
+
+export default async function SuppliersPage() {
   let session, suppliers;
 
   try {
@@ -25,13 +23,14 @@ export default async function SuppliersPage({
     suppliers = { error: "Error fetching suppliers", suppliers: [] };
   }
 
+  const user = session || null;
   const userRole = session?.role || "user";
   const userName = session
     ? `${session.userFirstName} ${session.userLastName}`.trim()
     : "Guest";
   return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
-        <ManageSuppliersClient suppliers={suppliers} />
+        <ManageSuppliersClient suppliers={suppliers} user={user}/>
     </AuthenticatedLayout>
   );
 }
