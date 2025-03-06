@@ -180,7 +180,7 @@ const editUserSchema = z
       .trim(),
     email: z.string().email({ message: "Invalid email address" }).trim(),
     role: z.enum(["admin", "user"]),
-    status: z.enum(["active", "inactive"]),
+    isActive: z.string(),
     department_id: z.string().min(1, { message: "Department is required" }),
     new_password: z.string().optional(),
   })
@@ -198,7 +198,7 @@ export async function editUser(prevState: any, formData: FormData) {
     };
   }
 
-  const { first_name, last_name, email, role, status, department_id, new_password } = result.data;
+  const { first_name, last_name, email, role, isActive, department_id, new_password } = result.data;
   const userId = formData.get("user_id") as string;
 
   try {
@@ -222,7 +222,7 @@ export async function editUser(prevState: any, formData: FormData) {
         last_name,
         email,
         role,
-        status,
+        isActive,
         department_id,
         ...(new_password && { password: new_password }),
       },
@@ -246,32 +246,6 @@ export async function editUser(prevState: any, formData: FormData) {
         server: "Error editing user, please try again",
       },
     };
-  }
-}
-
-export async function deleteUser(prevState: any, userId: string) {
-  try {
-    const token = (await cookies()).get("access_token")?.value;
-
-    if (!token) {
-      return { error: "No authentication token found" };
-    }
-
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
-    
-    const response = await axios.delete(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/delete/${userId}`,
-      {
-        headers,
-      }
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error("Error deleting user:", error);
-    return { error: "Error deleting user" };
   }
 }
 

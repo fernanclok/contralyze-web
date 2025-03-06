@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { logout } from "./actions";
 import Icon from "@mdi/react";
-import { mdiViewDashboard, mdiAccountBoxMultiple, mdiTruck } from "@mdi/js";
+import { mdiViewDashboard, mdiAccountBoxMultiple, mdiTruck, mdiArchiveOutline, mdiFileDocumentOutline } from "@mdi/js";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -26,17 +27,21 @@ const menuItems: {
 } = {
   admin: [
     { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
+    { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
+    { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
     { path: "/clients", label: "Clients", icon: mdiAccountBoxMultiple },
     { path: "/suppliers", label: "Suppliers", icon: mdiTruck },
   ],
-  user: [{ path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard }],
+  user: [
+    { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
+    { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
+    { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
+    { path: "/clients", label: "Clients", icon: mdiAccountBoxMultiple },
+    { path: "/suppliers", label: "Suppliers", icon: mdiTruck },
+  ],
 };
 
-const AuthenticatedLayout = ({
-  children,
-  userRole,
-  userName,
-}: AuthenticatedLayoutProps) => {
+const AuthenticatedLayout = ({ children, userRole, userName }: AuthenticatedLayoutProps) => {
   const [allowedRoutes, setAllowedRoutes] = useState<
     { path: string; label: string; icon: string }[]
   >([]);
@@ -75,17 +80,17 @@ const AuthenticatedLayout = ({
               const isActive = pathname === item.path;
               return (
                 <li key={item.path}>
-                  <a
+                  <Link
                     href={item.path}
                     className={`flex items-center p-2 rounded-lg ${
                       isActive
-                        ? "bg-primary text-primary-foreground" // Estilo para la página actual
+                        ? "bg-primary text-primary-foreground"
                         : "text-gray-900 hover:bg-primary hover:text-primary-foreground"
                     }`}
                   >
                     <Icon path={item.icon} size={1} className="mr-3" />
                     <span className="ml-3">{item.label}</span>
-                  </a>
+                  </Link>
                 </li>
               );
             })}
@@ -113,22 +118,14 @@ const AuthenticatedLayout = ({
               <ul className="py-2">
                 {userRole === "admin" && (
                   <li>
-                    <a
+                    <Link
                       href="/manage-company"
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       Manage Company
-                    </a>
+                    </Link>
                   </li>
                 )}
-                <li>
-                  <a
-                    href="/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
-                  >
-                    Profile
-                  </a>
-                </li>
                 <li>
                   <button
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"

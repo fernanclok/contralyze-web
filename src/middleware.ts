@@ -32,8 +32,8 @@ export default async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/", req.nextUrl)); // Redirige a "/"
     }
 
-    const userRole = session.role; // Assuming the role is stored in the session
-    const allowedRoles = protectedRoutes[path];
+    const userRole = session.role as string; // Assuming the role is stored in the session
+    const allowedRoles = protectedRoutes[path as keyof typeof protectedRoutes];
 
     if (!allowedRoles.includes(userRole)) {
       return NextResponse.redirect(new URL("/unauthorized", req.nextUrl)); // Redirect to an unauthorized page
