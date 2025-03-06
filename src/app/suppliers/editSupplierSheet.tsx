@@ -21,7 +21,6 @@ import { emmiter } from "@/lib/emmiter";
 
 export function EditSupplierSheet({ supplier }: { supplier: any }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isActive, setIsActive] = useState(supplier.isActive);
   const [state, editSupplierAction] = useActionState(
     async (prevState: any, formData: FormData) => {
       const result = await editSupplier(prevState, formData);
@@ -119,15 +118,14 @@ export function EditSupplierSheet({ supplier }: { supplier: any }) {
             <select
               name="isActive"
               id="isActive"
-              value={isActive ? "true" : "false"}
-              onChange={(e) => setIsActive(e.target.value === "true")}
+              defaultValue={supplier.isActive ? "true" : "false"}
               className="border border-neutral-200 text-gray-900 text-sm rounded-md focus:ring-primary focus:border-primary block w-full p-2.5"
             >
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
           </div>
-          {!isActive && (
+          {!supplier.isActive && (
             <div className="mt-2 text-red-600">
               <p>This supplier is inactive.</p>
             </div>

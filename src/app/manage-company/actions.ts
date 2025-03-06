@@ -249,32 +249,6 @@ export async function editUser(prevState: any, formData: FormData) {
   }
 }
 
-// export async function deleteUser(prevState: any, userId: string) {
-//   try {
-//     const token = (await cookies()).get("access_token")?.value;
-
-//     if (!token) {
-//       return { error: "No authentication token found" };
-//     }
-
-//     const headers = {
-//       Authorization: `Bearer ${token}`,
-//     };
-    
-//     const response = await axios.delete(
-//       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/delete/${userId}`,
-//       {
-//         headers,
-//       }
-//     );
-
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error deleting user:", error);
-//     return { error: "Error deleting user" };
-//   }
-// }
-
 // DEPARTMENT ACTIONS
 
 export async function getDepartments() {
