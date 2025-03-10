@@ -1,19 +1,16 @@
+
 import AuthenticatedLayout from "@/components/layouts/authenticatedLayout";
 import { getSession } from "@/app/lib/session";
+import AddRequisition from "./addRequisitionPage";
 
-import ManageRequisitionsClient from "./manageRequisitionsClient";
-
-export const dynamic = 'force-dynamic';
-
-export default async function RequisitionsPage() {
+export default async function DashboardPage() {
   const session = await getSession();
 
-  const user = session || null;
   const userRole = session?.role || "user";
   const userName = session? `${session.userFirstName} ${session.userLastName}`.trim() : "Guest";
   return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
-        <ManageRequisitionsClient user={user} />
+      <AddRequisition />
     </AuthenticatedLayout>
   );
 }
