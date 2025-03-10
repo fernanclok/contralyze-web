@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { logout } from "./actions";
 import Icon from "@mdi/react";
-import { mdiViewDashboard, mdiAccountBoxMultiple, mdiTruck, mdiArchiveOutline, mdiFileDocumentOutline } from "@mdi/js";
+import { mdiViewDashboard, mdiAccountBoxMultiple, mdiTruck, mdiArchiveOutline, mdiFileDocumentOutline, mdiCashMultiple } from "@mdi/js";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -29,6 +29,7 @@ const menuItems: {
     { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
     { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
     { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
+    { path: "/dashboard/budgets", label: "Budgets", icon: mdiCashMultiple },
     { path: "/clients", label: "Clients", icon: mdiAccountBoxMultiple },
     { path: "/suppliers", label: "Suppliers", icon: mdiTruck },
   ],
@@ -36,6 +37,7 @@ const menuItems: {
     { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
     { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
     { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
+    { path: "/dashboard/budgets", label: "Budgets", icon: mdiCashMultiple },
     { path: "/clients", label: "Clients", icon: mdiAccountBoxMultiple },
     { path: "/suppliers", label: "Suppliers", icon: mdiTruck },
   ],

@@ -7,6 +7,7 @@ const protectedRoutes = {
   "/requisitions": ["admin", "user"],
   "/requisitions/new-requisition": ["admin", "user"],
   "/transactions": ["admin", "user"],
+  "/dashboard/budgets": ["admin", "user"],
   "/clients": ["admin", "user"],
   "/suppliers": ["admin", "user"],
   "/manage-company": ["admin"], 
@@ -51,5 +52,5 @@ export default async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard', '/', '/manage-company', '/requisitions', '/requisitions/new-requisition', '/transactions', '/clients', '/suppliers'], // Actualizado
+  matcher: ['/' ,'/dashboard', '/dashboard/budgets', '/manage-company', '/requisitions', '/requisitions/new-requisition', '/transactions', '/clients', '/suppliers'], // Actualizado
 };
