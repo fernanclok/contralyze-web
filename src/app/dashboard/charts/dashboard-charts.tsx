@@ -8,7 +8,9 @@ import { ExpensesChart } from "./expenses-chart";
 import { BudgetComparisonChart } from "./budget-comparison-chart";
 import { ArrowUpIcon, UsersIcon, BuildingIcon, UserIcon } from "lucide-react";
 
-export default function DashboardCharts() {
+
+export default function DashboardCharts({ Budgets } : {Budgets:any}) {
+
   const [users, setUsers] = useState(0);
   const [departments, setDepartments] = useState(0);
   const [clients, setClients] = useState(0);
@@ -22,59 +24,73 @@ export default function DashboardCharts() {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm text-gray-400 font-medium">Active Users</CardTitle>
+            <CardTitle className="text-sm text-gray-400 font-medium">All Budgets</CardTitle>
             <UsersIcon className="h-5 w-5 text-gray-600" />
           </CardHeader>
           <CardContent>
             <div className="block justify-center items-center">
               <div className="flex items-center justify-center">
                 <ArrowUpIcon className="h-5 w-5 text-green-500" />
-                <span className="text-3xl font-bold text-black">+{users}</span>
+                <span className="text-3xl font-bold text-black">+{Budgets.budgets.total_budgets}</span>
               </div>
-                <p className="text-sm text-gray-300 font-thin mt-2">All users are using the app.</p>
+                <p className="text-sm text-gray-300 font-thin mt-2">All budgets from departments and categories.</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm text-gray-400 font-medium">Departments</CardTitle>
+            <CardTitle className="text-sm text-gray-400 font-medium">Total budgets amount.</CardTitle>
             <BuildingIcon className="h-5 w-5 text-gray-600" />
           </CardHeader>
           <CardContent>
             <div className="block justify-center items-center">
               <div className="flex items-center justify-center">
                 <ArrowUpIcon className="h-5 w-5 text-green-500" />
-                <span className="text-3xl font-bold text-black">+{departments}</span>
+                <span className="text-3xl font-bold text-black">+{Budgets.budgets.total_budget_amount}</span>
               </div>
             </div>
-            <p className="text-sm text-gray-300 font-thin mt-2">All departments have its budget.</p>
+            <p className="text-sm text-gray-300 font-thin mt-2">All budget expended.</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm text-gray-400 font-medium">Clients</CardTitle>
+            <CardTitle className="text-sm text-gray-400 font-medium">Active budgets</CardTitle>
             <UserIcon className="h-5 w-5 text-gray-600" />
           </CardHeader>
           <CardContent>
             <div className="block justify-center items-center">
               <div className="flex items-center justify-center">
                 <ArrowUpIcon className="h-5 w-5 text-green-500" />
-                <span className="text-3xl font-bold text-black">+{clients}</span>
+                <span className="text-3xl font-bold text-black">+{Budgets.budgets.total_active_budgets}</span>
               </div>
             </div>
-            <p className="text-sm text-gray-300 font-thin mt-2">All clients have contact info.</p>
+            <p className="text-sm text-gray-300 font-thin mt-2">All active budgets today.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm text-gray-400 font-medium">Inactive budgets</CardTitle>
+            <UserIcon className="h-5 w-5 text-gray-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="block justify-center items-center">
+              <div className="flex items-center justify-center">
+                <ArrowUpIcon className="h-5 w-5 text-green-500" />
+                <span className="text-3xl font-bold text-black">+{Budgets.budgets.total_inactive_budgets}</span>
+              </div>
+            </div>
+            <p className="text-sm text-gray-300 font-thin mt-2">Inactive budgets can be expired budgets.</p>
           </CardContent>
         </Card>
       </div>
-      <Tabs defaultValue="revenue" className="space-y-4">
+      <Tabs defaultValue="budget" className="space-y-4">
         <div className="flex justify-between items-center">
           <TabsList>
-            <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="budget">Budget Comparison</TabsTrigger>
+            <TabsTrigger value="revenue">Revenue</TabsTrigger>
           </TabsList>
         </div>
 
@@ -90,26 +106,10 @@ export default function DashboardCharts() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="expenses" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Expense Analysis</CardTitle>
-              <p>Monthly expenses by category</p>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <ExpensesChart />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="budget" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Budget vs Actual</CardTitle>
-              <p>Comparison of budgeted amounts against actual spending</p>
-            </CardHeader>
             <CardContent className="pl-2">
-              <BudgetComparisonChart />
+              <BudgetComparisonChart Budgets={Budgets}/>
             </CardContent>
           </Card>
         </TabsContent>

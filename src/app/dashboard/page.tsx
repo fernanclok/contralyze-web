@@ -1,16 +1,39 @@
 import AuthenticatedLayout from "@/components/layouts/authenticatedLayout";
 import { getSession } from "@/app/lib/session";
+import { getBudgets, getInfoperCards } from "@/app/dashboard/actions";
 import ClientDashboardPage from "./ClientDashboard";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ServerDashboardPage() {
-  const session = await getSession();
-
-  const userRole = session?.role || "user";
-  const userName = session ? `${session.userFirstName} ${session.userLastName}`.trim() : "Guest";
-
+  let session, Budget, InfoCards ;
+   try {
+      session = await getSession();
+    } catch (error) {
+      console.error("Error fetching session:", error);
+      session = null;
+    }
+  try{
+    Budget = await getBudgets()
+  }
+  catch(error){
+    console.error("Error fetching bufgeeeeeets:", error)
+  }
+  try{
+    InfoCards = await getInfoperCards()
+  }
+  catch(error){
+    console.error("Error fetching infocards:", error)
+  }
+  
+    const user = session || null;
+    const userRole = session?.role || "user";
+    const userName = session
+      ? `${session.userFirstName} ${session.userLastName}`.trim()
+      : "Guest";
   return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
-      <ClientDashboardPage />
+      <ClientDashboardPage user={user} Budgets={Budget} Information={InfoCards}/>
     </AuthenticatedLayout>
   );
 }

@@ -1,6 +1,7 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import {clearLocalStorage} from "@/lib/client-utils";
 
 const secretKey = process.env.SESSION_SECRET;
 const encodedKey = new TextEncoder().encode(secretKey);
@@ -39,6 +40,10 @@ export async function storeTokenBackend(token: string) {
 export async function deleteSession() {
   (await cookies()).delete("session");
   (await cookies()).delete("access_token");
+   // clean the local storage
+   if (typeof window !== "undefined") {
+    clearLocalStorage();
+  }
 }
 
 type SessionPayload = {
