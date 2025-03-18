@@ -25,6 +25,8 @@ import { emmiter } from "@/lib/emmiter";
 import { EditBudgetRequestModal } from './EditBudgetRequestModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Pagination } from '@/components/ui/pagination';
+import { getSession } from '@/app/lib/session';
+import { type Department, type Category } from '@/app/dashboard/budgets/actions';
 
 interface BudgetRequest {
   id: string;
@@ -36,6 +38,11 @@ interface BudgetRequest {
   status: string;
   reviewed_by: string | null;
   category: {
+    name: string;
+    department_id?: string;
+  };
+  department?: {
+    id: string;
     name: string;
   };
   user?: {
@@ -53,25 +60,23 @@ interface BudgetRequest {
   };
 }
 
-export function BudgetRequestList({ requests, categories, userRole }: { 
+export function BudgetRequestList({ requests, categories, departments, userRole, hasConnectionError = false }: { 
   requests: BudgetRequest[],
-  categories: { id: string, name: string }[],
-  userRole: string
+  categories: Category[],
+  departments: Department[],
+  userRole: string,
+  hasConnectionError?: boolean
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BudgetRequest | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterDepartment, setFilterDepartment] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const router = useRouter();
-  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [requestToDelete, setRequestToDelete] = useState<BudgetRequest | null>(null);
-  const [isApproveAlertOpen, setIsApproveAlertOpen] = useState(false);
-  const [isRejectAlertOpen, setIsRejectAlertOpen] = useState(false);
-  const [requestToApproveReject, setRequestToApproveReject] = useState<BudgetRequest | null>(null);
   
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,10 +87,33 @@ export function BudgetRequestList({ requests, categories, userRole }: {
 
   // Get current user ID from localStorage on component mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentUserId(localStorage.getItem('user_id'));
-    }
-  }, []);
+    const getUserId = async () => {
+      try {
+        // Intenta obtener el ID de usuario de localStorage
+        if (typeof window !== 'undefined') {
+          const storedUserId = localStorage.getItem('user_id');
+          
+          if (storedUserId) {
+            setCurrentUserId(storedUserId);
+            return;
+          }
+          
+          // Si no hay ID en localStorage, obtenerlo de la API
+          const response = await fetch('/api/user');
+          const data = await response.json();
+          
+          if (data && data.id) {
+            localStorage.setItem('user_id', data.id);
+            setCurrentUserId(data.id);
+          }
+        }
+      } catch (error) {
+        // Silenciar error - no es crítico
+      }
+    };
+
+    getUserId();
+  }, [requests]);
 
   // Check if the current user is the creator of a request
   const isCreator = (request: BudgetRequest) => {
@@ -136,10 +164,25 @@ export function BudgetRequestList({ requests, categories, userRole }: {
     return `User ID: ${request.user_id}`;
   };
 
+  // Obtener el nombre del departamento para una solicitud
+  const getDepartmentName = (request: BudgetRequest): string => {
+    if (request.department && request.department.name) {
+      return request.department.name;
+    }
+    
+    if (request.category && request.category.department_id) {
+      const department = departments.find(d => d.id === request.category.department_id);
+      return department ? department.name : 'Unknown Department';
+    }
+    
+    return 'No Department';
+  };
+
   const handleCreateRequest = async (data: {
     category_id?: string;
     category_name?: string;
     category_type?: string;
+    department_id?: string;
     requested_amount: number;
     description: string;
     isNewCategory: boolean;
@@ -154,7 +197,8 @@ export function BudgetRequestList({ requests, categories, userRole }: {
         // Llamar a la API para crear la categoría
         const categoryResult = await createCategory({
           category_name: data.category_name,
-          category_type: data.category_type
+          category_type: data.category_type,
+          department_id: data.department_id ? parseInt(data.department_id) : undefined
         });
         
         if (categoryResult.error) {
@@ -191,8 +235,6 @@ export function BudgetRequestList({ requests, categories, userRole }: {
         description: data.description
       };
       
-      console.log('Sending budget request data:', formattedData);
-      
       const response = await createBudgetRequest(formattedData);
       
       if (response.error) {
@@ -208,7 +250,6 @@ export function BudgetRequestList({ requests, categories, userRole }: {
         router.refresh();
       }
     } catch (error) {
-      console.error('Error creating budget request:', error);
       emmiter.emit("showToast", {
         message: "Could not create the budget request",
         type: "error"
@@ -227,8 +268,21 @@ export function BudgetRequestList({ requests, categories, userRole }: {
       const response = await approveBudgetRequest(id);
       
       if (response.error) {
+        let errorMessage = response.error;
+        
+        // Personalizar mensaje según el tipo de error de presupuesto
+        if (response.budgetInfo) {
+          const { requested, available, budget_type, department } = response.budgetInfo;
+          
+          if (budget_type === 'total') {
+            errorMessage = `Not enough total budget available. Requested: ${formatCurrency(requested)}, Available: ${formatCurrency(available)}`;
+          } else if (budget_type === 'department') {
+            errorMessage = `Not enough budget available in department ${department}. Requested: ${formatCurrency(requested)}, Available: ${formatCurrency(available)}`;
+          }
+        }
+        
         emmiter.emit("showToast", {
-          message: `Failed to approve request: ${response.error}`,
+          message: errorMessage,
           type: "error"
         });
       } else {
@@ -236,10 +290,9 @@ export function BudgetRequestList({ requests, categories, userRole }: {
           message: "Budget request approved successfully",
           type: "success"
         });
-        router.refresh(); // Actualizar la página para reflejar el cambio
+        router.refresh();
       }
     } catch (error) {
-      console.error('Error approving budget request:', error);
       emmiter.emit("showToast", {
         message: "Could not approve the budget request",
         type: "error"
@@ -253,8 +306,6 @@ export function BudgetRequestList({ requests, categories, userRole }: {
   const handleRejectRequest = async (id: string) => {
     try {
       setLoading(true);
-      
-      console.log('Rejecting budget request:', id);
       
       const response = await rejectBudgetRequest(id);
       
@@ -271,7 +322,6 @@ export function BudgetRequestList({ requests, categories, userRole }: {
         router.refresh();
       }
     } catch (error) {
-      console.error('Error rejecting budget request:', error);
       emmiter.emit("showToast", {
         message: "Could not reject the budget request",
         type: "error"
@@ -282,6 +332,15 @@ export function BudgetRequestList({ requests, categories, userRole }: {
   };
 
   const handleEditRequest = (request: BudgetRequest) => {
+    // Verificar que el usuario sea admin o el creador de la solicitud
+    if (!isAdmin && !isCreator(request)) {
+      emmiter.emit("showToast", {
+        message: "You can only edit your own budget requests",
+        type: "error"
+      });
+      return;
+    }
+    
     setSelectedRequest(request);
     setIsEditModalOpen(true);
   };
@@ -295,8 +354,6 @@ export function BudgetRequestList({ requests, categories, userRole }: {
     try {
       setLoading(true);
       
-      console.log('Updating budget request:', id, data);
-      
       const response = await updateBudgetRequest(id, data);
       
       if (response.error) {
@@ -309,10 +366,9 @@ export function BudgetRequestList({ requests, categories, userRole }: {
           message: "Budget request updated successfully",
           type: "success"
         });
-        router.refresh(); // Refresh the page to show changes
+        router.refresh();
       }
     } catch (error) {
-      console.error('Error updating budget request:', error);
       emmiter.emit("showToast", {
         message: "Could not update the budget request",
         type: "error"
@@ -331,6 +387,16 @@ export function BudgetRequestList({ requests, categories, userRole }: {
   const confirmDelete = async () => {
     if (!selectedRequest) return;
     
+    // Verificar que el usuario sea admin o el creador de la solicitud
+    if (!isAdmin && !isCreator(selectedRequest)) {
+      emmiter.emit("showToast", {
+        message: "You can only delete your own budget requests",
+        type: "error"
+      });
+      setDeleteDialogOpen(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       
@@ -346,10 +412,9 @@ export function BudgetRequestList({ requests, categories, userRole }: {
           message: "Budget request deleted successfully",
           type: "success"
         });
-        router.refresh(); // Refresh the page to show changes
+        router.refresh();
       }
     } catch (error) {
-      console.error('Error deleting budget request:', error);
       emmiter.emit("showToast", {
         message: "Could not delete the budget request",
         type: "error"
@@ -360,21 +425,34 @@ export function BudgetRequestList({ requests, categories, userRole }: {
     }
   };
 
-  // Filter requests based on status and search
+  // Filter requests based on status, department and search
   const filteredRequests = requests.filter(request => {
     // Status filter
     if (filterStatus !== 'all' && request.status !== filterStatus) {
       return false;
     }
     
+    // Department filter
+    if (filterDepartment !== 'all') {
+      const departmentId = request.department?.id || request.category.department_id;
+      if (departmentId !== filterDepartment) {
+        return false;
+      }
+    }
+    
     // Search by requester or category
-    const searchLower = searchTerm.toLowerCase();
-    
-    const requesterName = getUserDisplayName(request).toLowerCase();
-    const categoryName = request.category.name.toLowerCase();
-    
-    if (searchTerm && !requesterName.includes(searchLower) && !categoryName.includes(searchLower)) {
-      return false;
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      
+      const requesterName = getUserDisplayName(request).toLowerCase();
+      const categoryName = request.category.name.toLowerCase();
+      const departmentName = getDepartmentName(request).toLowerCase();
+      
+      if (!requesterName.includes(searchLower) && 
+          !categoryName.includes(searchLower) && 
+          !departmentName.includes(searchLower)) {
+        return false;
+      }
     }
     
     return true;
@@ -393,7 +471,7 @@ export function BudgetRequestList({ requests, categories, userRole }: {
   // Resetear a la primera página cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterStatus]);
+  }, [searchTerm, filterStatus, filterDepartment]);
 
   // Get status badge style
   const getStatusStyle = (status: string) => {
@@ -414,6 +492,32 @@ export function BudgetRequestList({ requests, categories, userRole }: {
     return new Date(dateString).toLocaleDateString();
   };
 
+  // Agrupar solicitudes por departamento para estadísticas
+  const requestsByDepartment = departments.map(dept => {
+    const deptRequests = requests.filter(request => {
+      const requestDeptId = request.department?.id || request.category.department_id;
+      return requestDeptId === dept.id;
+    });
+    
+    const pendingCount = deptRequests.filter(req => req.status === 'pending').length;
+    const approvedCount = deptRequests.filter(req => req.status === 'approved').length;
+    const rejectedCount = deptRequests.filter(req => req.status === 'rejected').length;
+    
+    const totalAmount = deptRequests
+      .filter(req => req.status === 'approved')
+      .reduce((sum, req) => sum + parseFloat(req.requested_amount.toString()), 0);
+    
+    return {
+      id: dept.id,
+      name: dept.name,
+      requestCount: deptRequests.length,
+      pendingCount,
+      approvedCount,
+      rejectedCount,
+      totalAmount
+    };
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -422,7 +526,7 @@ export function BudgetRequestList({ requests, categories, userRole }: {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input
               type="search"
-              placeholder="Search by requester or category..."
+              placeholder="Search by requester, department or category..."
               className="pl-8 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -455,10 +559,27 @@ export function BudgetRequestList({ requests, categories, userRole }: {
               </SelectContent>
             </Select>
           </div>
-          {(searchTerm || filterStatus !== 'all') && (
+          <div className="w-[160px] min-w-[140px]">
+            <Select 
+              value={filterDepartment} 
+              onValueChange={setFilterDepartment}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Department" />
+              </SelectTrigger>
+              <SelectContent className="bg-white shadow-md">
+                <SelectItem value="all">All Departments</SelectItem>
+                {departments.map(dept => (
+                  <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(searchTerm || filterStatus !== 'all' || filterDepartment !== 'all') && (
             <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={() => {
               setSearchTerm('');
               setFilterStatus('all');
+              setFilterDepartment('all');
             }}>
               <FilterX className="mr-2 h-4 w-4" />
               Clear filters
@@ -466,12 +587,50 @@ export function BudgetRequestList({ requests, categories, userRole }: {
           )}
         </div>
         {userRole && (
-          <Button onClick={() => setIsModalOpen(true)} className="whitespace-nowrap">
+          <Button 
+            onClick={() => setIsModalOpen(true)} 
+            className="whitespace-nowrap"
+            disabled={hasConnectionError}
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             New Request
           </Button>
         )}
       </div>
+
+      {/* Department Summary Cards */}
+      {requestsByDepartment.length > 0 && isAdmin && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-4">
+          {requestsByDepartment.map(dept => (
+            dept.requestCount > 0 && (
+              <div 
+                key={dept.id} 
+                className="bg-white rounded-md border p-4 shadow-sm"
+                onClick={() => setFilterDepartment(dept.id)}
+              >
+                <h3 className="font-medium text-gray-900">{dept.name}</h3>
+                <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-amber-50 p-1 rounded">
+                    <span className="text-amber-600 font-bold block">{dept.pendingCount}</span>
+                    <span className="text-xs text-gray-600">Pending</span>
+                  </div>
+                  <div className="bg-green-50 p-1 rounded">
+                    <span className="text-green-600 font-bold block">{dept.approvedCount}</span>
+                    <span className="text-xs text-gray-600">Approved</span>
+                  </div>
+                  <div className="bg-red-50 p-1 rounded">
+                    <span className="text-red-600 font-bold block">{dept.rejectedCount}</span>
+                    <span className="text-xs text-gray-600">Rejected</span>
+                  </div>
+                </div>
+                {dept.approvedCount > 0 && (
+                  <p className="text-sm font-medium mt-2 text-blue-600">{formatCurrency(dept.totalAmount)} approved</p>
+                )}
+              </div>
+            )
+          ))}
+        </div>
+      )}
 
       {filteredRequests.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
@@ -480,43 +639,24 @@ export function BudgetRequestList({ requests, categories, userRole }: {
           </div>
           <h3 className="mb-1 text-lg font-medium">No budget requests found</h3>
           <p className="text-sm text-gray-500 mb-3">
-            {searchTerm || filterStatus !== 'all' 
+            {searchTerm || filterStatus !== 'all' || filterDepartment !== 'all'
               ? 'Try adjusting your filters' 
               : 'Start by creating your first budget request'}
           </p>
-          {searchTerm || filterStatus !== 'all' ? (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                setSearchTerm('');
-                setFilterStatus('all');
-              }}
-            >
-              Clear filters
-            </Button>
-          ) : (
-            <Button 
-              variant="default" 
-              size="sm"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Request
-            </Button>
-          )}
         </div>
       ) : (
-        <div className="rounded-md border overflow-x-auto">
+        <div className="w-full overflow-hidden rounded-md border">
+          <div className="w-full overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Created By</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[15%] min-w-[150px]">Created By</TableHead>
+                  <TableHead className="w-[15%] min-w-[120px]">Department</TableHead>
+                  <TableHead className="w-[15%] min-w-[120px]">Category</TableHead>
+                  <TableHead className="w-[10%] min-w-[100px]">Amount</TableHead>
+                  <TableHead className="hidden md:table-cell w-[20%]">Description</TableHead>
+                  <TableHead className="hidden sm:table-cell w-[10%] min-w-[100px]">Date</TableHead>
+                  <TableHead className="w-[10%] min-w-[100px]">Status</TableHead>
                   {isAdmin && <TableHead className="w-[160px] text-right">Actions</TableHead>}
                   {!isAdmin && <TableHead className="w-[80px] text-right">Actions</TableHead>}
                 </TableRow>
@@ -527,8 +667,8 @@ export function BudgetRequestList({ requests, categories, userRole }: {
                     <TableCell className="font-semibold">
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                          <User className="h-5 w-5 text-blue-600" />
-                          <div className="text-black">
+                          <User className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                          <div className="text-black truncate max-w-[150px]">
                             {getUserDisplayName(request)}
                           </div>
                         </div>
@@ -539,10 +679,17 @@ export function BudgetRequestList({ requests, categories, userRole }: {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-black">{request.category.name}</TableCell>
-                    <TableCell className="text-black">{formatCurrency(request.requested_amount)}</TableCell>
-                    <TableCell className="max-w-xs truncate text-black">{request.description}</TableCell>
-                    <TableCell className="text-black">{formatDate(request.request_date)}</TableCell>
+                    <TableCell className="text-black truncate max-w-[120px]">
+                      {getDepartmentName(request)}
+                    </TableCell>
+                    <TableCell className="text-black truncate max-w-[120px]">{request.category.name}</TableCell>
+                    <TableCell className="text-black whitespace-nowrap">{formatCurrency(request.requested_amount)}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="text-black truncate max-w-[250px]" title={request.description}>
+                        {request.description}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell text-black whitespace-nowrap">{formatDate(request.request_date)}</TableCell>
                     <TableCell>
                       <Badge className={cn(getStatusStyle(request.status))}>
                         {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
@@ -550,14 +697,14 @@ export function BudgetRequestList({ requests, categories, userRole }: {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {/* For admins, show approve/reject buttons for pending requests */}
+                        {/* Solo mostrar botones de aprobar/rechazar para administradores */}
                         {isAdmin && request.status === 'pending' && (
                           <>
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => handleApproveRequest(request.id)}
-                              disabled={loading}
+                              disabled={loading || hasConnectionError}
                               title="Approve"
                             >
                               <CheckCircle className="h-4 w-4 text-green-600" />
@@ -567,7 +714,7 @@ export function BudgetRequestList({ requests, categories, userRole }: {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleRejectRequest(request.id)}
-                              disabled={loading}
+                              disabled={loading || hasConnectionError}
                               title="Reject"
                             >
                               <XCircle className="h-4 w-4 text-red-600" />
@@ -576,13 +723,13 @@ export function BudgetRequestList({ requests, categories, userRole }: {
                           </>
                         )}
                         
-                        {/* Edit button - Only for the creator or admin */}
+                        {/* Mostrar botón de editar solo para el creador o admin */}
                         {(isAdmin || isCreator(request)) && (
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEditRequest(request)}
-                            disabled={loading}
+                            disabled={loading || hasConnectionError}
                             title="Edit"
                           >
                             <Edit className="h-4 w-4 text-blue-600" />
@@ -590,13 +737,13 @@ export function BudgetRequestList({ requests, categories, userRole }: {
                           </Button>
                         )}
                         
-                        {/* Delete button - Only for the creator or admin */}
+                        {/* Mostrar botón de eliminar solo para el creador o admin */}
                         {(isAdmin || isCreator(request)) && (
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDeleteRequest(request)}
-                            disabled={loading}
+                            disabled={loading || hasConnectionError}
                             title="Delete"
                           >
                             <Trash2 className="h-4 w-4 text-red-600" />
@@ -619,6 +766,7 @@ export function BudgetRequestList({ requests, categories, userRole }: {
                 onPageChange={handlePageChange}
               />
             </div>
+          </div>
         </div>
       )}
 
@@ -627,6 +775,7 @@ export function BudgetRequestList({ requests, categories, userRole }: {
         onOpenChange={setIsModalOpen}
         onSubmit={handleCreateRequest}
         categories={categories}
+        departments={departments}
         loading={loading}
       />
 
@@ -635,6 +784,7 @@ export function BudgetRequestList({ requests, categories, userRole }: {
         onOpenChange={setIsEditModalOpen}
         onSubmit={handleUpdateRequest}
         categories={categories}
+        departments={departments}
         request={selectedRequest}
         loading={loading}
         userRole={userRole}

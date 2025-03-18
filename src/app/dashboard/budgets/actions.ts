@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { cookies } from "next/headers";
+import { getSession } from "@/app/lib/session";
 
 // Tipos para los datos de budget
 export interface Budget {
@@ -13,6 +14,14 @@ export interface Budget {
   end_date: string;
   status: string;
   category: {
+    name: string;
+    department_id?: string;
+  };
+  department?: {
+    id: string;
+    name: string;
+  };
+  user?: {
     name: string;
   };
 }
@@ -28,6 +37,11 @@ export interface BudgetRequest {
   reviewed_by: string | null;
   category: {
     name: string;
+    department_id?: string;
+  };
+  department?: {
+    id: string;
+    name: string;
   };
   user?: {
     name?: string;
@@ -42,6 +56,21 @@ export interface BudgetRequest {
   reviewer?: {
     name: string;
   };
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  department_id?: string;
+  department?: {
+    name: string;
+  };
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 // Obtener todos los budgets
@@ -421,12 +450,40 @@ export async function approveBudgetRequest(id: string) {
       }
     );
 
+    // Si hay un error en la respuesta relacionado con el presupuesto
+    if (response.data.error) {
+      return { 
+        error: response.data.error, 
+        request: null,
+        budgetInfo: {
+          requested: response.data.requested,
+          available: response.data.available,
+          budget_type: response.data.budget_type,
+          department: response.data.department
+        }
+      };
+    }
+
     return { request: response.data, error: null };
   } catch (error: any) {
     console.error("Error approving budget request:", error);
 
     if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
       return { error: "Error connecting to the server", request: null };
+    }
+
+    // Si el error viene del servidor y contiene información del presupuesto
+    if (error.response?.data) {
+      return {
+        error: error.response.data.error,
+        request: null,
+        budgetInfo: {
+          requested: error.response.data.requested,
+          available: error.response.data.available,
+          budget_type: error.response.data.budget_type,
+          department: error.response.data.department
+        }
+      };
     }
 
     return { error: "Error approving budget request", request: null };
@@ -632,5 +689,69 @@ export async function createCategory(data: {
     }
 
     return { error: "Error creating category", category: null };
+  }
+}
+
+// Obtener departamentos
+export async function getDepartments() {
+  try {
+    const token = (await cookies()).get('access_token')?.value;
+
+    if (!token) {
+      return { departments: [], error: 'Authorization required' };
+    }
+
+    const headers = {
+      Authorization: `Bearer ${token}`
+    };
+
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/departments/all`,
+      { headers }
+    );
+
+    return { departments: response.data, error: null };
+  } catch (error: any) {
+    console.error('Error fetching departments:', error);
+    
+    if (error.code === 'ECONNREFUSED' || error.response?.status === 429) {
+      return { departments: [], error: 'Error connecting to the server' };
+    }
+
+    return { departments: [], error: 'Error fetching departments' };
+  }
+}
+
+// Obtener el departamento del usuario actual
+export async function getUserDepartment() {
+  try {
+    const token = (await cookies()).get('access_token')?.value;
+    const session = await getSession();
+
+    if (!token || !session) {
+      return { department: null, error: 'Authorization required' };
+    }
+
+    const headers = {
+      Authorization: `Bearer ${token}`
+    };
+
+    // Intentamos obtener el departamento del usuario desde el backend
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/${session.id}`,
+      { headers }
+    );
+
+    const userDepartment = response.data?.department;
+    
+    return { department: userDepartment, error: null };
+  } catch (error: any) {
+    console.error('Error fetching user department:', error);
+    
+    if (error.code === 'ECONNREFUSED' || error.response?.status === 429) {
+      return { department: null, error: 'Error connecting to the server' };
+    }
+
+    return { department: null, error: 'Error fetching user department' };
   }
 }

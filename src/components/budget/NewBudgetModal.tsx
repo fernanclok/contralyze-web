@@ -11,11 +11,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format, addMonths, addDays, isBefore, startOfDay } from "date-fns"
 import { CalendarIcon, PlusCircle, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-interface Category {
-  id: string
-  name: string
-}
+import { type Department, type Category } from '@/app/dashboard/budgets/actions'
+import axios from "axios"
+import { emmiter } from "@/lib/emmiter";
 
 interface NewBudgetModalProps {
   open: boolean
@@ -24,6 +22,7 @@ interface NewBudgetModalProps {
     category_id?: string
     category_name?: string
     category_type?: string
+    department_id?: string
     max_amount: number
     start_date: Date
     end_date: Date
@@ -31,6 +30,7 @@ interface NewBudgetModalProps {
     periodicity: string
   }) => void
   categories: Category[]
+  departments: Department[]
   loading?: boolean
 }
 
@@ -79,6 +79,7 @@ export function NewBudgetModal({
   onOpenChange, 
   onSubmit, 
   categories,
+  departments,
   loading = false 
 }: NewBudgetModalProps) {
   const [categoryId, setCategoryId] = useState("")
@@ -88,13 +89,89 @@ export function NewBudgetModal({
   const [isAddingNewCategory, setIsAddingNewCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
   const [newCategoryType, setNewCategoryType] = useState("")
+  const [departmentId, setDepartmentId] = useState("")
   const [periodicity, setPeriodicity] = useState("monthly")
+  const [userDepartment, setUserDepartment] = useState<Department | null>(null)
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([])
+  const [loadingUserInfo, setLoadingUserInfo] = useState(false)
 
   // Current date for validation
   const today = startOfDay(new Date());
 
   // Check if there are available categories
   const hasCategories = categories.length > 0
+  
+  // Check if there are available departments
+  const hasDepartments = departments.length > 0
+
+  // Cargar información del usuario cuando se abre el modal
+  useEffect(() => {
+    if (open) {
+      loadUserDepartment();
+    }
+  }, [open]);
+
+  // Cargar el departamento del usuario
+  const loadUserDepartment = async () => {
+    try {
+      setLoadingUserInfo(true);
+      const response = await axios.get('/api/user');
+      
+      if (response.data && response.data.department) {
+        // Si el usuario tiene un departamento asignado, lo utilizamos
+        const userDept = response.data.department;
+        console.log('Departamento del usuario:', userDept);
+        
+        // Buscar el departamento en la lista de departamentos
+        const matchingDepartment = departments.find(d => d.id === userDept.id);
+        
+        if (matchingDepartment) {
+          setUserDepartment(matchingDepartment);
+          setDepartmentId(matchingDepartment.id);
+          console.log('Departamento seleccionado automáticamente:', matchingDepartment.name);
+          
+          // Filtrar categorías para este departamento
+          filterCategoriesByDepartment(matchingDepartment.id);
+        }
+      } else {
+        console.log('Usuario sin departamento asignado');
+        // Si el usuario no tiene departamento, utilizamos el primer departamento disponible
+        if (hasDepartments && departments.length > 0) {
+          setDepartmentId(departments[0].id);
+          filterCategoriesByDepartment(departments[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Error al cargar el departamento del usuario:', error);
+      emmiter.emit('showToast', {
+        message: 'No se pudo cargar la información del departamento',
+        type: 'error'
+      });
+      
+      // Si falla, utilizamos el primer departamento disponible
+      if (hasDepartments && departments.length > 0) {
+        setDepartmentId(departments[0].id);
+        filterCategoriesByDepartment(departments[0].id);
+      }
+    } finally {
+      setLoadingUserInfo(false);
+    }
+  };
+
+  // Filtrar categorías por departamento
+  const filterCategoriesByDepartment = (deptId: string) => {
+    if (deptId && categories.length > 0) {
+      const filtered = categories.filter(cat => cat.department_id === deptId);
+      setFilteredCategories(filtered);
+      
+      // Si hay categorías filtradas, seleccionar la primera por defecto
+      if (filtered.length > 0 && !isAddingNewCategory) {
+        setCategoryId(filtered[0].id);
+      }
+    } else {
+      setFilteredCategories(categories);
+    }
+  };
 
   // If there are no categories, force the creation of a new one
   useEffect(() => {
@@ -112,6 +189,23 @@ export function NewBudgetModal({
       }
     }
   }, [startDate, periodicity]);
+
+  // Cuando se selecciona un departamento, filtrar las categorías
+  useEffect(() => {
+    if (departmentId) {
+      filterCategoriesByDepartment(departmentId);
+    }
+  }, [departmentId, categories]);
+
+  // Cuando se selecciona una categoría existente, actualizar el departamento
+  useEffect(() => {
+    if (!isAddingNewCategory && categoryId) {
+      const selectedCategory = categories.find(cat => cat.id === categoryId);
+      if (selectedCategory && selectedCategory.department_id) {
+        setDepartmentId(selectedCategory.department_id);
+      }
+    }
+  }, [categoryId, categories, isAddingNewCategory]);
 
   const handleStartDateChange = (date: Date | undefined) => {
     if (date) {
@@ -147,9 +241,14 @@ export function NewBudgetModal({
       (isAddingNewCategory && !newCategoryName) ||
       !maxAmount ||
       !startDate ||
-      !endDate
+      !endDate ||
+      (hasDepartments && !departmentId)
     ) {
-      // Handle validation errors
+      // Mostrar error de validación
+      emmiter.emit('showToast', {
+        message: 'Por favor, completa todos los campos requeridos',
+        type: 'error'
+      });
       return
     }
 
@@ -157,6 +256,7 @@ export function NewBudgetModal({
       category_id: isAddingNewCategory ? undefined : categoryId,
       category_name: isAddingNewCategory ? newCategoryName : undefined,
       category_type: isAddingNewCategory ? newCategoryType : undefined,
+      department_id: departmentId,
       max_amount: parseFloat(maxAmount),
       start_date: startDate!,
       end_date: endDate!,
@@ -176,6 +276,16 @@ export function NewBudgetModal({
     setIsAddingNewCategory(!hasCategories) // Keep true if no categories
     setNewCategoryName("")
     setNewCategoryType("")
+    
+    // Mantener el departamento del usuario si está disponible
+    if (userDepartment) {
+      setDepartmentId(userDepartment.id);
+    } else if (hasDepartments && departments.length > 0) {
+      setDepartmentId(departments[0].id);
+    } else {
+      setDepartmentId("");
+    }
+    
     setPeriodicity("monthly")
   }
 
@@ -201,6 +311,32 @@ export function NewBudgetModal({
           <SheetTitle>Create New Budget</SheetTitle>
         </SheetHeader>
         <div className="my-6 space-y-6">
+          {/* Department selection */}
+          {hasDepartments && (
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Select 
+                value={departmentId} 
+                onValueChange={setDepartmentId}
+                disabled={loadingUserInfo}
+              >
+                <SelectTrigger id="department" className={cn("w-full bg-white", loadingUserInfo ? "opacity-70" : "")}>
+                  <SelectValue placeholder={loadingUserInfo ? "Cargando departamento..." : "Select department"} />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {userDepartment && (
+                <p className="text-xs text-gray-500">Departamento asignado: {userDepartment.name}</p>
+              )}
+            </div>
+          )}
+
           {/* Category selection or create new */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -247,42 +383,52 @@ export function NewBudgetModal({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
+                  {departmentId ? (
+                    // Mostrar categorías filtradas por departamento
+                    filteredCategories.length > 0 ? (
+                      filteredCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-categories" disabled>
+                        No hay categorías para este departamento
+                      </SelectItem>
+                    )
+                  ) : (
+                    // Mostrar todas las categorías si no hay departamento seleccionado
+                    categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                        {category.department?.name ? ` (${category.department.name})` : ''}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             ) : null}
           </div>
 
-          {/* Amount */}
+          {/* Budget Amount */}
           <div className="space-y-2">
-            <Label htmlFor="max-amount">Maximum Amount</Label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                $
-              </span>
-              <Input
-                id="max-amount"
-                type="number"
-                className="pl-6 w-full"
-                placeholder="0.00"
-                value={maxAmount}
-                onChange={(e) => setMaxAmount(e.target.value)}
-                step="0.01"
-                min="0"
-              />
-            </div>
+            <Label htmlFor="amount">Budget Amount</Label>
+            <Input
+              id="amount"
+              value={maxAmount}
+              onChange={(e) => setMaxAmount(e.target.value)}
+              type="number"
+              placeholder="0.00"
+              className="w-full"
+            />
           </div>
 
           {/* Periodicity */}
           <div className="space-y-2">
-            <Label htmlFor="periodicity">Periodicity</Label>
+            <Label htmlFor="periodicity">Budget Period</Label>
             <Select value={periodicity} onValueChange={handlePeriodicityChange}>
               <SelectTrigger id="periodicity" className="w-full bg-white">
-                <SelectValue placeholder="Select period" />
+                <SelectValue placeholder="Select period type" />
               </SelectTrigger>
               <SelectContent className="bg-white">
                 {periodOptions.map((option) => (
@@ -294,80 +440,86 @@ export function NewBudgetModal({
             </Select>
           </div>
 
-          {/* Date range */}
+          {/* Start Date */}
           <div className="space-y-2">
-            <Label>Period</Label>
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="w-full">
-                <Label htmlFor="start-date" className="text-xs text-gray-500">Start Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal mt-1 bg-white"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {startDate ? format(startDate, "PP") : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white">
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={handleStartDateChange}
-                      initialFocus
-                      disabled={(date) => isBefore(date, today)}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="w-full">
-                <Label htmlFor="end-date" className="text-xs text-gray-500">End Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal mt-1 bg-white",
-                        periodicity !== "custom" && "opacity-70 cursor-not-allowed"
-                      )}
-                      disabled={periodicity !== "custom"}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, "PP") : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  {periodicity === "custom" && (
-                    <PopoverContent className="w-auto p-0 bg-white">
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        onSelect={setEndDate}
-                        initialFocus
-                        disabled={(date) => 
-                          startDate ? isBefore(date, startDate) : isBefore(date, today)
-                        }
-                      />
-                    </PopoverContent>
+            <Label htmlFor="start-date">Start Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="start-date"
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal bg-white"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-white" align="start">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={handleStartDateChange}
+                  initialFocus
+                  disabled={(date) => isBefore(date, today)}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* End Date */}
+          <div className="space-y-2">
+            <Label htmlFor="end-date">End Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="end-date"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    periodicity !== "custom" ? "bg-gray-100 text-gray-500" : "bg-white"
                   )}
-                </Popover>
-                {periodicity !== "custom" && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Automatically calculated based on start date and periodicity
-                  </p>
-                )}
-              </div>
-            </div>
+                  disabled={periodicity !== "custom"}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              {periodicity === "custom" && (
+                <PopoverContent className="w-auto p-0 bg-white" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    disabled={(date) => startDate ? isBefore(date, startDate) : false}
+                  />
+                </PopoverContent>
+              )}
+            </Popover>
+            {periodicity !== "custom" && (
+              <p className="text-xs text-gray-500">
+                End date is automatically calculated based on the selected period
+              </p>
+            )}
           </div>
         </div>
-
-        <SheetFooter className="flex justify-between sm:justify-end gap-2 mt-8">
-          <Button variant="outline" onClick={handleClose} disabled={loading} className="flex-1 sm:flex-none">
+        <SheetFooter className="pt-6">
+          <Button onClick={handleClose} variant="outline" className="w-full sm:w-auto bg-white">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={loading} className="flex-1 sm:flex-none">
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save
+          <Button 
+            onClick={handleSubmit} 
+            className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              'Create Budget'
+            )}
           </Button>
         </SheetFooter>
       </SheetContent>
