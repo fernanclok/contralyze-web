@@ -6,8 +6,9 @@ import { useRouter, usePathname } from "next/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { logout } from "./actions";
 import Icon from "@mdi/react";
+
 import {clearLocalStorage} from "@/lib/client-utils";
-import { mdiViewDashboard, mdiAccountBoxMultiple, mdiTruck, mdiArchiveOutline, mdiFileDocumentOutline } from "@mdi/js";
+import { mdiViewDashboard, mdiAccountBoxMultiple, mdiTruck, mdiArchiveOutline, mdiFileDocumentOutline, mdiCashMultiple } from "@mdi/js";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -30,6 +31,7 @@ const menuItems: {
     { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
     { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
     { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
+    { path: "/dashboard/budgets", label: "Budgets", icon: mdiCashMultiple },
     { path: "/clients", label: "Clients", icon: mdiAccountBoxMultiple },
     { path: "/suppliers", label: "Suppliers", icon: mdiTruck },
   ],
@@ -37,6 +39,7 @@ const menuItems: {
     { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
     { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
     { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
+    { path: "/dashboard/budget-requests", label: "Budget Requests", icon: mdiCashMultiple },
     { path: "/clients", label: "Clients", icon: mdiAccountBoxMultiple },
     { path: "/suppliers", label: "Suppliers", icon: mdiTruck },
   ],
@@ -75,11 +78,11 @@ const AuthenticatedLayout = ({ children, userRole, userName }: AuthenticatedLayo
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <aside className="fixed top-0 left-0 z-40 w-54 h-screen bg-gray-50 flex flex-col justify-between">
+      <aside className="fixed top-0 left-0 z-40 w-54 h-full min-h-screen bg-gray-50 flex flex-col justify-between">
         <div className="px-3 py-4 overflow-y-auto flex-1">
           <ul className="space-y-2 font-medium">
             {allowedRoutes.map((item) => {
-              const isActive = pathname === item.path;
+              const isActive = pathname.startsWith(item.path);
               return (
                 <li key={item.path}>
                   <Link
@@ -143,7 +146,7 @@ const AuthenticatedLayout = ({ children, userRole, userName }: AuthenticatedLayo
       </aside>
 
       {/* Contenido principal */}
-      <div className="flex-1 ml-56 p-6">{children}</div>
+      <div className="flex-1 ml-56 p-6 min-h-screen">{children}</div>
     </div>
   );
 };

@@ -1,28 +1,41 @@
 import AuthenticatedLayout from "@/components/layouts/authenticatedLayout";
 import { getSession } from "@/app/lib/session";
-import { getSuppliers } from "@/app/suppliers/actions";
+
+import { getRequisitions } from "@/app/requisitions/actions";
+import EditRequisition from "./editRequisitionPage";
 import { AlertCircle } from "lucide-react";
 
-import ManageSuppliersClient from "./manageSuppliersClient";
-
-export default async function SuppliersPage() {
+export default async function RequisitionEditPage({
+  params,
+}: {
+  params: { requisition_uid: string };
+}) {
   const session = await getSession();
-  const user = session || null;
+
   const userRole = session?.role || "user";
   const userName = session
     ? `${session.userFirstName} ${session.userLastName}`.trim()
     : "Guest";
 
-  //data from backend
-  const { suppliers, error: supplierError } = await getSuppliers();
+  const { requisition_uid } = params;
 
-  const supplierData = suppliers || [];
+  //data from backend
+  const { requisitions = [], error: requisitionError } =
+    await getRequisitions();
+
+  const requisitionData =
+    Array.isArray(requisitions) && requisitions.length > 0 ? requisitions : [];
+
+  //filtrate the requisition data to get the requisition with the requisition_uid
+  const requisition = requisitionData.filter(
+    (requisition) => requisition.requisition_uid === requisition_uid
+  );
+
   //api errors
-  const hasError = !!supplierError;
+  const hasError = !!requisitionError;
+
   return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
-      <h1 className="text-2xl font-bold mb-4">Manage Suppliers</h1>
-
       {hasError && (
         <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
           <AlertCircle className="h-5 w-5 mt-0.5" />
@@ -35,7 +48,7 @@ export default async function SuppliersPage() {
         </div>
       )}
 
-      <ManageSuppliersClient suppliers={supplierData} user={user} />
+      <EditRequisition requisition={requisition} />
     </AuthenticatedLayout>
   );
 }

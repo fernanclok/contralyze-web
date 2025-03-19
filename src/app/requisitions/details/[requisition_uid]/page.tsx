@@ -1,28 +1,31 @@
 import AuthenticatedLayout from "@/components/layouts/authenticatedLayout";
 import { getSession } from "@/app/lib/session";
-import { getSuppliers } from "@/app/suppliers/actions";
+
+import { getRequisitions } from "@/app/requisitions/actions";
+import RequisitionDetails from "./requisitionDetails";
 import { AlertCircle } from "lucide-react";
 
-import ManageSuppliersClient from "./manageSuppliersClient";
-
-export default async function SuppliersPage() {
+export default async function RequisitionDetailsPage() {
   const session = await getSession();
-  const user = session || null;
+
   const userRole = session?.role || "user";
   const userName = session
     ? `${session.userFirstName} ${session.userLastName}`.trim()
     : "Guest";
 
   //data from backend
-  const { suppliers, error: supplierError } = await getSuppliers();
+  const { requisitions = [], error: requisitionError } =
+    await getRequisitions();
 
-  const supplierData = suppliers || [];
+  const requisitionData =
+    Array.isArray(requisitions) && requisitions.length > 0 ? requisitions : [];
+
+  console.log("Requisitions received:", requisitionData);
+
   //api errors
-  const hasError = !!supplierError;
+  const hasError = !!requisitionError;
   return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
-      <h1 className="text-2xl font-bold mb-4">Manage Suppliers</h1>
-
       {hasError && (
         <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
           <AlertCircle className="h-5 w-5 mt-0.5" />
@@ -35,7 +38,7 @@ export default async function SuppliersPage() {
         </div>
       )}
 
-      <ManageSuppliersClient suppliers={supplierData} user={user} />
+      <RequisitionDetails requisition={requisitionData} user={session} hasError={hasError} />
     </AuthenticatedLayout>
   );
 }
