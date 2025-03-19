@@ -11,11 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format, addMonths, addDays, isBefore, startOfDay, parse } from "date-fns"
 import { CalendarIcon, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-interface Category {
-  id: string
-  name: string
-}
+import { emmiter } from "@/lib/emmiter"
+import { type Department, type Category } from '@/app/dashboard/budgets/actions'
 
 interface Budget {
   id: string;
@@ -26,6 +23,11 @@ interface Budget {
   end_date: string;
   status: string;
   category: {
+    name: string;
+    department_id?: string;
+  };
+  department?: {
+    id: string;
     name: string;
   };
 }
@@ -41,6 +43,7 @@ interface EditBudgetModalProps {
     status?: string
   }) => void
   categories: Category[]
+  departments: Department[]
   budget: Budget | null
   loading?: boolean
 }
@@ -97,6 +100,7 @@ export function EditBudgetModal({
   onOpenChange, 
   onSubmit, 
   categories,
+  departments,
   budget,
   loading = false 
 }: EditBudgetModalProps) {
@@ -106,6 +110,8 @@ export function EditBudgetModal({
   const [endDate, setEndDate] = useState<Date | undefined>(addMonths(new Date(), 1))
   const [status, setStatus] = useState("active")
   const [periodicity, setPeriodicity] = useState("custom")
+  const [departmentId, setDepartmentId] = useState("")
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([])
 
   // Current date for validation
   const today = startOfDay(new Date());
@@ -132,8 +138,43 @@ export function EditBudgetModal({
       
       // Default to custom for editing
       setPeriodicity("custom")
+      
+      // Set department ID from budget
+      const deptId = budget.department?.id || 
+                  (budget.category && budget.category.department_id) || '';
+      setDepartmentId(deptId);
+      
+      // Filtrar categorías por departamento
+      filterCategoriesByDepartment(deptId);
     }
   }, [budget, open])
+
+  // Filtrar categorías por departamento
+  const filterCategoriesByDepartment = (deptId: string) => {
+    if (deptId && categories.length > 0) {
+      const filtered = categories.filter(cat => cat.department_id === deptId);
+      setFilteredCategories(filtered);
+    } else {
+      setFilteredCategories(categories);
+    }
+  };
+
+  // Actualizar el departamento cuando cambie la categoría
+  useEffect(() => {
+    if (categoryId) {
+      const selectedCategory = categories.find(cat => cat.id === categoryId);
+      if (selectedCategory && selectedCategory.department_id) {
+        setDepartmentId(selectedCategory.department_id);
+      }
+    }
+  }, [categoryId, categories]);
+
+  // Cuando se selecciona un departamento, filtrar las categorías
+  useEffect(() => {
+    if (departmentId) {
+      filterCategoriesByDepartment(departmentId);
+    }
+  }, [departmentId, categories]);
 
   // Update end date when start date or periodicity changes
   useEffect(() => {
@@ -178,7 +219,11 @@ export function EditBudgetModal({
     }
 
     if (!categoryId || !maxAmount || !startDate || !endDate || !status) {
-      // Handle validation errors
+      // Mostrar error de validación
+      emmiter.emit('showToast', {
+        message: 'Por favor, completa todos los campos requeridos',
+        type: 'error'
+      });
       return
     }
 
@@ -195,6 +240,12 @@ export function EditBudgetModal({
     onOpenChange(false)
   }
 
+  // Get department name for display
+  const getDepartmentName = (departmentId: string): string => {
+    const department = departments.find(d => d.id === departmentId);
+    return department ? department.name : 'Unknown Department';
+  };
+
   if (!budget) {
     return null;
   }
@@ -206,6 +257,16 @@ export function EditBudgetModal({
           <SheetTitle>Edit Budget</SheetTitle>
         </SheetHeader>
         <div className="my-6 space-y-6">
+          {/* Department display (read-only) */}
+          {departmentId && (
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <div className="p-2 border rounded bg-gray-50">
+                {getDepartmentName(departmentId)}
+              </div>
+            </div>
+          )}
+          
           {/* Category selection */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -215,11 +276,17 @@ export function EditBudgetModal({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
+                  {filteredCategories.length > 0 ? (
+                    filteredCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-categories" disabled>
+                      No hay categorías para este departamento
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>

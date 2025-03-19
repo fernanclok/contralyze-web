@@ -6,51 +6,46 @@ import { getSession } from "@/app/lib/session";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { ArrowUpCircle, ArrowDownCircle, Clock, CreditCard, AlertCircle } from "lucide-react";
-import { getBudgets, getBudgetRequests, getCategories } from './actions';
+import { getBudgets, getBudgetRequests, getCategories, getDepartments } from './actions';
+import { redirect } from 'next/navigation';
+import { CollapsibleCharts } from '@/components/budget/CollapsibleCharts';
 
 export default async function BudgetsPage() {
   const session = await getSession();
   const userRole = session?.role || "user";
   const userName = session ? `${session.userFirstName} ${session.userLastName}`.trim() : "Guest";
 
+  // Solo administradores pueden acceder a esta página
+  if (userRole !== 'admin') {
+    redirect('/dashboard/budget-requests');
+  }
+
   // Get real data from backend
   const { budgets = [], error: budgetsError } = await getBudgets();
   const { requests = [], error: requestsError } = await getBudgetRequests();
   const { categories = [], error: categoriesError } = await getCategories();
-
-  // Console logs for debugging
-  console.log("Budgets received:", budgets);
-  console.log("Requests received:", requests);
-  console.log("Categories received:", categories);
-  
-  // Check data structure for troubleshooting
-  if (requests && Array.isArray(requests)) {
-    console.log("Number of requests:", requests.length);
-    if (requests.length > 0) {
-      console.log("Example structure of first request:", 
-        JSON.stringify(requests[0], null, 2));
-    }
-  } else {
-    console.log("Requests are not an array or are empty:", requests);
-  }
+  const { departments = [], error: departmentsError } = await getDepartments();
 
   // Use real data or empty arrays if errors occurred
   const budgetData = Array.isArray(budgets) && budgets.length > 0 ? budgets : [];
   const requestData = Array.isArray(requests) && requests.length > 0 ? requests : [];
   const categoryOptions = Array.isArray(categories) && categories.length > 0 ? categories : [];
+  const departmentOptions = Array.isArray(departments) && departments.length > 0 ? departments : [];
 
   // Filter only active budgets for total calculation
   const activeBudgets = budgetData.filter(budget => budget.status === 'active');
-  console.log("Active budgets for total calculation:", activeBudgets.length);
   
   // Summary calculations
   const totalBudget = activeBudgets.reduce((sum, budget) => sum + parseFloat(budget.max_amount.toString()), 0);
-  const totalRequested = requestData.reduce((sum, req) => sum + parseFloat(req.requested_amount.toString()), 0);
+  const totalApproved = requestData
+    .filter(req => req.status === 'approved')
+    .reduce((sum, req) => sum + parseFloat(req.requested_amount.toString()), 0);
+  const totalAvailable = Math.max(0, totalBudget - totalApproved);
   const pendingRequests = requestData.filter(req => req.status === 'pending').length;
   const approvedRequests = requestData.filter(req => req.status === 'approved').length;
 
   // Check for API errors
-  const hasError = budgetsError || requestsError || categoriesError;
+  const hasError = !!budgetsError || !!requestsError || !!categoriesError || !!departmentsError;
 
   return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
@@ -66,7 +61,7 @@ export default async function BudgetsPage() {
             <div>
               <p className="font-medium">Connection Error</p>
               <p className="text-sm">
-                Could not connect to the server. Using demo data temporarily.
+                Could not connect to the server. Using demo data temporarily. All creation and editing actions have been disabled.
               </p>
             </div>
           </div>
@@ -78,11 +73,18 @@ export default async function BudgetsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Active Budget Total</p>
-                  <h3 className="text-2xl font-bold mt-1">{formatCurrency(totalBudget)}</h3>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {activeBudgets.length} active budget{activeBudgets.length !== 1 ? 's' : ''}
-                  </p>
+                  <p className="text-sm font-medium text-gray-500">Total Available Budget</p>
+                  <h3 className="text-2xl font-bold mt-1">{formatCurrency(totalAvailable)}</h3>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-gray-500">
+                      Total allocated: {formatCurrency(totalBudget)}
+                    </p>
+                    {totalApproved > 0 && (
+                      <p className="text-xs text-green-600">
+                        Total approved: {formatCurrency(totalApproved)}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="p-2 bg-blue-100 rounded-full">
                   <CreditCard className="h-6 w-6 text-blue-600" />
@@ -124,7 +126,7 @@ export default async function BudgetsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Total Requested</p>
-                  <h3 className="text-2xl font-bold mt-1">{formatCurrency(totalRequested)}</h3>
+                  <h3 className="text-2xl font-bold mt-1">{formatCurrency(totalBudget)}</h3>
                 </div>
                 <div className="p-2 bg-purple-100 rounded-full">
                   <ArrowDownCircle className="h-6 w-6 text-purple-600" />
@@ -133,6 +135,13 @@ export default async function BudgetsPage() {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Sección de gráficos colapsables */}
+        <CollapsibleCharts 
+          budgets={budgetData} 
+          requests={requestData}
+          title="Budget Analytics"
+        />
         
         {/* Tabs section */}
         <Card>
@@ -147,7 +156,10 @@ export default async function BudgetsPage() {
                 <BudgetList 
                   budgets={budgetData} 
                   categories={categoryOptions} 
+                  departments={departmentOptions}
                   userRole={userRole}
+                  hasConnectionError={hasError}
+                  requests={requestData}
                 />
               </TabsContent>
               
@@ -155,7 +167,9 @@ export default async function BudgetsPage() {
                 <BudgetRequestList 
                   requests={requestData} 
                   categories={categoryOptions}
+                  departments={departmentOptions}
                   userRole={userRole} 
+                  hasConnectionError={hasError}
                 />
               </TabsContent>
             </Tabs>
