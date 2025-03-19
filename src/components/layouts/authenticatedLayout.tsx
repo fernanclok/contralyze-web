@@ -75,11 +75,11 @@ const AuthenticatedLayout = ({ children, userRole, userName }: AuthenticatedLayo
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <aside className="fixed top-0 left-0 z-40 w-54 h-screen bg-gray-50 flex flex-col justify-between">
+      <aside className="fixed top-0 left-0 z-40 w-54 h-full min-h-screen bg-gray-50 flex flex-col justify-between">
         <div className="px-3 py-4 overflow-y-auto flex-1">
           <ul className="space-y-2 font-medium">
             {allowedRoutes.map((item) => {
-              const isActive = pathname === item.path;
+              const isActive = pathname.startsWith(item.path);
               return (
                 <li key={item.path}>
                   <Link
@@ -143,7 +143,7 @@ const AuthenticatedLayout = ({ children, userRole, userName }: AuthenticatedLayo
       </aside>
 
       {/* Contenido principal */}
-      <div className="flex-1 ml-56 p-6">{children}</div>
+      <div className="flex-1 ml-56 p-6 min-h-screen">{children}</div>
     </div>
   );
 };

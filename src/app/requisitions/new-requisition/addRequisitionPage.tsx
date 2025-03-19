@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Car, Save } from "lucide-react";
+import {
+  ArrowLeft,
+  type File,
+  FileText,
+  Paperclip,
+  Upload,
+  X,
+  Calendar as CalendarIcon,
+} from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, isBefore, startOfDay } from "date-fns"
 
 import { addRequisition } from "@/app/requisitions/actions";
 import { useFormStatus } from "react-dom";
@@ -34,6 +45,9 @@ export default function AddRequisition() {
   const [items, setItems] = useState([
     { name: "", description: "", quantity: 0, price: 0 },
   ]);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const [requestDate, setrequestDate] = useState<Date | undefined>(new Date())
   const router = useRouter();
 
   const handleAddRequisition = async (
@@ -41,13 +55,38 @@ export default function AddRequisition() {
   ) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    // Create JSON object for items
+    const itemsJson = items.map((item) => ({
+      product_name: item.name,
+      product_description: item.description,
+      quantity: item.quantity,
+      price: item.price,
+    }));
+
+    // Append items JSON to formData
+    if (requestDate) {
+      formData.append("request_date", format(requestDate, "yyyy-MM-dd"));
+    }
+    formData.append("total_amount", calculateTotal().toString());
+    formData.append("items", JSON.stringify(itemsJson));
+    // Append attachments to formData
+    attachments.forEach((file) => {
+      formData.append("attachment", file);
+    });
+
+    // delete items from formData
+    formData.delete("product_name");
+    formData.delete("product_description");
+    formData.delete("quantity");
+    formData.delete("price");
+
     const result = await addRequisition(state, formData);
     if (!result.errors) {
       emmiter.emit("showToast", {
         message: "Requisition added successfully",
         type: "success",
       });
-      router.push("/requisitions");
+      router.push("/requisitions?tab=list");
     }
     setState(result);
   };
@@ -73,6 +112,27 @@ export default function AddRequisition() {
   const calculateTotal = () => {
     return items.reduce((total, item) => total + item.quantity * item.price, 0);
   };
+
+  const [currentDate, setCurrentDate] = useState("");
+
+  useEffect(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    setCurrentDate(`${year}-${month}-${day}`);
+  }, []);
+
+    // Current date for validation
+    const today = startOfDay(new Date());
+
+    const handleStartDateChange = (date: Date | undefined) => {
+      if (date) {
+        // Make sure the selected date is not earlier than today
+        const selectedDate = isBefore(date, today) ? today : date;
+        setrequestDate(selectedDate);
+      }
+    };
 
   return (
     <>
@@ -147,6 +207,7 @@ export default function AddRequisition() {
                     <SelectItem value="low">Low</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
                 {state?.errors?.priority && (
@@ -154,18 +215,32 @@ export default function AddRequisition() {
                     {state.errors.priority}
                   </p>
                 )}
-                <Label htmlFor="requested_date" className="text-black">
-                  Requested date
+                <Label htmlFor="request_date" className="text-black">
+                  Request date
                 </Label>
-                <Input
-                  type="date"
-                  id="requested_date"
-                  name="requested_date"
-                  className="text-black w-full"
-                />
-                {state?.errors?.requested_date && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal mt-1 bg-white text-black"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-gray-500" />
+                      {requestDate ? format(requestDate, "yyyy-MM-dd") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-white">
+                    <Calendar
+                      mode="single"
+                      selected={requestDate}
+                      onSelect={handleStartDateChange}
+                      initialFocus
+                      disabled={[{ from: new Date(0), to: today }]}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {state?.errors?.request_date && (
                   <p className="text-sm text-red-500">
-                    {state.errors.requested_date}
+                    {state.errors.request_date}
                   </p>
                 )}
               </div>
@@ -187,13 +262,13 @@ export default function AddRequisition() {
                 className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 p-4 border rounded-lg"
               >
                 <div className="md:col-span-3">
-                  <Label htmlFor="article_name" className="text-black">
+                  <Label htmlFor="product_name" className="text-black">
                     Article Name
                   </Label>
                   <Input
                     type="text"
-                    id="article_name"
-                    name="article_name"
+                    id="product_name"
+                    name="product_name"
                     placeholder="Ej: Laptop Dell Inspiron 15"
                     value={item.name}
                     onChange={(e) => updateItem(index, "name", e.target.value)}
@@ -201,13 +276,13 @@ export default function AddRequisition() {
                   />
                 </div>
                 <div className="md:col-span-4">
-                  <Label htmlFor="description" className="text-black">
+                  <Label htmlFor="product_description" className="text-black">
                     Description
                   </Label>
                   <Input
                     type="text"
-                    id="description"
-                    name="description"
+                    id="product_description"
+                    name="product_description"
                     placeholder="Ej: 16GB RAM, 1TB SSD, 15.6 inches"
                     value={item.description}
                     onChange={(e) =>
@@ -247,13 +322,13 @@ export default function AddRequisition() {
                     min="0"
                     step="0.01"
                     value={item.price}
-                    onChange={(e) =>
-                      updateItem(
-                        index,
-                        "price",
-                        Number.parseFloat(e.target.value) || 0
-                      )
-                    }
+                    onChange={(e) => {
+                      const value = Number.parseFloat(e.target.value);
+                      const formattedValue = Number.isNaN(value)
+                        ? 0
+                        : Math.round(value * 100) / 100;
+                      updateItem(index, "price", formattedValue);
+                    }}
                     className="text-black"
                   />
                 </div>
@@ -272,7 +347,11 @@ export default function AddRequisition() {
             ))}
 
             <div className="flex justify-between items-center mt-4">
-              <Button type="button" className="bg-primary hover:bg-primary-light text-white" onClick={addItem}>
+              <Button
+                type="button"
+                className="bg-primary hover:bg-primary-light text-white"
+                onClick={addItem}
+              >
                 Add article
               </Button>
               <div className="text-right">
@@ -284,9 +363,81 @@ export default function AddRequisition() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-end">
-            <SubmitButton />
-          </CardFooter>
+              <SubmitButton />
+            </CardFooter>
         </Card>
+
+        {/* <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="text-black">Attachments</CardTitle>
+            <CardDescription className="text-gray-500">
+              Attach any additional documents or images that support the
+              requisition
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+              <div
+                className={`border-2 border-dashed rounded-lg p-6 text-center ${dragActive ? "border-primary bg-primary/5" : "border-gray-300"}`}
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+              >
+                <Paperclip className="h-10 w-10 text-gray-500 mx-auto mb-4" />
+                <p className="mb-2 text-sm text-gray-500">
+                  Drag and drop files here
+                </p>
+                <p className="text-xs text-gray-500">
+                 Supported formats: PDF, DOC, DOCX, XLS, XLSX, JPG, JPEG, PNG
+                </p>
+                <Input
+                  type="file"
+                  id="attachment"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  multiple
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                />
+                <Button type="button" variant="outline" onClick={() => document.getElementById("attachment")?.click()} className="mt-4">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Select files
+                </Button>
+              </div>
+
+              {attachments.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-medium mb-3 text-black">Selected Files ({attachments.length})</h3>
+                  <div className="space-y-2">
+                    {attachments.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted/40 rounded-md">
+                        <div className="flex items-center">
+                          <div className="p-2 bg-background rounded-md mr-3">
+                            <FileText className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-[300px] text-black">{file.name}</p>
+                            <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeFile(index)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <SubmitButton />
+            </CardFooter>
+        </Card> */}
       </form>
     </>
   );

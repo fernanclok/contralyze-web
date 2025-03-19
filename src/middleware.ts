@@ -6,6 +6,7 @@ const protectedRoutes = {
   "/dashboard": ["admin", "user"],
   "/requisitions": ["admin", "user"],
   "/requisitions/new-requisition": ["admin", "user"],
+  "/requisitions/details/[requisition_uid]": ["admin", "user"],
   "/transactions": ["admin", "user"],
   "/dashboard/budgets": ["admin", "user"],
   "/clients": ["admin", "user"],
@@ -16,7 +17,7 @@ const publicRoutes = ["/", "/register"]; // Cambié "/login" por "/"
 
 export default async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
-  const isProtectedRoute = Object.keys(protectedRoutes).includes(path);
+  const isProtectedRoute = Object.keys(protectedRoutes).some(route => new RegExp(`^${route.replace(/\[.*?\]/g, '.*')}$`).test(path));
   const isPublicRoute = publicRoutes.includes(path);
 
   const cookie = (await cookies()).get("session")?.value;
@@ -37,9 +38,9 @@ export default async function middleware(req: NextRequest) {
     }
 
     const userRole = session.role as string; // Assuming the role is stored in the session
-    const allowedRoles = protectedRoutes[path as keyof typeof protectedRoutes];
+    const allowedRoles = Object.entries(protectedRoutes).find(([route]) => new RegExp(`^${route.replace(/\[.*?\]/g, '.*')}$`).test(path))?.[1];
 
-    if (!allowedRoles.includes(userRole)) {
+    if (allowedRoles && !allowedRoles.includes(userRole)) {
       return NextResponse.redirect(new URL("/unauthorized", req.nextUrl)); // Redirect to an unauthorized page
     }
   }
@@ -52,5 +53,5 @@ export default async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/' ,'/dashboard', '/dashboard/budgets', '/manage-company', '/requisitions', '/requisitions/new-requisition', '/transactions', '/clients', '/suppliers'], // Actualizado
+  matcher: ['/' ,'/dashboard', '/dashboard/budgets', '/manage-company', '/requisitions', '/requisitions/new-requisition', '/requisitions/details/:requisition_uid*', '/transactions', '/clients', '/suppliers'], // Actualizado
 };

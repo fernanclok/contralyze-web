@@ -3,13 +3,42 @@
     "short_name": "Contralyze",
     "icons": [
       {
-        "src": "/web-app-manifest-192x192.png",
-        "sizes": "192x192",
-        "type": "image/png",
-        "purpose": "any maskable"
+        "src": "/img/icons/Contralyze72x72.png",
+        "sizes": "72x72",
+        "type": "image/png"
       },
       {
-        "src": "/web-app-manifest-512x512.png",
+        "src": "/img/icons/Contralyze96x96.png",
+        "sizes": "96x96",
+        "type": "image/png"
+      },
+      {
+        "src": "/img/icons/Contralyze128x128.png",
+        "sizes": "128x128",
+        "type": "image/png"
+      },
+      {
+        "src": "/img/icons/Contralyze144x144.png",
+        "sizes": "144x144",
+        "type": "image/png"
+      },
+      {
+        "src": "/img/icons/Contralyze152x152.png",
+        "sizes": "152x152",
+        "type": "image/png"
+      },
+      {
+        "src": "/img/icons/Contralyze192x192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/img/icons/Contralyze384x384.png",
+        "sizes": "384x384",
+        "type": "image/png"
+      },
+      {
+        "src": "/img/icons/Contralyze512x512.png",
         "sizes": "512x512",
         "type": "image/png"
       }
