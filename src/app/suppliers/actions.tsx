@@ -23,9 +23,13 @@ export async function getSuppliers() {
       }
     );
 
-    return { supplier: response.data, error: null };
-  } catch (error) {
+    return { suppliers: response.data || [], error: null };
+  } catch (error: any) {
     console.error("Error fetching suppliers:", error);
+
+    if (error.code === "ECONNREFUSED" && error.response?.status === 429) {
+      return { error: "Error connecting to the server", suppliers: [] };
+    }
     return { error: "Error fetching suppliers", suppliers: [] };
   }
 }
