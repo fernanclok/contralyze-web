@@ -8,11 +8,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
-
-interface Category {
-  id: string
-  name: string
-}
+import { type Department, type Category } from '@/app/dashboard/budgets/actions'
+import { emmiter } from '@/lib/emmiter'
+import { cn } from "@/lib/utils"
 
 interface BudgetRequest {
   id: string;
@@ -24,6 +22,11 @@ interface BudgetRequest {
   status: string;
   reviewed_by: string | null;
   category: {
+    name: string;
+    department_id?: string;
+  };
+  department?: {
+    id: string;
     name: string;
   };
   user?: {
@@ -51,23 +54,18 @@ interface EditBudgetRequestModalProps {
     status?: string
   }) => void
   categories: Category[]
+  departments: Department[]
   request: BudgetRequest | null
   loading?: boolean
   userRole: string
 }
-
-// Status options
-const statusOptions = [
-  { value: "pending", label: "Pending" },
-  { value: "approved", label: "Approved" },
-  { value: "rejected", label: "Rejected" },
-];
 
 export function EditBudgetRequestModal({ 
   open, 
   onOpenChange, 
   onSubmit, 
   categories,
+  departments,
   request,
   loading = false,
   userRole
@@ -75,7 +73,14 @@ export function EditBudgetRequestModal({
   const [categoryId, setCategoryId] = useState("")
   const [requestedAmount, setRequestedAmount] = useState("")
   const [description, setDescription] = useState("")
-  const [status, setStatus] = useState("pending")
+  const [status, setStatus] = useState("")
+  const [departmentId, setDepartmentId] = useState("")
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([])
+  const [errors, setErrors] = useState<{
+    category?: string;
+    requestedAmount?: string;
+    description?: string;
+  }>({});
 
   const isAdmin = userRole === "admin"
 
@@ -83,35 +88,116 @@ export function EditBudgetRequestModal({
   useEffect(() => {
     if (request) {
       // Load request data into state
-      setCategoryId(request.category_id)
-      setRequestedAmount(request.requested_amount.toString())
-      setDescription(request.description)
-      setStatus(request.status || "pending")
+      setCategoryId(request.category_id || "")
+      setRequestedAmount(request.requested_amount.toString() || "")
+      setDescription(request.description || "")
+      setStatus(request.status || "")
+      
+      // Obtener y establecer el departamento
+      const deptId = request.department?.id || 
+                  (request.category && request.category.department_id) || '';
+      setDepartmentId(deptId);
+      
+      // Filtrar categorías por departamento
+      filterCategoriesByDepartment(deptId);
     }
   }, [request, open])
 
+  // Filtrar categorías por departamento
+  const filterCategoriesByDepartment = (deptId: string) => {
+    if (deptId && categories.length > 0) {
+      const filtered = categories.filter(cat => cat.department_id === deptId);
+      setFilteredCategories(filtered);
+    } else {
+      setFilteredCategories(categories);
+    }
+  };
+
+  // Actualizar el departamento cuando cambie la categoría
+  useEffect(() => {
+    if (categoryId) {
+      const selectedCategory = categories.find(cat => cat.id === categoryId);
+      if (selectedCategory && selectedCategory.department_id) {
+        setDepartmentId(selectedCategory.department_id);
+      }
+    }
+  }, [categoryId, categories]);
+
+  // Cuando se selecciona un departamento, filtrar las categorías
+  useEffect(() => {
+    if (departmentId) {
+      filterCategoriesByDepartment(departmentId);
+    }
+  }, [departmentId, categories]);
+
+  // Función de validación
+  const validateForm = () => {
+    const newErrors: {
+      category?: string;
+      requestedAmount?: string;
+      description?: string;
+    } = {};
+
+    // Validate category
+    if (!categoryId) {
+      newErrors.category = 'Please select a category';
+    }
+
+    // Validate amount
+    if (!requestedAmount) {
+      newErrors.requestedAmount = 'Amount is required';
+    } else {
+      const amount = parseFloat(requestedAmount);
+      if (isNaN(amount)) {
+        newErrors.requestedAmount = 'Amount must be a valid number';
+      } else if (amount <= 0) {
+        newErrors.requestedAmount = 'Amount must be greater than 0';
+      } else if (amount > 999999999.99) {
+        newErrors.requestedAmount = 'Amount cannot exceed 999,999,999.99';
+      } else if (!/^\d+(\.\d{1,2})?$/.test(requestedAmount)) {
+        newErrors.requestedAmount = 'Amount must have a maximum of 2 decimal places';
+      }
+    }
+
+    // Validate description
+    if (!description) {
+      newErrors.description = 'Description is required';
+    } else if (description.length < 10) {
+      newErrors.description = 'Description must be at least 10 characters long';
+    } else if (description.length > 1000) {
+      newErrors.description = 'Description cannot exceed 1000 characters';
+    } else if (!/^[a-zA-Z0-9\s\-_.,!?()áéíóúÁÉÍÓÚñÑ]+$/.test(description)) {
+      newErrors.description = 'Description can only contain letters, numbers, and basic punctuation marks';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = () => {
-    if (!request || !request.id) {
-      console.error("No request selected for editing");
+    if (!request || !validateForm()) {
+      emmiter.emit('showToast', {
+        message: 'Please correct the errors in the form',
+        type: 'error'
+      });
       return;
     }
 
-    if (!categoryId || !requestedAmount || !description) {
-      // Handle validation errors
-      return
-    }
-
-    onSubmit(request.id, {
+    const updatedData = {
       category_id: categoryId,
       requested_amount: parseFloat(requestedAmount),
-      description: description,
-      status: isAdmin ? status : undefined // Only admins can change status
-    })
-  }
+      description,
+      status
+    };
 
-  const handleClose = () => {
-    onOpenChange(false)
-  }
+    onSubmit(request.id, updatedData);
+  };
+
+  // Get department name for display
+  const getDepartmentName = (departmentId: string): string => {
+    const department = departments.find(d => d.id === departmentId);
+    return department ? department.name : 'Unknown Department';
+  };
 
   if (!request) {
     return null;
@@ -136,23 +222,34 @@ export function EditBudgetRequestModal({
             />
           </div>
 
-          {/* Category selection */}
-          <div className="space-y-4">
+          {/* Department display (read-only) */}
+          {departmentId && (
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger id="category" className="w-full bg-white">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent className="bg-white shadow-md">
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="department">Department</Label>
+              <div className="p-2 border rounded bg-gray-50">
+                {getDepartmentName(departmentId)}
+              </div>
             </div>
+          )}
+
+          {/* Category selection */}
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger id="category" className={cn("w-full bg-white", errors.category && "border-red-500")}>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                {filteredCategories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.category && (
+              <p className="text-sm text-red-500">{errors.category}</p>
+            )}
           </div>
 
           {/* Amount */}
@@ -165,14 +262,18 @@ export function EditBudgetRequestModal({
               <Input
                 id="requested-amount"
                 type="number"
-                className="pl-6 w-full"
+                className={cn("pl-6 w-full", errors.requestedAmount && "border-red-500")}
                 placeholder="0.00"
                 value={requestedAmount}
                 onChange={(e) => setRequestedAmount(e.target.value)}
                 step="0.01"
-                min="0"
+                min="0.01"
+                max="999999999.99"
               />
             </div>
+            {errors.requestedAmount && (
+              <p className="text-sm text-red-500">{errors.requestedAmount}</p>
+            )}
           </div>
 
           {/* Description */}
@@ -182,9 +283,15 @@ export function EditBudgetRequestModal({
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the purpose of this budget request"
-              className="min-h-[120px]"
+              placeholder="Describe the purpose of this request"
+              className={cn("min-h-[120px]", errors.description && "border-red-500")}
             />
+            {errors.description && (
+              <p className="text-sm text-red-500">{errors.description}</p>
+            )}
+            <p className="text-xs text-gray-500">
+              {description.length}/1000 characters
+            </p>
           </div>
 
           {/* Status - admin only */}
@@ -195,12 +302,10 @@ export function EditBudgetRequestModal({
                 <SelectTrigger id="status" className="w-full bg-white">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent className="bg-white shadow-md">
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                <SelectContent className="bg-white">
+                  <SelectItem value="pending" className="text-amber-600">Pending</SelectItem>
+                  <SelectItem value="approved" className="text-green-600">Approved</SelectItem>
+                  <SelectItem value="rejected" className="text-red-600">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -208,7 +313,7 @@ export function EditBudgetRequestModal({
         </div>
 
         <SheetFooter className="flex justify-between sm:justify-end gap-2 mt-8">
-          <Button variant="outline" onClick={handleClose} disabled={loading} className="flex-1 sm:flex-none">
+          <Button variant="outline" onClick={onOpenChange} disabled={loading} className="flex-1 sm:flex-none">
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="flex-1 sm:flex-none">

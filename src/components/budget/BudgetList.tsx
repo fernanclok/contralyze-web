@@ -22,6 +22,7 @@ import { createBudget, updateBudget, deleteBudget, createCategory } from '@/app/
 import { useRouter } from 'next/navigation';
 import { emmiter } from "@/lib/emmiter";
 import { Pagination } from '@/components/ui/pagination';
+import { type Department, type Category } from '@/app/dashboard/budgets/actions';
 
 interface Budget {
   id: string;
@@ -33,22 +34,41 @@ interface Budget {
   status: string;
   category: {
     name: string;
+    department_id?: string;
+  };
+  department?: {
+    id: string;
+    name: string;
   };
   user?: {
     name: string;
   };
 }
 
-export function BudgetList({ budgets, categories, userRole }: { 
+export function BudgetList({ budgets, categories, departments, userRole, hasConnectionError = false, requests = [] }: { 
   budgets: Budget[],
-  categories: { id: string, name: string }[],
-  userRole: string 
+  categories: Category[],
+  departments: Department[],
+  userRole: string,
+  hasConnectionError?: boolean,
+  requests?: {
+    department?: {
+      id: string;
+      name: string;
+    };
+    category: {
+      department_id?: string;
+    };
+    status: string;
+    requested_amount: number;
+  }[]
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterDepartment, setFilterDepartment] = useState('all');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -62,13 +82,15 @@ export function BudgetList({ budgets, categories, userRole }: {
   useEffect(() => {
     console.log("Budgets in BudgetList:", budgets);
     console.log("Available categories:", categories);
+    console.log("Available departments:", departments);
     console.log("User role:", userRole);
-  }, [budgets, categories, userRole]);
+  }, [budgets, categories, departments, userRole]);
 
   const handleCreateBudget = async (data: {
     category_id?: string;
     category_name?: string;
     category_type?: string;
+    department_id?: string;
     max_amount: number;
     start_date: Date;
     end_date: Date;
@@ -85,7 +107,8 @@ export function BudgetList({ budgets, categories, userRole }: {
         // Llamar a la API para crear la categoría
         const categoryResult = await createCategory({
           category_name: data.category_name,
-          category_type: data.category_type
+          category_type: data.category_type,
+          department_id: data.department_id ? parseInt(data.department_id) : undefined
         });
         
         if (categoryResult.error) {
@@ -192,16 +215,45 @@ export function BudgetList({ budgets, categories, userRole }: {
     }
   };
 
-  // Filter budgets based on status and search
+  // Obtener el nombre del departamento para una categoría
+  const getDepartmentName = (budget: Budget): string => {
+    if (budget.department && budget.department.name) {
+      return budget.department.name;
+    }
+    
+    if (budget.category && budget.category.department_id) {
+      const department = departments.find(d => d.id === budget.category.department_id);
+      return department ? department.name : 'Unknown Department';
+    }
+    
+    return 'No Department';
+  };
+
+  // Filter budgets based on status, department and search
   const filteredBudgets = budgets.filter(budget => {
     // Status filter
     if (filterStatus !== 'all' && budget.status !== filterStatus) {
       return false;
     }
     
+    // Department filter
+    if (filterDepartment !== 'all') {
+      const departmentId = budget.department?.id || budget.category.department_id;
+      if (departmentId !== filterDepartment) {
+        return false;
+      }
+    }
+    
     // Search (by category)
-    if (searchTerm && !budget.category.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const categoryNameMatch = budget.category.name.toLowerCase().includes(searchLower);
+      const departmentName = getDepartmentName(budget);
+      const departmentNameMatch = departmentName.toLowerCase().includes(searchLower);
+      
+      if (!categoryNameMatch && !departmentNameMatch) {
+        return false;
+      }
     }
     
     return true;
@@ -220,7 +272,7 @@ export function BudgetList({ budgets, categories, userRole }: {
   // Resetear a la primera página cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterStatus]);
+  }, [searchTerm, filterStatus, filterDepartment]);
 
   // Contadores por estado
   const activeBudgets = budgets.filter(budget => budget.status === 'active').length;
@@ -246,15 +298,49 @@ export function BudgetList({ budgets, categories, userRole }: {
     return new Date(dateString).toLocaleDateString();
   };
 
+  // Agrupar presupuestos por departamento para calcular totales
+  const budgetsByDepartment = departments.map(dept => {
+    const deptBudgets = budgets.filter(budget => {
+      const budgetDeptId = budget.department?.id || budget.category.department_id;
+      return budgetDeptId === dept.id && budget.status === 'active';
+    });
+    
+    const totalBudget = deptBudgets.reduce((sum, budget) => 
+      sum + parseFloat(budget.max_amount.toString()), 0);
+
+    // Calcular el presupuesto aprobado para este departamento
+    const approvedAmount = requests
+      .filter(req => {
+        // Una solicitud pertenece a un departamento si:
+        // 1. El usuario que la creó pertenece al departamento, o
+        // 2. La categoría de la solicitud pertenece al departamento
+        const reqDeptId = req.department?.id || req.category.department_id;
+        return reqDeptId === dept.id && req.status === 'approved';
+      })
+      .reduce((sum: number, req) => sum + parseFloat(req.requested_amount.toString()), 0);
+    
+    // Asegurar que nunca tengamos valores negativos para el presupuesto disponible
+    const availableBudget = Math.max(0, totalBudget - approvedAmount);
+    
+    return {
+      id: dept.id,
+      name: dept.name,
+      budgetCount: deptBudgets.length,
+      totalBudget,
+      availableBudget,
+      approvedAmount
+    };
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-2">
-          <div className="relative flex-1">
+        <div className="flex flex-1 items-center gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-[180px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input
               type="search"
-              placeholder="Search by category..."
+              placeholder="Search by category or department..."
               className="pl-8 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -271,7 +357,7 @@ export function BudgetList({ budgets, categories, userRole }: {
               </Button>
             )}
           </div>
-          <div className="w-[160px]">
+          <div className="w-[160px] min-w-[140px]">
             <Select 
               value={filterStatus} 
               onValueChange={setFilterStatus}
@@ -287,10 +373,27 @@ export function BudgetList({ budgets, categories, userRole }: {
               </SelectContent>
             </Select>
           </div>
-          {(searchTerm || filterStatus !== 'all') && (
-            <Button variant="ghost" size="sm" onClick={() => {
+          <div className="w-[160px] min-w-[140px]">
+            <Select 
+              value={filterDepartment} 
+              onValueChange={setFilterDepartment}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Department" />
+              </SelectTrigger>
+              <SelectContent className="bg-white shadow-md">
+                <SelectItem value="all">All Departments</SelectItem>
+                {departments.map(dept => (
+                  <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(searchTerm || filterStatus !== 'all' || filterDepartment !== 'all') && (
+            <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={() => {
               setSearchTerm('');
               setFilterStatus('all');
+              setFilterDepartment('all');
             }}>
               <FilterX className="mr-2 h-4 w-4" />
               Clear filters
@@ -298,12 +401,49 @@ export function BudgetList({ budgets, categories, userRole }: {
           )}
         </div>
         {isAdmin && (
-          <Button onClick={() => setIsModalOpen(true)}>
+          <Button 
+            onClick={() => setIsModalOpen(true)} 
+            className="whitespace-nowrap"
+            disabled={hasConnectionError}
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Budget
           </Button>
         )}
       </div>
+
+      {/* Departament Budget Summary */}
+      {budgetsByDepartment.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-4">
+          {budgetsByDepartment.map(dept => (
+            dept.budgetCount > 0 && (
+              <div 
+                key={dept.id} 
+                className="bg-white rounded-md border p-4 shadow-sm"
+                onClick={() => setFilterDepartment(dept.id)}
+              >
+                <h3 className="font-medium text-gray-900">{dept.name}</h3>
+                <div className="flex flex-col gap-1">
+                  <p className="text-2xl font-bold text-blue-600">{formatCurrency(dept.availableBudget)}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-500">
+                      Total allocated: {formatCurrency(dept.totalBudget)}
+                    </p>
+                    {dept.approvedAmount > 0 && (
+                      <p className="text-xs text-green-600">
+                        Approved: {formatCurrency(dept.approvedAmount)}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {dept.budgetCount} active budget{dept.budgetCount !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+            )
+          ))}
+        </div>
+      )}
 
       {filteredBudgets.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
@@ -312,75 +452,61 @@ export function BudgetList({ budgets, categories, userRole }: {
           </div>
           <h3 className="mb-1 text-lg font-medium">No budgets found</h3>
           <p className="text-sm text-gray-500 mb-3">
-            {searchTerm || filterStatus !== 'all' 
+            {searchTerm || filterStatus !== 'all' || filterDepartment !== 'all'
               ? 'Try adjusting your filters' 
               : isAdmin ? 'Start by creating your first budget' : 'No budgets available'}
           </p>
-          {searchTerm || filterStatus !== 'all' ? (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                setSearchTerm('');
-                setFilterStatus('all');
-              }}
-            >
-              Clear filters
-            </Button>
-          ) : (
-            isAdmin && (
-              <Button 
-                variant="default" 
-                size="sm"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create Budget
-              </Button>
-            )
-          )}
         </div>
       ) : (
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Category</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Period</TableHead>
-                <TableHead>Status</TableHead>
-                {isAdmin && <TableHead className="w-[100px] text-right">Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {currentItems.map((budget) => (
-                <TableRow key={budget.id}>
-                  <TableCell className="font-medium text-black">{budget.category.name}</TableCell>
-                  <TableCell className="text-black">{formatCurrency(budget.max_amount)}</TableCell>
-                  <TableCell className="text-black">
-                    {formatDate(budget.start_date)} - {formatDate(budget.end_date)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={cn(getStatusStyle(budget.status))}>
-                      {budget.status.charAt(0).toUpperCase() + budget.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  {isAdmin && (
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleEditBudget(budget)}
-                      >
-                        <Edit className="h-4 w-4" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                    </TableCell>
-                  )}
+        <div className="w-full overflow-hidden rounded-md border">
+          <div className="w-full overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[25%] min-w-[150px]">Category</TableHead>
+                  <TableHead className="w-[15%] min-w-[120px]">Department</TableHead>
+                  <TableHead className="w-[15%] min-w-[120px]">Amount</TableHead>
+                  <TableHead className="hidden sm:table-cell w-[25%] min-w-[200px]">Period</TableHead>
+                  <TableHead className="w-[10%] min-w-[100px]">Status</TableHead>
+                  {isAdmin && <TableHead className="w-[10%] text-right">Actions</TableHead>}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {currentItems.map((budget) => (
+                  <TableRow key={budget.id}>
+                    <TableCell className="font-medium text-black truncate max-w-[180px]" title={budget.category.name}>
+                      {budget.category.name}
+                    </TableCell>
+                    <TableCell className="text-black truncate max-w-[150px]" title={getDepartmentName(budget)}>
+                      {getDepartmentName(budget)}
+                    </TableCell>
+                    <TableCell className="text-black whitespace-nowrap">{formatCurrency(budget.max_amount)}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-black whitespace-nowrap">
+                      {formatDate(budget.start_date)} - {formatDate(budget.end_date)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={cn(getStatusStyle(budget.status))}>
+                        {budget.status.charAt(0).toUpperCase() + budget.status.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleEditBudget(budget)}
+                          disabled={hasConnectionError}
+                        >
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
           
           {/* Componente de paginación */}
           <div className="p-4">
@@ -399,6 +525,7 @@ export function BudgetList({ budgets, categories, userRole }: {
         onOpenChange={setIsModalOpen}
         onSubmit={handleCreateBudget}
         categories={categories}
+        departments={departments}
         loading={loading}
       />
 
@@ -407,6 +534,7 @@ export function BudgetList({ budgets, categories, userRole }: {
         onOpenChange={setIsEditModalOpen}
         onSubmit={handleUpdateBudget}
         categories={categories}
+        departments={departments}
         budget={selectedBudget}
         loading={loading}
       />
