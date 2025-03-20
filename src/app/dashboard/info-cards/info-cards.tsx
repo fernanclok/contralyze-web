@@ -49,15 +49,43 @@ const usePagination = (data, itemsPerPage) => {
 export default function InfoCards({Info}: {Info: any}) {
   const [progress, setProgress] = useState(0) // Estado para el progreso
 
+  
     // parser target date 
+    if (!Info.info) return null
     const target_date = new Date(Info.info.target_date)
+
+    
     const target_date_formatted = target_date.toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     })
 
+    // Función para obtener el ícono dinámico según el estado
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+        case "increased":
+            return <ArrowUpIcon className="h-4 w-4 text-green-600" />;
+        case "decreased":
+            return <ArrowDownIcon className="h-4 w-4 text-red-600" />;
+        default:
+            return null;
+        }
+    };
 
+    // Función para obtener el color de fondo según el estado
+    const getStatusColor = (status: string) => {
+        switch (status) {
+        case "increased":
+            return "bg-green-100 text-green-700";
+        case "decreased":
+            return "bg-red-100 text-red-700";
+        case "unchanged":
+            return "bg-gray-100 text-gray-700";
+        default:
+            return "";
+        }
+    };
 
   const recent_transactions = [
     {
@@ -201,77 +229,107 @@ const {
     selectedData: selectedActivity,
     handleNextPage: handleNextActivityPage,
     handlePreviousPage: handlePreviousActivityPage,
-  } = usePagination(activity, 4)
+  } = usePagination(activity, 3)
   
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3">
+        {/* Emergency fund */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="flex justify-center items-center text-sm font-medium">
-              <DollarSignIcon className="h-5 w-5 text-green-600 " />
+          <CardHeader className="flex flex-row items-center justify-end space-y-0 pb-2">
+            <CardTitle className="flex justify-center items-center text-sm font-medium w-fit bg-green-200/50 p-2 rounded-lg ">
+              <DollarSignIcon className="h-4 w-4 text-black  " />
             </CardTitle>
-            <div className="flex justify-center gap-2 items-center bg-green-100 p-2 rounded-lg">
-              <ArrowUpIcon className="h-4 w-4 text-green-600" />
-              <p className="text-green-700 text-sm font-semibold">Increase</p>
-            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">Emergency Fund</div>
-            <p className="text-xs text-gray-400">
-              <span className="text-emerald-500 font-medium inline-flex items-center">
-                <ArrowUpIcon className="mr-1 h-3 w-3" />
-                +3 %
-              </span>{" "}
-              from last month
-            </p>
-            <div className="w-ful rounded-full mt-2">
-              <div className="flex justify-between items-center p-2">
-                <p className="text-gray-400 text-sm font-thin">Progress</p>
-                <p className="text-gray-500 font-bold text-base">{progress}%</p>
-              </div>
-              <div
-                className="bg-green-500 text-xs font-medium text-white text-center p-0.5 leading-none rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <p className="text-base text-gray-400 mt-2">
-              <strong>${Info.info.emergency_fund}</strong> 10% of total budget.
-            </p>
-            <div className="flex justify-start gap-2 items-center mt-3">
-              <CalendarDays className="text-gray-400 w-4 h-4" />
-              <p className="text-gray-400 text-sm ">
-                <strong>Target</strong> {target_date_formatted}
-              </p>
+                <nav className="flex justify-center gap-2 items-center rounded-lg">
+                    <div
+                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                            Info.info.changes.emergency_fund.previous_status
+                        )}`}
+                        >
+                        {getStatusIcon(Info.info.changes.emergency_fund.previous_status)}
+                        <p className="text-sm font-semibold">
+                            {Info.info.changes.emergency_fund.previous_status === "unchanged"
+                            ? "Unchanged"
+                            : `${Info.info.changes.emergency_fund.percentage} % ${Info.info.changes.emergency_fund.previous_status}`}
+                        </p> {" "}
+                        from last update.
+                    </div>
+                    <div
+                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                            Info.info.changes.emergency_fund.status
+                        )}`}
+                        >
+                        {getStatusIcon(Info.info.changes.emergency_fund.status)}
+                        <p className="text-sm font-semibold">
+                            {Info.info.changes.emergency_fund.status === "unchanged"
+                            ? "Unchanged"
+                            : `${Info.info.changes.emergency_fund.percentage} % ${Info.info.changes.emergency_fund.status}`}
+                        </p> {" "}
+                        from last update.
+                    </div>
+                </nav>
+                <div className="w-ful rounded-full mt-2">
+                <div className="flex justify-between items-center p-2">
+                    <p className="text-gray-400 text-sm font-thin">Progress</p>
+                    <p className="text-gray-500 font-bold text-base">{progress}%</p>
+                </div>
+                <div
+                    className="bg-green-500 text-xs font-medium text-white text-center p-0.5 leading-none rounded-full transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                ></div>
+                </div>
+                <p className="text-base text-gray-400 mt-2">
+                <strong>${Info.info.emergency_fund}</strong> is 10% of total budget.
+                </p>
+                <div className="flex justify-start gap-2 items-center mt-3">
+                <CalendarDays className="text-gray-400 w-4 h-4" />
+                <p className="text-gray-400 text-sm ">
+                    <strong>Target</strong> {target_date_formatted}
+                </p>`
             </div>
           </CardContent>
-          <div className="w-full p-1 rounded-b-xl bg-green-500 hover:bg-green-700 group transition-all duration-300 ease-in-out">
-            <button className="text-white w-full font-thin text-sm transition-all duration-400 ease-in-out gap-2 hover:translate-x-2 flex justify-center items-center">
-              View Details
-              <ArrowDownIcon className="w-5 h-5 group-hover:-rotate-90 transition-transform duration-300 ease-in-out" />
-            </button>
-          </div>
+         
         </Card>
-
+        {/* Expenses */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="flex justify-center items-center text-sm font-medium">
-              <TrendingDownIcon className="h-4 w-4 text-orange-600 " />
+          <CardHeader className="flex flex-row items-center justify-end space-y-0 pb-2">
+            <CardTitle className="flex justify-center items-center text-sm font-medium w-fit bg-orange-100/50 p-2 rounded-lg ">
+              <TrendingDownIcon className="h-4 w-4 text-black " />
             </CardTitle>
-            <div className="flex justify-center gap-2 items-center bg-orange-100/50 p-2 rounded-lg">
-              <ArrowDownIcon className="h-4 w-4 text-orange-600" />
-              <p className="text-orange-700 text-sm font-semibold">Decreased</p>
-            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">Expenses</div>
-            <p className="text-xs text-gray-400">
-              <span className="text-rose-500 font-medium inline-flex items-center">
-                <ArrowDownIcon className="mr-1 h-3 w-3" />
-                -4.5%
-              </span>{" "}
-              from last month
-            </p>
+            <nav className="flex justify-center gap-2 items-center rounded-lg">
+                <div
+                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                            Info.info.changes.total_expenses.previous_status
+                        )}`}
+                        >
+                {getStatusIcon(Info.info.changes.total_expenses.previous_status)}
+                <p className="text-sm font-semibold">
+                    {Info.info.changes.total_expenses.previous_status === "unchanged"
+                    ? "Unchanged"
+                    : `${Info.info.changes.total_expenses.percentage} % ${Info.info.changes.total_expenses.previous_status}`}
+                </p> {" "}
+                from last update.
+                </div>
+                <div
+                    className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                        Info.info.changes.total_expenses.status
+                    )}`}
+                    >
+                {getStatusIcon(Info.info.changes.total_expenses.status)}
+                <p className="text-sm font-semibold">
+                    {Info.info.changes.total_expenses.status === "unchanged"
+                    ? "Unchanged"
+                    : `${Info.info.changes.total_expenses.percentage} % ${Info.info.changes.total_expenses.status}`}
+                </p> {" "}
+                from last update.
+                </div>
+            </nav>
             <div className="w-ful rounded-full mt-2">
               <div className="flex justify-between items-center p-2">
                 <p className="text-gray-400 text-sm font-thin">Progress</p>
@@ -292,33 +350,45 @@ const {
               </p>
             </div>
           </CardContent>
-          <div className="w-full p-1 rounded-b-xl bg-yellow-500 hover:bg-yellow-700 group transition-all duration-300 ease-in-out">
-            <button className="text-white w-full font-thin text-sm transition-all duration-400 ease-in-out gap-2 hover:translate-x-2 flex justify-center items-center">
-              View Details
-              <ArrowDownIcon className="w-5 h-5 group-hover:-rotate-90 transition-transform duration-300 ease-in-out" />
-            </button>
-          </div>
+          
         </Card>
-
+        {/* Budgets */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="flex justify-center items-center text-sm font-medium">
-              <PercentIcon className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-end space-y-0 pb-2">
+            <CardTitle className="flex justify-center items-center text-sm font-medium w-fit bg-green-200/50 p-2 rounded-lg ">
+              <DollarSignIcon className="h-4 w-4 text-black  " />
             </CardTitle>
-            <div className="flex justify-center gap-2 items-center bg-blue-100/50 p-2 rounded-lg">
-              <AlarmClock className="h-4 w-4 text-blue-600" />
-              <p className="text-blue-700 text-sm font-semibold">It remains</p>
-            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">Budgets</div>
-            <p className="text-xs text-gray-400">
-              <span className="text-blue-500 font-medium inline-flex items-center">
-                <EqualApproximately className="mr-1 h-3 w-3" />
-                3.5%
-              </span>{" "}
-              for a month
-            </p>
+                <nav className="flex justify-center gap-2 items-center rounded-lg">
+                    <div
+                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                            Info.info.changes.total_budget_amount.previous_status
+                        )}`}
+                        >
+                        {getStatusIcon(Info.info.changes.total_budget_amount.previous_status)}
+                        <p className="text-sm font-semibold">
+                            {Info.info.changes.total_budget_amount.previous_status === "unchanged"
+                            ? "Unchanged"
+                            : `${Info.info.changes.total_budget_amount.percentage} % ${Info.info.changes.total_budget_amount.previous_status}`}
+                        </p> {" "}
+                        from last update.
+                    </div>
+                    <div
+                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                            Info.info.changes.total_budget_amount.status
+                        )}`}
+                        >
+                        {getStatusIcon(Info.info.changes.total_budget_amount.status)}
+                        <p className="text-sm font-semibold">
+                            {Info.info.changes.total_budget_amount.status === "unchanged"
+                            ? "Unchanged"
+                            : `${Info.info.changes.total_budget_amount.percentage} % ${Info.info.changes.total_budget_amount.status}`}
+                        </p> {" "}
+                        from last update.
+                    </div>
+                </nav>
             <div className="w-full rounded-full mt-2">
               <div className="flex justify-between items-center p-2">
                 <p className="text-gray-400 text-sm font-thin">Progress</p>
@@ -339,19 +409,13 @@ const {
               </p>
             </div>
           </CardContent>
-          <div className="w-full p-1 rounded-b-xl bg-blue-500 hover:bg-blue-700 group transition-all duration-300 ease-in-out">
-            <button className="text-white w-full font-thin text-sm transition-all duration-400 ease-in-out gap-2 hover:translate-x-2 flex justify-center items-center">
-              View Details
-              <ArrowDownIcon className="w-5 h-5 group-hover:-rotate-90 transition-transform duration-300 ease-in-out" />
-            </button>
-          </div>
         </Card>
       </div>
-      <div className="grid grid-flow-col grid-rows-3 gap-4">
+      <div className="grid grid-flow-col grid-rows-2 gap-4">
         <Card className="row-span-3 h-fit">
-          <CardHeader className="flex flex-row items-center justify-start gap-2 space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-start gap-2 space-y-0 pb-2 px-12">
             <WalletMinimal className="h-5 w-5 font-blod text-gray-600" />
-            <CardTitle className="text-2xl text-gray-800 font-bold">Recent Transactions</CardTitle>
+            <CardTitle className="text-2xl text-gray-600 font-bold">Recent Transactions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="shadow-xl rounded-lg p-2">
@@ -406,7 +470,7 @@ const {
                   className="px-4 py-2 text-gray-600 rounded disabled:opacity-50"
                   title="Previous Transactions"
                 >
-                  <ChevronLeft className="h-8 w-8" />
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
                 <button
                   onClick={handleNextTransactionsPage}
@@ -414,7 +478,7 @@ const {
                   className="px-4 py-2  text-gray-600 rounded disabled:opacity-50"
                   title="Next Transactions"
                 >
-                  <ChevronRight className="h-8 w-8" />
+                  <ChevronRight className="h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -426,9 +490,9 @@ const {
 
         <Card className="col-span-2 row-span-2 h-fit">
           <CardHeader className="flex flex-row items-center  justify-start gap-4 pb-2">
-            <div className="bg-blue-500 p-2 rounded-lg flex justify-center items-center gap-2">
-              <UsersIcon className="h-5 w-5 text-gray-100" />
-              <CardTitle className="text-xl font-semibold text-white">Accounts</CardTitle>
+            <div className="bg-blue-100/50 p-2 rounded-lg flex justify-center items-center gap-2">
+              <UsersIcon className="h-4 w-4 text-black" />
+              <CardTitle className="text-lg  font-semibold text-black">Activity</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -499,7 +563,7 @@ const {
                   className="px-4 py-2 text-gray-600 rounded disabled:opacity-50"
                   title="Previous activity"
                 >
-                  <ChevronLeft className="h-8 w-8" />
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
                 <button
                   onClick={handleNextActivityPage}
@@ -507,7 +571,7 @@ const {
                   className="px-4 py-2  text-gray-600 rounded disabled:opacity-50"
                   title="Next Activity"
                 >
-                  <ChevronRight className="h-8 w-8" />
+                  <ChevronRight className="h-5 w-5" />
                 </button>
               </div>
             </div>
