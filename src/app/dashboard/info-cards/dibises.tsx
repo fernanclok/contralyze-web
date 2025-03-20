@@ -189,9 +189,9 @@ export default function Dibises() {
                 From
               </label>
               <select
-                id="targetCurrency"
-                value={targetCurrency}
-                onChange={handleTargetCurrencyChange}
+                id="baseCurrency"
+                value={currencyType}
+                onChange={handleCurrencyChange}
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               >
                 <option value="MXN">MXN</option>
@@ -202,12 +202,12 @@ export default function Dibises() {
             </div>
             <div className="">
               <label htmlFor="currencyType" className="block text-sm font-medium text-gray-700">
-                To
+                to
               </label>
               <select
-                id="baseCurrency"
-                value={currencyType}
-                onChange={handleCurrencyChange}
+                id="targetCurrency"
+                value={targetCurrency}
+                onChange={handleTargetCurrencyChange}
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               >
                 <option value="MXN">MXN</option>
