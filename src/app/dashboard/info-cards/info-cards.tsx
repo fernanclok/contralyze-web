@@ -49,6 +49,7 @@ const usePagination = (data, itemsPerPage) => {
 export default function InfoCards({Info}: {Info: any}) {
   const [progress, setProgress] = useState(0) // Estado para el progreso
 
+  
     // parser target date 
     if (!Info.info) return null
     const target_date = new Date(Info.info.target_date)
@@ -242,37 +243,52 @@ const {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">Emergency Fund</div>
-                <div
-                    className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
-                        Info.info.changes.emergency_fund.status
-                    )}`}
-                    >
-                    {getStatusIcon(Info.info.changes.emergency_fund.status)}
-                    <p className="text-sm font-semibold">
-                        {Info.info.changes.emergency_fund.status === "unchanged"
-                        ? "Unchanged"
-                        : `${Info.info.changes.emergency_fund.percentage} % ${Info.info.changes.emergency_fund.status}`}
-                    </p> {" "}
-                    from last update.
+                <nav className="flex justify-center gap-2 items-center rounded-lg">
+                    <div
+                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                            Info.info.changes.emergency_fund.previous_status
+                        )}`}
+                        >
+                        {getStatusIcon(Info.info.changes.emergency_fund.previous_status)}
+                        <p className="text-sm font-semibold">
+                            {Info.info.changes.emergency_fund.previous_status === "unchanged"
+                            ? "Unchanged"
+                            : `${Info.info.changes.emergency_fund.percentage} % ${Info.info.changes.emergency_fund.previous_status}`}
+                        </p> {" "}
+                        from last update.
+                    </div>
+                    <div
+                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                            Info.info.changes.emergency_fund.status
+                        )}`}
+                        >
+                        {getStatusIcon(Info.info.changes.emergency_fund.status)}
+                        <p className="text-sm font-semibold">
+                            {Info.info.changes.emergency_fund.status === "unchanged"
+                            ? "Unchanged"
+                            : `${Info.info.changes.emergency_fund.percentage} % ${Info.info.changes.emergency_fund.status}`}
+                        </p> {" "}
+                        from last update.
+                    </div>
+                </nav>
+                <div className="w-ful rounded-full mt-2">
+                <div className="flex justify-between items-center p-2">
+                    <p className="text-gray-400 text-sm font-thin">Progress</p>
+                    <p className="text-gray-500 font-bold text-base">{progress}%</p>
                 </div>
-            <div className="w-ful rounded-full mt-2">
-              <div className="flex justify-between items-center p-2">
-                <p className="text-gray-400 text-sm font-thin">Progress</p>
-                <p className="text-gray-500 font-bold text-base">{progress}%</p>
-              </div>
-              <div
-                className="bg-green-500 text-xs font-medium text-white text-center p-0.5 leading-none rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <p className="text-base text-gray-400 mt-2">
-              <strong>${Info.info.emergency_fund}</strong> is 10% of total budget.
-            </p>
-            <div className="flex justify-start gap-2 items-center mt-3">
-              <CalendarDays className="text-gray-400 w-4 h-4" />
-              <p className="text-gray-400 text-sm ">
-                <strong>Target</strong> {target_date_formatted}
-              </p>
+                <div
+                    className="bg-green-500 text-xs font-medium text-white text-center p-0.5 leading-none rounded-full transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                ></div>
+                </div>
+                <p className="text-base text-gray-400 mt-2">
+                <strong>${Info.info.emergency_fund}</strong> is 10% of total budget.
+                </p>
+                <div className="flex justify-start gap-2 items-center mt-3">
+                <CalendarDays className="text-gray-400 w-4 h-4" />
+                <p className="text-gray-400 text-sm ">
+                    <strong>Target</strong> {target_date_formatted}
+                </p>`
             </div>
           </CardContent>
          
@@ -286,19 +302,34 @@ const {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">Expenses</div>
-            <div
+            <nav className="flex justify-center gap-2 items-center rounded-lg">
+                <div
+                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                            Info.info.changes.total_expenses.previous_status
+                        )}`}
+                        >
+                {getStatusIcon(Info.info.changes.total_expenses.previous_status)}
+                <p className="text-sm font-semibold">
+                    {Info.info.changes.total_expenses.previous_status === "unchanged"
+                    ? "Unchanged"
+                    : `${Info.info.changes.total_expenses.percentage} % ${Info.info.changes.total_expenses.previous_status}`}
+                </p> {" "}
+                from last update.
+                </div>
+                <div
                     className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
                         Info.info.changes.total_expenses.status
                     )}`}
                     >
-              {getStatusIcon(Info.info.changes.total_expenses.status)}
-              <p className="text-sm font-semibold">
-                {Info.info.changes.total_expenses.status === "unchanged"
-                  ? "Unchanged"
-                  : `${Info.info.changes.total_expenses.percentage} % ${Info.info.changes.total_expenses.status}`}
-              </p> {" "}
-              from last update.
-            </div>
+                {getStatusIcon(Info.info.changes.total_expenses.status)}
+                <p className="text-sm font-semibold">
+                    {Info.info.changes.total_expenses.status === "unchanged"
+                    ? "Unchanged"
+                    : `${Info.info.changes.total_expenses.percentage} % ${Info.info.changes.total_expenses.status}`}
+                </p> {" "}
+                from last update.
+                </div>
+            </nav>
             <div className="w-ful rounded-full mt-2">
               <div className="flex justify-between items-center p-2">
                 <p className="text-gray-400 text-sm font-thin">Progress</p>
@@ -324,25 +355,40 @@ const {
         {/* Budgets */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-end space-y-0 pb-2">
-          <CardTitle className="flex justify-center items-center text-sm font-medium w-fit bg-blue-100/50 p-2 rounded-lg ">
-              <PercentIcon className="h-4 w-4 text-black" />
+            <CardTitle className="flex justify-center items-center text-sm font-medium w-fit bg-green-200/50 p-2 rounded-lg ">
+              <DollarSignIcon className="h-4 w-4 text-black  " />
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">Budgets</div>
-                <div
-                    className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
-                        Info.info.changes.total_budget_amount.status
-                    )}`}
-                    >
-                    {getStatusIcon(Info.info.changes.total_budget_amount.status)}
-                    <p className="text-sm font-semibold">
-                        {Info.info.changes.total_budget_amount.status === "unchanged"
-                        ? "Unchanged"
-                        : `${Info.info.changes.total_budget_amount.percentage} % ${Info.info.changes.total_budget_amount.status}`}
-                    </p> {" "}
-                    from last update.
-                </div>
+                <nav className="flex justify-center gap-2 items-center rounded-lg">
+                    <div
+                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                            Info.info.changes.total_budget_amount.previous_status
+                        )}`}
+                        >
+                        {getStatusIcon(Info.info.changes.total_budget_amount.previous_status)}
+                        <p className="text-sm font-semibold">
+                            {Info.info.changes.total_budget_amount.previous_status === "unchanged"
+                            ? "Unchanged"
+                            : `${Info.info.changes.total_budget_amount.percentage} % ${Info.info.changes.total_budget_amount.previous_status}`}
+                        </p> {" "}
+                        from last update.
+                    </div>
+                    <div
+                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
+                            Info.info.changes.total_budget_amount.status
+                        )}`}
+                        >
+                        {getStatusIcon(Info.info.changes.total_budget_amount.status)}
+                        <p className="text-sm font-semibold">
+                            {Info.info.changes.total_budget_amount.status === "unchanged"
+                            ? "Unchanged"
+                            : `${Info.info.changes.total_budget_amount.percentage} % ${Info.info.changes.total_budget_amount.status}`}
+                        </p> {" "}
+                        from last update.
+                    </div>
+                </nav>
             <div className="w-full rounded-full mt-2">
               <div className="flex justify-between items-center p-2">
                 <p className="text-gray-400 text-sm font-thin">Progress</p>
