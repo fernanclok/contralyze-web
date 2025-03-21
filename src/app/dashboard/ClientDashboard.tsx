@@ -4,7 +4,7 @@ import { useState } from "react";
 import DashboardCharts from "./charts/dashboard-charts";
 import InfoCards from "./info-cards/info-cards";
 
-export default function ClientDashboardPage({Budgets, user, Information} : {Budgets:any, user:any, Information:any}) {
+export default function ClientDashboardPage({Budgets, user, Information, Transaction} : {Budgets:any, user:any, Information:any, Transaction:any}) {
 
     // get the last updated date
     const date = new Date();
@@ -21,7 +21,7 @@ export default function ClientDashboardPage({Budgets, user, Information} : {Budg
             </div>
           </div>
                 <InfoCards Info={Information}/>
-                <DashboardCharts Budgets={Budgets}/>
+                <DashboardCharts Budgets={Budgets} transaction= {Transaction}/>
         </div>
       </div>
     </div>
