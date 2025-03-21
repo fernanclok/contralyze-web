@@ -26,6 +26,7 @@ export async function logout() {
     console.error(error);
   }
 
+
   deleteSession();
 
   redirect("/");
