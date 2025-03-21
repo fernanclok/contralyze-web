@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
-import { type Department, type Category } from '@/app/dashboard/budgets/actions'
+import { type Department, type Category } from '@/app/budgets/actions'
 import { emmiter } from '@/lib/emmiter'
 import { cn } from "@/lib/utils"
 

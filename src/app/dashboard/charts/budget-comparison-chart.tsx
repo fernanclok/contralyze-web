@@ -57,8 +57,8 @@ export function BudgetComparisonChart({ Budgets }: { Budgets: any }) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-4">
         <CardHeader>
-                  <CardTitle>Total budget by Category</CardTitle>
-                  <p>Comparison of budgeted amounts against categories.</p>
+                  <CardTitle className="text-black">Total budget by Category</CardTitle>
+                  <p className="text-sm text-gray-400">Comparison of budgeted amounts against categories.</p>
                 </CardHeader>
           <ChartContainer
             config={{
@@ -98,76 +98,45 @@ export function BudgetComparisonChart({ Budgets }: { Budgets: any }) {
         </div>
       <div className="flex flex-col gap-4">
       <CardHeader>
-              <CardTitle>Total budget by Category</CardTitle>
-              <p>Comparison of budgeted amounts against categories.</p>
+              <CardTitle className="text-black">Total budget by Department</CardTitle>
+              <p className="text-sm text-gray-400">Comparison of budgeted amounts against department.</p>
             </CardHeader>
-      <ChartContainer
-        config={{
-          operations: {
-            label: "Operations",
-            color: "hsl(var(--chart-1))",
-          },
-          payroll: {
-            label: "Payroll",
-            color: "hsl(var(--chart-2))",
-          },
-          marketing: {
-            label: "Marketing",
-            color: "hsl(var(--chart-3))",
-          },
-          equipment: {
-            label: "Equipment",
-            color: "hsl(var(--chart-4))",
-          },
-          facilities: {
-            label: "Facilities",
-            color: "hsl(var(--chart-5))",
-          },
-        }}
-        className="h-[350px]"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie data={data2} cx="50%" cy="50%" labelLine={false} outerRadius={120} fill="#8884d8" dataKey="value">
-              {data2.map((entry, index) => {
-                const colors = [
-                  "var(--color-operations)",
-                  "var(--color-payroll)",
-                  "var(--color-marketing)",
-                  "var(--color-equipment)",
-                  "var(--color-facilities)",
-                ]
-                return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-              })}
-            </Pie>
-            <Tooltip formatter={(value) => `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-          </PieChart>
-        </ResponsiveContainer>
+        
+            <ChartContainer
+            config={{
+              total_budgets: {
+                label: "Total Budgets",
+                color: "hsl(var(--chart-1))",
+              },
+              total_budget_amount: {
+                label: "Total Budget Amount",
+                color: "hsl(var(--chart-5))",
+              },
+            }}
+            className="h-[350px]"
+          >
 
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-4">
-          {data2.map((item, index) => (
-            <div key={item.name} className="flex items-center gap-2">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{
-                  backgroundColor: [
-                    "var(--color-operations)",
-                    "var(--color-payroll)",
-                    "var(--color-marketing)",
-                    "var(--color-equipment)",
-                    "var(--color-facilities)",
-                  ][index % 5],
-                }}
-              />
-              <div className="flex flex-col">
-                <span className="text-xs font-medium">{item.name}</span>
-                <span className="text-xs text-muted-foreground">${item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </ChartContainer>
-
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={formattedData}
+                  dataKey="total_budget_amount"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  fill="#8884d8"
+                  label
+                >
+                  {formattedData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                <Legend  content={<CustomLegend />}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartContainer>
       </div>
     </div>
   )

@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format, addMonths, addDays, isBefore, startOfDay } from "date-fns"
 import { CalendarIcon, PlusCircle, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { type Department, type Category } from '@/app/dashboard/budgets/actions'
+import { type Department, type Category } from '@/app/budgets/actions'
 import axios from "axios"
 import { emmiter } from "@/lib/emmiter";
 
@@ -504,9 +504,6 @@ export function NewBudgetModal({
           </div>
         </div>
         <SheetFooter className="pt-6">
-          <Button onClick={handleClose} variant="outline" className="w-full sm:w-auto bg-white">
-            Cancel
-          </Button>
           <Button 
             onClick={handleSubmit} 
             className="w-full sm:w-auto bg-primary hover:bg-primary/90"

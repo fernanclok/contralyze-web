@@ -12,7 +12,7 @@ import { format, addMonths, addDays, isBefore, startOfDay, parse } from "date-fn
 import { CalendarIcon, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { emmiter } from "@/lib/emmiter"
-import { type Department, type Category } from '@/app/dashboard/budgets/actions'
+import { type Department, type Category } from '@/app/budgets/actions'
 
 interface Budget {
   id: string;

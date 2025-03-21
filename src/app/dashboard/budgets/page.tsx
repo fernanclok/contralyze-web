@@ -11,21 +11,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
-import {
-  ArrowUpCircle,
-  ArrowDownCircle,
-  Clock,
-  CreditCard,
-  AlertCircle,
-} from "lucide-react";
-import {
-  getBudgets,
-  getBudgetRequests,
-  getCategories,
-  getDepartments,
-} from "./actions";
 import { redirect } from "next/navigation";
-import { CollapsibleCharts } from "@/components/budget/CollapsibleCharts";
+import { ArrowUpCircle, ArrowDownCircle, Clock, CreditCard, AlertCircle } from "lucide-react";
+import { getBudgets, getBudgetRequests, getCategories, getDepartments } from './actions';
+import { CollapsibleCharts } from '@/components/budget/CollapsibleCharts';
 
 export default async function BudgetsPage() {
   const session = await getSession();
@@ -33,11 +22,6 @@ export default async function BudgetsPage() {
   const userName = session
     ? `${session.userFirstName} ${session.userLastName}`.trim()
     : "Guest";
-
-  // Solo administradores pueden acceder a esta página
-  if (userRole !== "admin") {
-    redirect("/dashboard/budget-requests");
-  }
 
   // Get real data from backend
   const { budgets = [], error: budgetsError } = await getBudgets();
