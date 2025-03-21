@@ -395,9 +395,7 @@ export function EditBudgetModal({
                         selected={endDate}
                         onSelect={setEndDate}
                         initialFocus
-                        disabled={(date) => 
-                          startDate ? isBefore(date, startDate) : false
-                        }
+                        disabled={startDate ? [{ from: new Date(0), to: addDays(startDate, -1) }] : undefined}
                       />
                     </PopoverContent>
                   )}

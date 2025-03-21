@@ -313,7 +313,7 @@ export function EditBudgetRequestModal({
         </div>
 
         <SheetFooter className="flex justify-between sm:justify-end gap-2 mt-8">
-          <Button variant="outline" onClick={onOpenChange} disabled={loading} className="flex-1 sm:flex-none">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="flex-1 sm:flex-none">
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="flex-1 sm:flex-none">

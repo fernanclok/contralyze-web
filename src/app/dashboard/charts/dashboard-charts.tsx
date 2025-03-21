@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RevenueChart } from "./revenue-charts";
-import { ExpensesChart } from "./expenses-chart";
+// import { ExpensesChart } from "./expenses-chart";
 import { BudgetComparisonChart } from "./budget-comparison-chart";
 import { ArrowUpIcon, UsersIcon, BuildingIcon, UserIcon } from "lucide-react";
 

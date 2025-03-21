@@ -460,7 +460,7 @@ export function NewBudgetModal({
                   selected={startDate}
                   onSelect={handleStartDateChange}
                   initialFocus
-                  disabled={(date) => isBefore(date, today)}
+                  disabled={[{ from: new Date(0), to: today }]}
                 />
               </PopoverContent>
             </Popover>
@@ -491,7 +491,7 @@ export function NewBudgetModal({
                     selected={endDate}
                     onSelect={setEndDate}
                     initialFocus
-                    disabled={(date) => startDate ? isBefore(date, startDate) : false}
+                    disabled={startDate ? [{ from: new Date(0), to: startDate }] : []}
                   />
                 </PopoverContent>
               )}

@@ -12,11 +12,12 @@ import { getDepartments } from "@/app/manage-company/actions";
 import RequisitionDashboard from "./requisitionDashboard";
 import RequisitionList from "./requisitionList";
 
-export default async function RequisitionsPage({
-  searchParams,
-}: {
-  searchParams: { tab?: string };
-}) {
+export default async function RequisitionsPage(
+  props: {
+    searchParams: Promise<{ tab?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const session = await getSession();
   const user = session || null;
   const userRole = session?.role || "user";
@@ -41,16 +42,16 @@ export default async function RequisitionsPage({
       ? requisitionDashboard
       : {};
 
- //departments
- let departmentData = [];
- let departmentError = null;
+  //departments
+  let departmentData = [];
+  let departmentError = null;
 
- if (userRole === "admin") {
-   const { departments = [], error } = await getDepartments();
-   departmentData =
-     Array.isArray(departments) && departments.length > 0 ? departments : [];
-   departmentError = error;
- }
+  if (userRole === "admin") {
+    const { departments = [], error } = await getDepartments();
+    departmentData =
+      Array.isArray(departments) && departments.length > 0 ? departments : [];
+    departmentError = error;
+  }
 
   //api errors
   const hasError = !!requisitionError || !!requisitionDashboardError || !!departmentError;

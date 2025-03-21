@@ -91,7 +91,7 @@ export function BudgetComparisonChart({ Budgets }: { Budgets: any }) {
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                <Legend  content={<CustomLegend />}/>
+                <Legend  content={<CustomLegend payload={[]} />}/>
               </PieChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -140,9 +140,7 @@ export function BudgetComparisonChart({ Budgets }: { Budgets: any }) {
                 return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
               })}
             </Pie>
-            <ChartTooltip
-              content={<ChartTooltipContent formatter={(value) => [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, "Amount"]} />}
-            />
+            <Tooltip formatter={(value) => `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
           </PieChart>
         </ResponsiveContainer>
 
