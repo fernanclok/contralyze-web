@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, Loader2 } from 'lucide-react';
-import { type Department, type Category } from '@/app/dashboard/budgets/actions';
+import { type Department, type Category } from '@/app/budgets/actions';
 import axios from 'axios';
 import { emmiter } from '@/lib/emmiter';
 import { cn } from '@/lib/utils';
@@ -410,13 +410,6 @@ export function NewBudgetRequestModal({
           </div>
         </div>
         <SheetFooter className="pt-6">
-          <Button 
-            variant="outline" 
-            onClick={handleClose}
-            className="w-full sm:w-auto bg-white"
-          >
-            Cancel
-          </Button>
           <Button 
             onClick={handleSubmit} 
             disabled={loading}

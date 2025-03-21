@@ -1,57 +1,87 @@
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { decrypt } from "./app/lib/session";
 
-const protectedRoutes = {
-  "/dashboard": ["admin", "user"],
-  "/requisitions": ["admin", "user"],
-  "/requisitions/new-requisition": ["admin", "user"],
-  "/requisitions/details/[requisition_uid]": ["admin", "user"],
-  "/transactions": ["admin", "user"],
-  "/dashboard/budgets": ["admin", "user"],
-  "/clients": ["admin", "user"],
-  "/suppliers": ["admin", "user"],
-  "/manage-company": ["admin"], 
-};
-const publicRoutes = ["/", "/register"]; // Cambié "/login" por "/"
+// Rutas que requieren autenticación
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/budgets',
+  '/budget-requests',
+  '/transactions',
+  '/invoices',
+  '/clients',
+  '/suppliers',
+  '/requisitions',
+  '/manage-company'
+];
 
-export default async function middleware(req: NextRequest) {
-  const path = req.nextUrl.pathname;
-  const isProtectedRoute = Object.keys(protectedRoutes).some(route => new RegExp(`^${route.replace(/\[.*?\]/g, '.*')}$`).test(path));
-  const isPublicRoute = publicRoutes.includes(path);
+// Rutas que requieren rol de admin
+const ADMIN_ROUTES = [
+  '/budgets',      // Solo admins pueden ver esta página, usuarios normales ven budget-requests
+  '/manage-company'
+];
 
-  const cookie = (await cookies()).get("session")?.value;
-  const session = await decrypt(cookie);
-
-  if (path === "/" && session?.userId) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
+export function middleware(request: NextRequest) {
+  // Obtener la ruta actual
+  const path = request.nextUrl.pathname;
+  
+  // Verificar si la ruta actual requiere autenticación
+  const isProtectedRoute = PROTECTED_ROUTES.some(route => path.startsWith(route));
+  
+  // Verificar si la ruta actual requiere rol de admin
+  const isAdminRoute = ADMIN_ROUTES.some(route => path.startsWith(route));
+  
+  // Obtener la cookie de sesión
+  const sessionCookie = request.cookies.get('session')?.value;
+  
+  // Si es una ruta protegida y no hay cookie de sesión, redirigir al login
+  if (isProtectedRoute && !sessionCookie) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('callbackUrl', request.url);
+    return NextResponse.redirect(loginUrl);
   }
-
-  // Bypass middleware for public routes
-  if (isPublicRoute) {
-    return NextResponse.next();
-  }
-
-  if (isProtectedRoute) {
-    if (!session?.userId) {
-      return NextResponse.redirect(new URL("/", req.nextUrl)); // Redirige a "/"
+  
+  // Para rutas de admin, verificar rol (simplificado)
+  if (isAdminRoute && sessionCookie) {
+    try {
+      // Decodificar base64 de la parte del payload (segunda parte de un JWT)
+      const base64Payload = sessionCookie.split('.')[1];
+      
+      // Si no hay payload, probablemente no es un JWT válido
+      if (!base64Payload) {
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
+      
+      // Decodificar base64 y convertir a objeto
+      const decodedPayload = JSON.parse(
+        Buffer.from(base64Payload, 'base64').toString('utf-8')
+      );
+      
+      // Verificar si el usuario tiene rol admin
+      if (decodedPayload.role !== 'admin') {
+        // Si es la ruta /budgets, redirigir a /budget-requests
+        if (path.startsWith('/budgets')) {
+          return NextResponse.redirect(new URL('/budget-requests', request.url));
+        }
+        // Para otras rutas admin, redirigir al dashboard
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+    } catch (error) {
+      console.error('Error al verificar roles:', error);
+      // Por seguridad, ante un error redirigir al login
+      return NextResponse.redirect(new URL('/login', request.url));
     }
-
-    const userRole = session.role as string; // Assuming the role is stored in the session
-    const allowedRoles = Object.entries(protectedRoutes).find(([route]) => new RegExp(`^${route.replace(/\[.*?\]/g, '.*')}$`).test(path))?.[1];
-
-    if (allowedRoles && !allowedRoles.includes(userRole)) {
-      return NextResponse.redirect(new URL("/unauthorized", req.nextUrl)); // Redirect to an unauthorized page
-    }
   }
-
-  if (!session) {
-    return NextResponse.redirect(new URL("/", req.nextUrl)); // Redirige a "/"
-  }
-
+  
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/' ,'/dashboard', '/dashboard/budgets', '/manage-company', '/requisitions', '/requisitions/new-requisition', '/requisitions/details/:requisition_uid*', '/transactions', '/clients', '/suppliers'], // Actualizado
-};
+  matcher: [
+    /*
+     * Match all request paths except for:
+     * - api routes (_next/, api/)
+     * - static files (images, media, favicon.ico)
+     * - Login, register, and root pages
+     */
+    '/((?!_next|api|.*\\..*|login|sign-up|$).*)',
+  ],
+}
