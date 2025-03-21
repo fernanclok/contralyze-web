@@ -1,15 +1,15 @@
 import AuthenticatedLayout from "@/components/layouts/authenticatedLayout";
 import { getSession } from "@/app/lib/session";
-
 import { getRequisitions } from "@/app/requisitions/actions";
 import EditRequisition from "./editRequisitionPage";
 import { AlertCircle } from "lucide-react";
 
-export default async function RequisitionEditPage({
-  params,
-}: {
-  params: { requisition_uid: string };
-}) {
+interface PageProps {
+  params: { slug: string[] }; //params are an array of strings.
+  searchParams: { tab?: string }; //searchParams are an object.
+}
+
+export default async function RequisitionEditPage({ params, searchParams }: PageProps) {
   const session = await getSession();
 
   const userRole = session?.role || "user";
@@ -17,7 +17,8 @@ export default async function RequisitionEditPage({
     ? `${session.userFirstName} ${session.userLastName}`.trim()
     : "Guest";
 
-  const { requisition_uid } = params;
+  const { slug } = params;
+  const requisition_uid = slug[1];
 
   //data from backend
   const { requisitions = [], error: requisitionError } =
@@ -42,13 +43,14 @@ export default async function RequisitionEditPage({
           <div>
             <p className="font-medium">Connection Error</p>
             <p className="text-sm">
-              Could not connect to the server. Using demo data temporarily.
+              Could not connect to the server.
+              All creation and editing actions have been disabled.
             </p>
           </div>
         </div>
       )}
 
-      <EditRequisition requisition={requisition} />
+      <EditRequisition requisition={requisition[0]} />
     </AuthenticatedLayout>
   );
 }

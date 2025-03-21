@@ -158,19 +158,19 @@ export default function RequisitionsList({
   user: any;
   departments: any[];
 }) {
-  const [filter, setFilter] = useState("All");
-  const [priorityFilter, setPriorityFilter] = useState("All");
-  const [departmentFilter, setDepartmentFilter] = useState("All");
+  const [filter, setFilter] = useState("All status");
+  const [priorityFilter, setPriorityFilter] = useState("All priorities");
+  const [departmentFilter, setDepartmentFilter] = useState("All departments");
   const [search, setSearch] = useState("");
 
   const filteredRequisitions = requisitions.filter((req: any) => {
     const matchesFilter =
-      filter === "All" || req.status.toLowerCase() === filter.toLowerCase();
+      filter === "All status" || req.status.toLowerCase() === filter.toLowerCase();
     const matchesPriorityFilter =
-      priorityFilter === "All" ||
+      priorityFilter === "All priorities" ||
       req.priority.toLowerCase() === priorityFilter.toLowerCase();
     const matchesDepartmentFilter =
-      departmentFilter === "All" ||
+      departmentFilter === "All departments" ||
       (req.department && req.department.name.toLowerCase() === departmentFilter.toLowerCase());
     const matchesSearch =
       req.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -230,29 +230,27 @@ export default function RequisitionsList({
                 />
               </div>
               <div className="flex items-center gap-2">
-                <p className="text-gray-500">Status:</p>
                 <Select value={filter} onValueChange={setFilter}>
-                  <SelectTrigger>
-                    <SelectValue>{filter}</SelectValue>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="All">All</SelectItem>
+                    <SelectItem value="All status">All status</SelectItem>
                     <SelectItem value="Approved">Approved</SelectItem>
                     <SelectItem value="Pending">Pending</SelectItem>
                     <SelectItem value="Rejected">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
                 {/* select to filter by priority */}
-                <p className="text-gray-500">Priority:</p>
                 <Select
                   value={priorityFilter}
                   onValueChange={setPriorityFilter}
                 >
-                  <SelectTrigger>
-                    <SelectValue>{priorityFilter}</SelectValue>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Priorities" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="All">All</SelectItem>
+                    <SelectItem value="All priorities">All priorities</SelectItem>
                     <SelectItem value="Low">Low</SelectItem>
                     <SelectItem value="Medium">Medium</SelectItem>
                     <SelectItem value="High">High</SelectItem>
@@ -262,16 +260,15 @@ export default function RequisitionsList({
                 {/* select to filter by department only if the user is admin */}
                 {user.role === "admin" && (
                   <>
-                    <p className="text-gray-500">Department:</p>
                     <Select
                       value={departmentFilter}
                       onValueChange={setDepartmentFilter}
                     >
-                      <SelectTrigger>
-                        <SelectValue>{departmentFilter}</SelectValue>
+                      <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Department" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="All">All</SelectItem>
+                      <SelectContent className="bg-white shadow-md">
+                        <SelectItem value="All departments">All departments</SelectItem>
                        {departments.map((deparment: any) => (
                           <SelectItem key={deparment.id} value={deparment.name}>
                             {deparment.name}

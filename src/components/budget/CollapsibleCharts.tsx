@@ -25,7 +25,7 @@ export function CollapsibleCharts({ budgets, requests, title = "Budget Analytics
       <div className="p-4 flex justify-between items-center border-b">
         <div className="flex items-center gap-2">
           <BarChart className="h-5 w-5 text-gray-500" />
-          <h3 className="font-medium">{title}</h3>
+          <h3 className="font-medium text-black">{title}</h3>
         </div>
         <Button 
           variant="ghost" 

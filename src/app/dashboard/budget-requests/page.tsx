@@ -60,7 +60,8 @@ export default async function BudgetRequestsPage() {
             <div>
               <p className="font-medium">Connection Error</p>
               <p className="text-sm">
-                Could not connect to the server. Using demo data temporarily. All creation and editing actions have been disabled.
+                Could not connect to the server.
+                All creation and editing actions have been disabled.
               </p>
             </div>
           </div>

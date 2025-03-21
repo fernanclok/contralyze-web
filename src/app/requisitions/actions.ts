@@ -282,7 +282,7 @@ export async function editRequisition(
     };
 
     const response = await axios.put(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/requisitions/edit/${requisition_id}`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/requisitions/update/${requisition_id}`,
       { 
         title, 
         justification,

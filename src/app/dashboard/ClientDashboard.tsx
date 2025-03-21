@@ -12,7 +12,7 @@ export default function ClientDashboardPage({Budgets,user, Information} : {Budge
       <div className="flex-1 p-6 md:p-8 overflow-auto">
         <div className="max-w-full mx-auto space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+            {/* <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1> */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Last updated: March 5, 2025</span>
             </div>
