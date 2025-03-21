@@ -20,8 +20,6 @@ export default async function RequisitionDetailsPage() {
   const requisitionData =
     Array.isArray(requisitions) && requisitions.length > 0 ? requisitions : [];
 
-  console.log("Requisitions received:", requisitionData);
-
   //api errors
   const hasError = !!requisitionError;
   return (
@@ -32,8 +30,9 @@ export default async function RequisitionDetailsPage() {
           <div>
             <p className="font-medium">Connection Error</p>
             <p className="text-sm">
-              Could not connect to the server. Using demo data temporarily.
-            </p>
+                Could not connect to the server.
+                All creation and editing actions have been disabled.
+              </p>
           </div>
         </div>
       )}
