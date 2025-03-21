@@ -91,7 +91,7 @@ export function BudgetComparisonChart({ Budgets }: { Budgets: any }) {
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                <Legend  content={<CustomLegend />}/>
+                <Legend  content={<CustomLegend payload={[]} />}/>
               </PieChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -101,6 +101,7 @@ export function BudgetComparisonChart({ Budgets }: { Budgets: any }) {
               <CardTitle className="text-black">Total budget by Department</CardTitle>
               <p className="text-sm text-gray-400">Comparison of budgeted amounts against department.</p>
             </CardHeader>
+        
             <ChartContainer
             config={{
               total_budgets: {

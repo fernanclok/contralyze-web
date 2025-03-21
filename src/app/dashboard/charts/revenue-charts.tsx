@@ -36,12 +36,8 @@ export function RevenueChart() {
           <YAxis className="text-xs" tickLine={false} axisLine={false} tickFormatter={(value) => `$${value / 1000}k`} />
           <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
           <ChartTooltip
-            content={
-              <ChartTooltipContent
-                labelFormatter={(value) => `${value}`}
-                formatter={(value) => [`$${value.toLocaleString()}`, "Revenue"]}
-              />
-            }
+            labelFormatter={(value) => `${value}`}
+            formatter={(value) => [`$${value.toLocaleString()}`, "Revenue"]}
           />
         </BarChart>
       </ResponsiveContainer>

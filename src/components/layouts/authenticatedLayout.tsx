@@ -6,9 +6,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { logout } from "./actions";
 import Icon from "@mdi/react";
-
 import {clearLocalStorage} from "@/lib/client-utils";
-import { mdiViewDashboard, mdiAccountBoxMultiple, mdiTruck, mdiArchiveOutline, mdiFileDocumentOutline, mdiCashMultiple } from "@mdi/js";
+import { mdiViewDashboard, mdiAccountBoxMultiple, mdiTruck, mdiArchiveOutline, mdiFileDocumentOutline, mdiCashMultiple, mdiReceiptText } from "@mdi/js";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -30,16 +29,18 @@ const menuItems: {
   admin: [
     { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
     { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
+    { path: "/invoices", label: "Invoices", icon: mdiReceiptText },
     { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
-    { path: "/dashboard/budgets", label: "Budgets", icon: mdiCashMultiple },
+    { path: "/budgets", label: "Budgets", icon: mdiCashMultiple },
     { path: "/clients", label: "Clients", icon: mdiAccountBoxMultiple },
     { path: "/suppliers", label: "Suppliers", icon: mdiTruck },
   ],
   user: [
     { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
     { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
+    { path: "/invoices", label: "Invoices", icon: mdiReceiptText },
     { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
-    { path: "/dashboard/budget-requests", label: "Budget Requests", icon: mdiCashMultiple },
+    { path: "/budget-requests", label: "Budget Requests", icon: mdiCashMultiple },
     { path: "/clients", label: "Clients", icon: mdiAccountBoxMultiple },
     { path: "/suppliers", label: "Suppliers", icon: mdiTruck },
   ],

@@ -18,11 +18,11 @@ import { PlusCircle, Edit, Search, Calendar, FilterX, X, Info } from 'lucide-rea
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { createBudget, updateBudget, deleteBudget, createCategory } from '@/app/dashboard/budgets/actions';
+import { createBudget, updateBudget, deleteBudget, createCategory } from '@/app/budgets/actions';
 import { useRouter } from 'next/navigation';
 import { emmiter } from "@/lib/emmiter";
 import { Pagination } from '@/components/ui/pagination';
-import { type Department, type Category } from '@/app/dashboard/budgets/actions';
+import { type Department, type Category } from '@/app/budgets/actions';
 
 interface Budget {
   id: string;
