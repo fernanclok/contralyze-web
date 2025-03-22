@@ -34,7 +34,7 @@ export function middleware(request: NextRequest) {
   
   // Si es una ruta protegida y no hay cookie de sesión, redirigir al login
   if (isProtectedRoute && !sessionCookie) {
-    const loginUrl = new URL('/login', request.url);
+    const loginUrl = new URL('/', request.url);
     loginUrl.searchParams.set('callbackUrl', request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -47,7 +47,7 @@ export function middleware(request: NextRequest) {
       
       // Si no hay payload, probablemente no es un JWT válido
       if (!base64Payload) {
-        return NextResponse.redirect(new URL('/login', request.url));
+        return NextResponse.redirect(new URL('/', request.url));
       }
       
       // Decodificar base64 y convertir a objeto
