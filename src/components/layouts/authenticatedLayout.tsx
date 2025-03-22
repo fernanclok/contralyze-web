@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { logout } from "./actions";
 import Icon from "@mdi/react";
+import {clearLocalStorage} from "@/lib/client-utils";
 import { mdiViewDashboard, mdiAccountBoxMultiple, mdiTruck, mdiArchiveOutline, mdiFileDocumentOutline, mdiCashMultiple, mdiReceiptText } from "@mdi/js";
 
 interface AuthenticatedLayoutProps {
@@ -70,6 +71,7 @@ const AuthenticatedLayout = ({ children, userRole, userName }: AuthenticatedLayo
   }, []);
 
   const handleLogout = async () => {
+    clearLocalStorage();
     await logout();
     router.push("/");
   };
