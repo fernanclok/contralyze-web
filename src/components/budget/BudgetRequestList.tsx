@@ -60,12 +60,13 @@ interface BudgetRequest {
   };
 }
 
-export function BudgetRequestList({ requests, categories, departments, userRole, hasConnectionError = false }: { 
+export function BudgetRequestList({ requests, categories, departments, userRole, hasConnectionError = false, userDepartmentId }: { 
   requests: BudgetRequest[],
   categories: Category[],
   departments: Department[],
   userRole: string,
-  hasConnectionError?: boolean
+  hasConnectionError?: boolean,
+  userDepartmentId?: string
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -84,6 +85,13 @@ export function BudgetRequestList({ requests, categories, departments, userRole,
 
   // Verificar si el usuario es administrador
   const isAdmin = userRole === 'admin';
+
+  // Efecto para establecer el departamento del usuario si no es admin
+  useEffect(() => {
+    if (!isAdmin && userDepartmentId) {
+      setFilterDepartment(userDepartmentId);
+    }
+  }, [isAdmin, userDepartmentId]);
 
   // Get current user ID from localStorage on component mount
   useEffect(() => {
@@ -559,22 +567,25 @@ export function BudgetRequestList({ requests, categories, departments, userRole,
               </SelectContent>
             </Select>
           </div>
-          <div className="w-[160px] min-w-[140px]">
-            <Select 
-              value={filterDepartment} 
-              onValueChange={setFilterDepartment}
-            >
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Department" />
-              </SelectTrigger>
-              <SelectContent className="bg-white shadow-md">
-                <SelectItem value="all">All Departments</SelectItem>
-                {departments.map(dept => (
-                  <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Filtro por departamento - Solo visible para administradores */}
+          {isAdmin && (
+            <div className="w-[160px] min-w-[140px]">
+              <Select 
+                value={filterDepartment} 
+                onValueChange={setFilterDepartment}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Department" />
+                </SelectTrigger>
+                <SelectContent className="bg-white shadow-md">
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {departments.map(dept => (
+                    <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           {(searchTerm || filterStatus !== 'all' || filterDepartment !== 'all') && (
             <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={() => {
               setSearchTerm('');
@@ -777,6 +788,8 @@ export function BudgetRequestList({ requests, categories, departments, userRole,
         categories={categories}
         departments={departments}
         loading={loading}
+        isAdmin={userRole === 'admin'}
+        userDepartmentId={userDepartmentId}
       />
 
       <EditBudgetRequestModal

@@ -9,7 +9,8 @@ export async function createSession(
   userId: string,
   role: string,
   userFirstName: string,
-  userLastName: string
+  userLastName: string,
+  departmentId?: string
 ) {
   const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours
   const session = await encrypt({
@@ -18,6 +19,7 @@ export async function createSession(
     expiresAt,
     userFirstName,
     userLastName,
+    departmentId,
   });
 
   (await cookies()).set("session", session, {
@@ -46,6 +48,7 @@ type SessionPayload = {
   role: string;
   userFirstName: string;
   userLastName: string;
+  departmentId?: string;
   expiresAt: Date;
 };
 
@@ -73,10 +76,15 @@ export async function getSession() {
   const cookie = await decrypt((await cookies()).get("session")?.value);
   if (!cookie) return null; // Si no hay cookie, retornamos null
 
+  // Asegurarse de que departmentId sea string o undefined
+  const departmentId = cookie.departmentId ? String(cookie.departmentId) : undefined;
+  console.log('Session departmentId:', departmentId);
+
   return {
     id: cookie.userId,
     role: typeof cookie.role === "string" ? cookie.role : "guest",
     userFirstName: cookie.userFirstName || "",
     userLastName: cookie.userLastName || "",
+    departmentId,
   };
 }

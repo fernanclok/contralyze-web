@@ -32,6 +32,7 @@ interface NewBudgetModalProps {
   categories: Category[]
   departments: Department[]
   loading?: boolean
+  userDepartmentId?: string
 }
 
 // Periodicity options
@@ -80,7 +81,8 @@ export function NewBudgetModal({
   onSubmit, 
   categories,
   departments,
-  loading = false 
+  loading = false,
+  userDepartmentId
 }: NewBudgetModalProps) {
   const [categoryId, setCategoryId] = useState("")
   const [maxAmount, setMaxAmount] = useState("")
@@ -109,21 +111,16 @@ export function NewBudgetModal({
     if (open) {
       loadUserDepartment();
     }
-  }, [open]);
+  }, [open, userDepartmentId]);
 
   // Cargar el departamento del usuario
-  const loadUserDepartment = async () => {
+  const loadUserDepartment = () => {
     try {
       setLoadingUserInfo(true);
-      const response = await axios.get('/api/user');
       
-      if (response.data && response.data.department) {
-        // Si el usuario tiene un departamento asignado, lo utilizamos
-        const userDept = response.data.department;
-        console.log('Departamento del usuario:', userDept);
-        
+      if (userDepartmentId) {
         // Buscar el departamento en la lista de departamentos
-        const matchingDepartment = departments.find(d => d.id === userDept.id);
+        const matchingDepartment = departments.find(d => String(d.id) === String(userDepartmentId));
         
         if (matchingDepartment) {
           setUserDepartment(matchingDepartment);
@@ -132,6 +129,11 @@ export function NewBudgetModal({
           
           // Filtrar categorías para este departamento
           filterCategoriesByDepartment(matchingDepartment.id);
+        } else {
+          console.log('No se encontró el departamento en la lista:', userDepartmentId);
+          // Intentar usar el ID directamente
+          setDepartmentId(String(userDepartmentId));
+          filterCategoriesByDepartment(String(userDepartmentId));
         }
       } else {
         console.log('Usuario sin departamento asignado');

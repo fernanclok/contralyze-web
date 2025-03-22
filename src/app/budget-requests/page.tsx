@@ -11,6 +11,8 @@ export default async function BudgetRequestsPage() {
   const session = await getSession();
   const userRole = session?.role || "user";
   const userName = session ? `${session.userFirstName} ${session.userLastName}`.trim() : "Guest";
+  const userDepartmentId = session?.departmentId;
+  console.log('BudgetRequests page userDepartmentId:', userDepartmentId);
   
   // Obtener el ID del usuario actual para filtrar solicitudes
   const userId = session?.id;
@@ -139,7 +141,8 @@ export default async function BudgetRequestsPage() {
               categories={categoryOptions}
               departments={departmentOptions}
               userRole={userRole} 
-              hasConnectionError={hasError}
+              hasConnectionError={!!requestsError}
+              userDepartmentId={userDepartmentId}
             />
           </CardContent>
         </Card>

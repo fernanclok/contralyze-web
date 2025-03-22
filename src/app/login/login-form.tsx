@@ -14,27 +14,12 @@ export default function LoginForm() {
   const [state, loginAction] = useActionState(login, undefined);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Obtener los datos del usuario después de un inicio de sesión exitoso
+  // Guardar el ID del usuario después de un inicio de sesión exitoso
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!state?.errors) {
-        try {
-          // Hacer una petición al endpoint de usuario para obtener el ID
-          const response = await fetch('/api/user');
-          const userData = await response.json();
-          
-          if (userData && userData.id) {
-            // Guardar el ID del usuario en localStorage
-            localStorage.setItem('user_id', userData.id);
-            console.log('User ID saved in localStorage:', userData.id);
-          }
-        } catch (error) {
-          console.error('Error fetching user data after login:', error);
-        }
-      }
-    };
-
-    fetchUserData();
+    if (!state?.errors && state?.user?.id) {
+      localStorage.setItem('user_id', state.user.id);
+      console.log('User ID saved in localStorage:', state.user.id);
+    }
   }, [state]);
 
   return (

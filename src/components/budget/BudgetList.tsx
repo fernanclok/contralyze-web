@@ -45,7 +45,7 @@ interface Budget {
   };
 }
 
-export function BudgetList({ budgets, categories, departments, userRole, hasConnectionError = false, requests = [] }: { 
+export function BudgetList({ budgets, categories, departments, userRole, hasConnectionError = false, requests = [], userDepartmentId }: { 
   budgets: Budget[],
   categories: Category[],
   departments: Department[],
@@ -61,7 +61,8 @@ export function BudgetList({ budgets, categories, departments, userRole, hasConn
     };
     status: string;
     requested_amount: number;
-  }[]
+  }[],
+  userDepartmentId?: string
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -527,6 +528,7 @@ export function BudgetList({ budgets, categories, departments, userRole, hasConn
         categories={categories}
         departments={departments}
         loading={loading}
+        userDepartmentId={userDepartmentId}
       />
 
       <EditBudgetModal 

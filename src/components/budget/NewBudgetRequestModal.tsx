@@ -34,6 +34,8 @@ interface NewBudgetRequestModalProps {
   categories: Category[];
   departments: Department[];
   loading?: boolean;
+  isAdmin: boolean;
+  userDepartmentId?: string;
 }
 
 export function NewBudgetRequestModal({ 
@@ -42,7 +44,9 @@ export function NewBudgetRequestModal({
   onSubmit, 
   categories,
   departments,
-  loading = false
+  loading = false,
+  isAdmin,
+  userDepartmentId
 }: NewBudgetRequestModalProps) {
   const [categoryId, setCategoryId] = useState('');
   const [requestedAmount, setRequestedAmount] = useState('');
@@ -66,26 +70,21 @@ export function NewBudgetRequestModal({
   // Check if there are available departments
   const hasDepartments = departments.length > 0;
 
-  // Cargar información del usuario cuando se abre el modal
+  // Cargar información del departamento cuando se abre el modal
   useEffect(() => {
     if (open) {
       loadUserDepartment();
     }
-  }, [open]);
+  }, [open, userDepartmentId]);
 
   // Cargar el departamento del usuario
-  const loadUserDepartment = async () => {
+  const loadUserDepartment = () => {
     try {
       setLoadingUserInfo(true);
-      const response = await axios.get('/api/user');
       
-      if (response.data && response.data.department) {
-        // Si el usuario tiene un departamento asignado, lo utilizamos
-        const userDept = response.data.department;
-        console.log('Departamento del usuario:', userDept);
-        
+      if (userDepartmentId) {
         // Buscar el departamento en la lista de departamentos
-        const matchingDepartment = departments.find(d => d.id === userDept.id);
+        const matchingDepartment = departments.find(d => String(d.id) === String(userDepartmentId));
         
         if (matchingDepartment) {
           setUserDepartment(matchingDepartment);
@@ -94,10 +93,15 @@ export function NewBudgetRequestModal({
           
           // Filtrar categorías para este departamento
           filterCategoriesByDepartment(matchingDepartment.id);
+        } else {
+          console.log('No se encontró el departamento en la lista:', userDepartmentId);
+          // Si el usuario no es admin, intentar usar el ID del departamento directamente
+          setDepartmentId(String(userDepartmentId));
+          filterCategoriesByDepartment(String(userDepartmentId));
         }
       } else {
         console.log('Usuario sin departamento asignado');
-        // Si el usuario no tiene departamento, utilizamos el primer departamento disponible
+        // Si el usuario no tiene departamento y hay departamentos disponibles, usar el primero
         if (hasDepartments && departments.length > 0) {
           setDepartmentId(departments[0].id);
           filterCategoriesByDepartment(departments[0].id);
@@ -110,7 +114,7 @@ export function NewBudgetRequestModal({
         type: 'error'
       });
       
-      // Si falla, utilizamos el primer departamento disponible
+      // Si falla y hay departamentos disponibles, usar el primero
       if (hasDepartments && departments.length > 0) {
         setDepartmentId(departments[0].id);
         filterCategoriesByDepartment(departments[0].id);
@@ -276,7 +280,7 @@ export function NewBudgetRequestModal({
               <Select 
                 value={departmentId} 
                 onValueChange={setDepartmentId}
-                disabled={loadingUserInfo}
+                disabled={loadingUserInfo || !isAdmin}
               >
                 <SelectTrigger id="department" className={cn("w-full bg-white", loadingUserInfo ? "opacity-70" : "")}>
                   <SelectValue placeholder={loadingUserInfo ? "Loading department..." : "Select department"} />
