@@ -89,3 +89,35 @@ export async function getBudgets() {
       return { error: "Error fetching info cards", Budgets: {} };
   }
   }
+
+  export async function getTransactions() 
+  {
+    try {
+      const token = (await cookies()).get("access_token")?.value;
+  
+      if (!token) {
+        return { error: "No authentication token found", company: {} };
+      }
+  
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+  
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transactions/all/statics`,
+        {
+          headers,
+        }
+      );
+  
+      return { transactions: response.data, error: null };
+    } catch (error: any) {
+      console.error("Error fetching transactions:", error);
+  
+      if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
+        return { error: "Error connecting to the server", Budgets: {} };
+      }
+  
+      return { error: "Error fetching transactions", Budgets: {} };
+    }
+  }
