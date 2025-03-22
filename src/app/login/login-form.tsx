@@ -14,14 +14,6 @@ export default function LoginForm() {
   const [state, loginAction] = useActionState(login, undefined);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Guardar el ID del usuario después de un inicio de sesión exitoso
-  useEffect(() => {
-    if (!state?.errors && state?.user?.id) {
-      localStorage.setItem('user_id', state.user.id);
-      console.log('User ID saved in localStorage:', state.user.id);
-    }
-  }, [state]);
-
   return (
     <form action={loginAction} className="space-y-6">
       {state?.errors?.server && (

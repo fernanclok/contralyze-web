@@ -8,12 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 
 export default function Dibises() {
-  const [exchangeRate, setExchangeRate] = useState(null)
+  const [exchangeRate, setExchangeRate] = useState<{ conversion_rates: { [key: string]: number } } | null>(null)
   const [currencyType, setCurrencyType] = useState("MXN")
   const [conversionAmount, setConversionAmount] = useState(1)
-  const [convertedAmount, setConvertedAmount] = useState(null)
+  const [convertedAmount, setConvertedAmount] = useState<number | null>(null)
   const [targetCurrency, setTargetCurrency] = useState("USD")
-  const [tabs, setTabs] = useState([])
+  const [tabs, setTabs] = useState<{ currency: string; rates: any }[]>([])
 
   const fetchExchangeRate = async (type: string) => {
     const storedExchange = localStorage.getItem(`exchange_${type}`)
@@ -39,10 +39,11 @@ export default function Dibises() {
   useEffect(() => {
     const storedCurrencies = ["USD", "EUR", "GBP", "JPY", "CAD", "AUD", "MXN", "BRL", "ARS", "COP", "CHF", "SEK", "NOK", "PLN", "CNY", "HKD", "SGD", "NZD"]
     const tabsData = storedCurrencies.map((currency) => {
-      const data = JSON.parse(localStorage.getItem(`exchange_${currency}`))
+      const storedData = localStorage.getItem(`exchange_${currency}`);
+      const data = storedData ? JSON.parse(storedData) : null;
       return data ? { currency, rates: data.conversion_rates } : null
     }).filter(Boolean)
-    setTabs(tabsData)
+    setTabs(tabsData.filter((tab) => tab !== null) as { currency: string; rates: any }[])
   }, [])
 
   const handleCurrencyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -71,31 +72,53 @@ export default function Dibises() {
   }
 
   // Helper functions for currency data
-  const getCurrencyName = (code) => {
-    const names = {
-      USD: "US Dollar",
-      EUR: "Euro",
-      GBP: "British Pound",
-      JPY: "Japanese Yen",
-      CAD: "Canadian Dollar",
-      AUD: "Australian Dollar",
-      MXN: "Mexican Peso",
-      BRL: "Brazilian Real",
-      ARS: "Argentine Peso",
-      COP: "Colombian Peso",
-      CHF: "Swiss Franc",
-      SEK: "Swedish Krona",
-      NOK: "Norwegian Krone",
-      PLN: "Polish Zloty",
-      CNY: "Chinese Yuan",
-      HKD: "Hong Kong Dollar",
-      SGD: "Singapore Dollar",
-      NZD: "New Zealand Dollar",
-    }
+  const names: { [key: string]: string } = {
+    USD: "US Dollar",
+    EUR: "Euro",
+    GBP: "British Pound",
+    JPY: "Japanese Yen",
+    CAD: "Canadian Dollar",
+    AUD: "Australian Dollar",
+    MXN: "Mexican Peso",
+    BRL: "Brazilian Real",
+    ARS: "Argentine Peso",
+    COP: "Colombian Peso",
+    CHF: "Swiss Franc",
+    SEK: "Swedish Krona",
+    NOK: "Norwegian Krone",
+    PLN: "Polish Zloty",
+    CNY: "Chinese Yuan",
+    HKD: "Hong Kong Dollar",
+    SGD: "Singapore Dollar",
+    NZD: "New Zealand Dollar",
+  }
+
+  const getCurrencyName = (code: keyof typeof names) => {
     return names[code] || code
   }
 
-  const getVariant = (code) => {
+  const variants = {
+    USD: "default",
+    EUR: "destructive",
+    GBP: "outline",
+    JPY: "secondary",
+    CAD: "default",
+    AUD: "destructive",
+    MXN: "outline",
+    BRL: "secondary",
+    ARS: "default",
+    COP: "destructive",
+    CHF: "outline",
+    SEK: "secondary",
+    NOK: "default",
+    PLN: "destructive",
+    CNY: "outline",
+    HKD: "secondary",
+    SGD: "default",
+    NZD: "destructive",
+  }
+
+  const getVariant = (code: keyof typeof variants) => {
     const variants = {
       USD: "default",
       EUR: "destructive",
@@ -116,7 +139,7 @@ export default function Dibises() {
       SGD: "default",
       NZD: "destructive",
     }
-    return variants[code] || "default"
+    return variants[code]
   }
 
   
