@@ -55,7 +55,14 @@ export async function login(prevState: any, formData: FormData): Promise<LoginRe
     };
   };
 
-  await createSession(user.id, user.role, user.first_name, user.last_name);
+  await createSession(
+    user.id, 
+    user.role, 
+    user.first_name, 
+    user.last_name, 
+    user.department_id ? String(user.department_id) : undefined
+  );
+  console.log('department_id:', user.department_id);
   await storeTokenBackend(token);
 
   redirect("/dashboard");
