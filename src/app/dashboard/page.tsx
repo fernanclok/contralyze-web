@@ -41,6 +41,8 @@ export default async function ServerDashboardPage() {
       : "Guest";
   return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
+                  <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+
       <ClientDashboardPage user={user} Budgets={Budget} Information={InfoCards} Transaction={transactions}/>
     </AuthenticatedLayout>
   );

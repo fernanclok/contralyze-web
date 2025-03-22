@@ -13,15 +13,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function ManageSuppliersClient({
   suppliers,
   user,
+  hasError,
 }: {
   suppliers: any;
   user: any;
+  hasError: boolean;
 }) {
-  console.log(suppliers);
   const [searchSuppliers, setSearchSuppliers] = useState("");
 
   const filteredSuppliers =
@@ -39,7 +41,13 @@ export default function ManageSuppliersClient({
           onChange={(e) => setSearchSuppliers(e.target.value)}
           className="w-1/3 px-2 py-2 text-sm text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring focus:ring-primary"
         />
+        {hasError ? (
+           <Button className="bg-primary hover:bg-primary-ligth text-white" disabled>
+           Add Supplier
+       </Button>
+        ) : (
         <AddSupplierSheet />
+        )}
       </div>
 
       {filteredSuppliers.length > 0 ? (

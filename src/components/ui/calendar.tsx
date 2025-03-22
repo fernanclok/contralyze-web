@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-export interface CalendarProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface CalendarProps {
   mode?: "single" | "range" | "multiple"
   selected?: Date | Date[] | { from: Date; to: Date }
   onSelect?: (date: Date | undefined) => void
@@ -16,6 +16,7 @@ export interface CalendarProps extends React.HTMLAttributes<HTMLDivElement> {
   locale?: string
   weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6
   ISOWeek?: boolean
+  className?: string
 }
 
 function Calendar({

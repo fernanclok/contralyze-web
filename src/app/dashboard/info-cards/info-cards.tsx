@@ -22,7 +22,7 @@ import { useState, useEffect } from "react"
 import Dibises from "./dibises"
 
 // Función de paginación general
-const usePagination = (data, itemsPerPage) => {
+const usePagination = (data: any[], itemsPerPage: number) => {
   const [currentPage, setCurrentPage] = useState(1)
   const totalPages = Math.ceil(data.length / itemsPerPage)
 

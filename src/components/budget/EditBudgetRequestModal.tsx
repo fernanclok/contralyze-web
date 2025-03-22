@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
-import { type Department, type Category } from '@/app/dashboard/budgets/actions'
+import { type Department, type Category } from '@/app/budgets/actions'
 import { emmiter } from '@/lib/emmiter'
 import { cn } from "@/lib/utils"
 
@@ -313,7 +313,7 @@ export function EditBudgetRequestModal({
         </div>
 
         <SheetFooter className="flex justify-between sm:justify-end gap-2 mt-8">
-          <Button variant="outline" onClick={onOpenChange} disabled={loading} className="flex-1 sm:flex-none">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="flex-1 sm:flex-none">
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="flex-1 sm:flex-none">

@@ -9,59 +9,53 @@ import { AddDepartmentSheet } from "./department/addDepartmentSheet";
 import { EditDepartmentSheet } from "./department/editDepartmentSheet";
 import { DeleteDepartmentSheet } from "./department/deleteDepartmentSheet";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import RefreshButton from "@/components/ui/RefreshButton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 export default function ManageCompanyClient({
   company,
   users,
   departments,
+  hasError,
 }: {
   company: any;
   users: any;
   departments: any;
+  hasError: boolean;
 }) {
   const [searchUsers, setSearchUsers] = useState("");
   const [searchDepartments, setSearchDepartments] = useState("");
-  console.log(users);
 
-  const filteredUsers = users.users.filter((user: any) =>
+  const filteredUsers = users.filter((user: any) =>
     `${user.first_name} ${user.last_name}`
       .toLowerCase()
       .includes(searchUsers.toLowerCase())
   );
 
-  const filteredDepartments = departments.departments.filter((department: any) =>
+  const filteredDepartments = departments.filter((department: any) =>
     department.name.toLowerCase().includes(searchDepartments.toLowerCase())
   );
 
   return (
-    <>
-      <h1 className="text-2xl font-bold mb-4">Manage Company</h1>
-
-      {/* Mostrar mensajes de error si ocurren */}
-      {company.error || users.error || departments.error ? (
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            An error occurred, please check your internet connection and try
-            again.
-          </AlertDescription>
-          <RefreshButton />
-        </Alert>
-      ) : (
         <>
           {/* Información de la empresa */}
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Company Information</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {[
-              { label: "Company Name", value: company.company.name || "Company Name" },
-              { label: "Company Email", value: company.company.email || "[email protected]" },
-              { label: "Company Phone", value: company.company.phone || "+1234567890" },
-              { label: "Company Address", value: company.company.address || "null" },
-              { label: "Company City", value: company.company.city || "City" },
-              { label: "Company Zip", value: company.company.zip || "12345" },
-              { label: "Company Size", value: company.company.size || "1-10" }
+              { label: "Company Name", value: company.name || "Company Name" },
+              { label: "Company Email", value: company.email || "[email protected]" },
+              { label: "Company Phone", value: company.phone || "+1234567890" },
+              { label: "Company Address", value: company.address || "null" },
+              { label: "Company City", value: company.city || "City" },
+              { label: "Company Zip", value: company.zip || "12345" },
+              { label: "Company Size", value: company.size || "1-10" }
             ].map((field, index) => (
               <div key={index}>
                 <label className="block text-sm text-gray-600 font-medium">{field.label}</label>
@@ -85,41 +79,36 @@ export default function ManageCompanyClient({
               onChange={(e) => setSearchUsers(e.target.value)}
               className="w-1/3 px-2 py-2 text-sm text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring focus:ring-primary"
             />
-            <AddUserSheet departments={departments.departments || []} />
+            {hasError ? (
+             <Button className="bg-primary hover:bg-primary-light text-white" disabled>
+             Add user
+           </Button>
+            )
+            : (
+            <AddUserSheet departments={departments || []} />
+            )}
+            
           </div>
-          <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-            <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3">
-                    Name
-                  </th>
-                  <th scope="col" className="px-6 py-3">
-                    Email
-                  </th>
-                  <th scope="col" className="px-6 py-3">
-                    Status
-                  </th>
-                  <th scope="col" className="px-6 py-3">
-                    Role
-                  </th>
-                  <th scope="col" className="px-6 py-3">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+              <TableRow>
+                  <TableHead className="hidden md:table-cell">Name</TableHead>
+                  <TableHead className="hidden md:table-cell">Email</TableHead>
+                  <TableHead className="hidden md:table-cell">Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Role</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filteredUsers.length > 0 ? (
                   filteredUsers.map((user: any) => (
-                    <tr
-                      key={user.id}
-                      className="border-b border-gray-200 odd:bg-white even:bg-gray-50"
-                    >
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">
                         {user.first_name} {user.last_name} {user.isActive}
-                      </td>
-                      <td className="px-6 py-4">{user.email}</td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
                         <span
                           className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
                             user.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
@@ -127,15 +116,15 @@ export default function ManageCompanyClient({
                         >
                           {user.isActive ? "Active" : "Inactive"}
                         </span>
-                      </td>
-                      <td className="px-6 py-4">{user.role}</td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell>{user.role}</TableCell>
+                      <TableCell className="text-right">
                         <EditUserSheet
                           user={user}
-                          departments={departments.departments}
+                          departments={departments}
                         />
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 ) : (
                   <tr>
@@ -147,8 +136,8 @@ export default function ManageCompanyClient({
                     </td>
                   </tr>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
           {/* Mostrar departamentos */}
@@ -161,7 +150,14 @@ export default function ManageCompanyClient({
                 onChange={(e) => setSearchDepartments(e.target.value)}
               className="w-1/3 px-2 py-2 text-sm text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring focus:ring-primary"
             />
+            {hasError ? (
+             <Button className="bg-primary hover:bg-primary-light text-white" disabled>
+             Add Department
+           </Button>
+            ) : (
             <AddDepartmentSheet />
+            )}
+            
           </div>
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
             <table className="w-full text-sm text-left rtl:text-right text-gray-500">
@@ -221,6 +217,3 @@ export default function ManageCompanyClient({
           </div>
         </>
       )}
-    </>
-  );
-}

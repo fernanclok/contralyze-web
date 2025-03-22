@@ -58,7 +58,7 @@ const ChartContainer = React.forwardRef<
 ChartContainer.displayName = "ChartContainer"
 
 interface ChartTooltipProps {
-  content?: React.ReactNode
+  content?: React.ReactNode | ((props: ChartTooltipProps) => React.ReactNode)
   cursor?: boolean
   offset?: number
   viewBox?: {

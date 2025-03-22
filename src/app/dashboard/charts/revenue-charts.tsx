@@ -55,12 +55,8 @@ export function RevenueChart({ transaction }: { transaction: any }) {
           />
           <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
           <ChartTooltip
-            content={
-              <ChartTooltipContent
-                labelFormatter={(label) => `Month: ${label}`} // Formatear el label del tooltip
-                formatter={(value) => [`$${value.toLocaleString()}`, "Revenue"]} // Formatear el valor del tooltip
-              />
-            }
+            labelFormatter={(value) => `${value}`}
+            formatter={(value) => [`$${value.toLocaleString()}`, "Revenue"]}
           />
         </BarChart>
       </ResponsiveContainer>

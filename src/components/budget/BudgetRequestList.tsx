@@ -19,7 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { createBudgetRequest, approveBudgetRequest, rejectBudgetRequest, updateBudgetRequest, deleteBudgetRequest, createCategory } from '@/app/dashboard/budgets/actions';
+import { createBudgetRequest, approveBudgetRequest, rejectBudgetRequest, updateBudgetRequest, deleteBudgetRequest, createCategory } from '@/app/budgets/actions';
 import { useRouter } from 'next/navigation';
 import { emmiter } from "@/lib/emmiter";
 import { EditBudgetRequestModal } from './EditBudgetRequestModal';
