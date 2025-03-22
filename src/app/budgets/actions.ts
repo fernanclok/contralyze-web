@@ -721,37 +721,3 @@ export async function getDepartments() {
     return { departments: [], error: 'Error fetching departments' };
   }
 }
-
-// Obtener el departamento del usuario actual
-export async function getUserDepartment() {
-  try {
-    const token = (await cookies()).get('access_token')?.value;
-    const session = await getSession();
-
-    if (!token || !session) {
-      return { department: null, error: 'Authorization required' };
-    }
-
-    const headers = {
-      Authorization: `Bearer ${token}`
-    };
-
-    // Intentamos obtener el departamento del usuario desde el backend
-    const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/${session.id}`,
-      { headers }
-    );
-
-    const userDepartment = response.data?.department;
-    
-    return { department: userDepartment, error: null };
-  } catch (error: any) {
-    console.error('Error fetching user department:', error);
-    
-    if (error.code === 'ECONNREFUSED' || error.response?.status === 429) {
-      return { department: null, error: 'Error connecting to the server' };
-    }
-
-    return { department: null, error: 'Error fetching user department' };
-  }
-}

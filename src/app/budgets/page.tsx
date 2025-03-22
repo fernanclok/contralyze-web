@@ -19,9 +19,9 @@ import { CollapsibleCharts } from '@/components/budget/CollapsibleCharts';
 export default async function BudgetsPage() {
   const session = await getSession();
   const userRole = session?.role || "user";
-  const userName = session
-    ? `${session.userFirstName} ${session.userLastName}`.trim()
-    : "Guest";
+  const userName = session ? `${session.userFirstName} ${session.userLastName}`.trim() : "Guest";
+  const userDepartmentId = session?.departmentId;
+  console.log('Page userDepartmentId:', userDepartmentId);
 
   // Get real data from backend
   const { budgets = [], error: budgetsError } = await getBudgets();
@@ -179,6 +179,7 @@ export default async function BudgetsPage() {
                   userRole={userRole}
                   hasConnectionError={hasError}
                   requests={requestData}
+                  userDepartmentId={userDepartmentId}
                 />
               </TabsContent>
 
@@ -189,6 +190,7 @@ export default async function BudgetsPage() {
                   departments={departmentOptions}
                   userRole={userRole}
                   hasConnectionError={hasError}
+                  userDepartmentId={userDepartmentId}
                 />
               </TabsContent>
             </Tabs>
