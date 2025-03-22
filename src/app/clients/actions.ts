@@ -23,9 +23,13 @@ export async function getClients() {
       }
     );
 
-    return { client: response.data, error: null };
-  } catch (error) {
+    return { client: response.data || [], error: null };
+  } catch (error: any) {
     console.error("Error fetching clients:", error);
+
+    if (error.code === "ECONNREFUSED" && error.response?.status === 429) {
+      return { error: "Error connecting to the server", clients: [] };
+    }
     return { error: "Error fetching clients", clients: [] };
   }
 }

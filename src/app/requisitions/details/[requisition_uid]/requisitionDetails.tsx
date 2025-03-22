@@ -110,15 +110,6 @@ export default function RequisitionDetails({
 
   return (
     <>
-      <div className="flex items-center mb-6">
-        <Link href="/requisitions?tab=list" className="mr-4">
-          <Button variant="outline" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-2xl font-bold">Requisition Details</h1>
-      </div>
-
       {hasError && (
         <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
           <AlertCircle className="h-5 w-5 mt-0.5" />

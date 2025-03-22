@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Edit } from "lucide-react";
 
 import { editUser } from "../actions";
 import { useFormStatus } from "react-dom";
@@ -84,9 +85,13 @@ export function EditUserSheet({
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <button className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
-          Edit
-        </button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hover:bg-primary hover:text-white"
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
       </SheetTrigger>
       <SheetContent className="overflow-y-auto">
         <SheetHeader>

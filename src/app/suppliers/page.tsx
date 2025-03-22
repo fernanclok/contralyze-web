@@ -36,7 +36,7 @@ export default async function SuppliersPage() {
         </div>
       )}
 
-      <ManageSuppliersClient suppliers={supplierData} user={user} />
+      <ManageSuppliersClient suppliers={supplierData} user={user} hasError={hasError} />
     </AuthenticatedLayout>
   );
 }
