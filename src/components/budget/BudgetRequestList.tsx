@@ -26,7 +26,7 @@ import { EditBudgetRequestModal } from './EditBudgetRequestModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Pagination } from '@/components/ui/pagination';
 import { getSession } from '@/app/lib/session';
-import { type Department, type Category } from '@/app/budgets/actions';
+import { type Department, type Category } from '@/app/dashboard/budgets/actions';
 
 interface BudgetRequest {
   id: string;

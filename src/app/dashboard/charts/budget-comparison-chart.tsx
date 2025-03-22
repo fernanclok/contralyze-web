@@ -133,7 +133,7 @@ export function BudgetComparisonChart({ Budgets }: { Budgets: any }) {
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                <Legend  content={<CustomLegend />}/>
+                <Legend content={(props) => <CustomLegend payload={props.payload || []} />} />
               </PieChart>
             </ResponsiveContainer>
           </ChartContainer>

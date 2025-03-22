@@ -22,7 +22,7 @@ import { createBudget, updateBudget, deleteBudget, createCategory } from '@/app/
 import { useRouter } from 'next/navigation';
 import { emmiter } from "@/lib/emmiter";
 import { Pagination } from '@/components/ui/pagination';
-import { type Department, type Category } from '@/app/budgets/actions';
+import { type Department, type Category } from '@/app/dashboard/budgets/actions';
 
 interface Budget {
   id: string;
