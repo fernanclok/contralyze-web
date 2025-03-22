@@ -8,7 +8,7 @@ import { BudgetComparisonChart } from "./budget-comparison-chart";
 import { ArrowUpIcon, UsersIcon, BuildingIcon, UserIcon } from "lucide-react";
 
 
-export default function DashboardCharts({ Budgets } : {Budgets:any}) {
+export default function DashboardCharts({ Budgets, transaction } : {Budgets:any, transaction:any}) {
 
     if (!Budgets) return null;
 
@@ -87,11 +87,11 @@ export default function DashboardCharts({ Budgets } : {Budgets:any}) {
           <TabsContent value="revenue" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Revenue Overview</CardTitle>
-                <p>Monthly revenue breakdown for the current fiscal year</p>
+                <CardTitle className="text-black p-2">Transactions Overview</CardTitle>
+                <p className="text-gray-400 px-5">Monthly revenue breakdown for the current fiscal year</p>
               </CardHeader>
               <CardContent className="pl-2">
-                <RevenueChart />
+                <RevenueChart transaction={transaction}/>
               </CardContent>
             </Card>
           </TabsContent>
