@@ -4,10 +4,12 @@ import { getSession } from "@/app/lib/session";
 import { getRequisitions } from "@/app/requisitions/actions";
 import RequisitionDetails from "./requisitionDetails";
 import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default async function RequisitionDetailsPage() {
   const session = await getSession();
-
   const userRole = session?.role || "user";
   const userName = session
     ? `${session.userFirstName} ${session.userLastName}`.trim()
@@ -24,6 +26,15 @@ export default async function RequisitionDetailsPage() {
   const hasError = !!requisitionError;
   return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
+       <div className="flex items-center mb-6">
+        <Link href="/requisitions?tab=list" className="mr-4">
+          <Button variant="outline" size="icon">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <h1 className="text-2xl font-bold">Requisition Details</h1>
+      </div>
+
       {hasError && (
         <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
           <AlertCircle className="h-5 w-5 mt-0.5" />

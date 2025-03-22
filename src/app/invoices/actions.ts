@@ -8,10 +8,10 @@ import { Invoice } from "@/app/transactions/actions";
 export interface InvoiceDetailed extends Invoice {
   transaction?: {
     id: string;
-    type: 'income' | 'expense' | 'transfer';
+    type: "income" | "expense" | "transfer";
     amount: number;
     description?: string;
-    status: 'pending' | 'completed' | 'cancelled';
+    status: "pending" | "completed" | "cancelled";
     payment_method?: string;
     reference_number?: string;
     transaction_date: string;
@@ -38,10 +38,11 @@ export async function getInvoices() {
       }
     );
 
-    const invoices = response.data.data?.data || 
-                     response.data.data || 
-                     response.data.invoices || 
-                     [];
+    const invoices =
+      response.data.data?.data ||
+      response.data.data ||
+      response.data.invoices ||
+      [];
 
     return { invoices, error: null };
   } catch (error: any) {
@@ -75,15 +76,17 @@ export async function createInvoice(data: {
 
     const headers = {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'multipart/form-data'
+      "Content-Type": "multipart/form-data",
     };
 
     // Crear un FormData si hay un archivo
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined) {
-        if (key === 'file' && value) {
-          formData.append('file', value);
+        if (key === "file" && value) {
+          if (value instanceof File) {
+            formData.append("file", value);
+          }
         } else {
           formData.append(key, String(value));
         }
@@ -104,7 +107,9 @@ export async function createInvoice(data: {
 
     // Capturar errores de validación
     if (error.response?.data?.errors) {
-      const validationErrors = Object.values(error.response.data.errors).flat().join(', ');
+      const validationErrors = Object.values(error.response.data.errors)
+        .flat()
+        .join(", ");
       return { error: `Validation error: ${validationErrors}`, invoice: null };
     }
 
@@ -117,16 +122,19 @@ export async function createInvoice(data: {
 }
 
 // Actualizar una factura
-export async function updateInvoice(id: string, data: {
-  transaction_id?: string;
-  invoice_number?: string;
-  amount?: number;
-  issue_date?: string;
-  due_date?: string;
-  status?: string;
-  notes?: string;
-  file?: File;
-}) {
+export async function updateInvoice(
+  id: string,
+  data: {
+    transaction_id?: string;
+    invoice_number?: string;
+    amount?: number;
+    issue_date?: string;
+    due_date?: string;
+    status?: string;
+    notes?: string;
+    file?: File;
+  }
+) {
   try {
     const token = (await cookies()).get("access_token")?.value;
 
@@ -136,15 +144,17 @@ export async function updateInvoice(id: string, data: {
 
     const headers = {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'multipart/form-data'
+      "Content-Type": "multipart/form-data",
     };
 
     // Crear un FormData si hay un archivo
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined) {
-        if (key === 'file' && value) {
-          formData.append('file', value);
+        if (key === "file" && value) {
+          if (value instanceof File) {
+            formData.append("file", value);
+          }
         } else {
           formData.append(key, String(value));
         }
@@ -166,7 +176,9 @@ export async function updateInvoice(id: string, data: {
 
     // Capturar errores de validación
     if (error.response?.data?.errors) {
-      const validationErrors = Object.values(error.response.data.errors).flat().join(', ');
+      const validationErrors = Object.values(error.response.data.errors)
+        .flat()
+        .join(", ");
       return { error: `Validation error: ${validationErrors}`, invoice: null };
     }
 
@@ -184,7 +196,10 @@ export async function deleteInvoice(id: string) {
     const token = (await cookies()).get("access_token")?.value;
 
     if (!token) {
-      return { error: "Authorization required. Please log in.", success: false };
+      return {
+        error: "Authorization required. Please log in.",
+        success: false,
+      };
     }
 
     const headers = {
@@ -230,10 +245,11 @@ export async function getTransactionsForInvoice() {
       }
     );
 
-    const transactions = response.data.data?.data || 
-                         response.data.data || 
-                         response.data.transactions || 
-                         [];
+    const transactions =
+      response.data.data?.data ||
+      response.data.data ||
+      response.data.transactions ||
+      [];
 
     return { transactions, error: null };
   } catch (error: any) {
@@ -264,7 +280,7 @@ export async function downloadInvoiceFile(id: string) {
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices/${id}/download`,
       {
         headers,
-        responseType: 'blob'
+        responseType: "blob",
       }
     );
 
@@ -280,4 +296,4 @@ export async function downloadInvoiceFile(id: string) {
 
     return { error: "Error downloading invoice file", url: null };
   }
-} 
+}
