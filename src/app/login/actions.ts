@@ -47,6 +47,7 @@ export async function login(prevState: any, formData: FormData): Promise<LoginRe
 
     user = response.data.user;
     token = response.data.token.original.access_token;
+    console.log(user);
   } catch (error) {
     return {
       errors: {
