@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Pusher from 'pusher-js';
 import {
   Table,
   TableBody,
@@ -22,7 +23,7 @@ import { createBudget, updateBudget, deleteBudget, createCategory } from '@/app/
 import { useRouter } from 'next/navigation';
 import { emmiter } from "@/lib/emmiter";
 import { Pagination } from '@/components/ui/pagination';
-import { type Department, type Category } from '@/app/dashboard/budgets/actions';
+import { type Department, type Category } from '@/app/budgets/actions';
 
 interface Budget {
   id: string;
@@ -45,25 +46,16 @@ interface Budget {
   };
 }
 
-export function BudgetList({ budgets, categories, departments, userRole, hasConnectionError = false, requests = [], userDepartmentId }: { 
+export function BudgetList({ budgets: initialBudgets, categories, departments, userRole, hasConnectionError = false, requests = [], userDepartmentId }: { 
   budgets: Budget[],
   categories: Category[],
   departments: Department[],
   userRole: string,
   hasConnectionError?: boolean,
-  requests?: {
-    department?: {
-      id: string;
-      name: string;
-    };
-    category: {
-      department_id?: string;
-    };
-    status: string;
-    requested_amount: number;
-  }[],
+  requests?: any[],
   userDepartmentId?: string
 }) {
+  const [budgets, setBudgets] = useState<Budget[]>(initialBudgets);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
@@ -332,6 +324,51 @@ export function BudgetList({ budgets, categories, departments, userRole, hasConn
       approvedAmount
     };
   });
+
+  // Efecto para Pusher
+  useEffect(() => {
+    // Inicializar Pusher
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+    });
+
+    // Suscribirse al canal de budget requests
+    const channel = pusher.subscribe('budget-requests');
+
+    // Manejar nuevo budget request (solo para admin)
+    if (userRole === 'admin') {
+      channel.bind('new-request', (data: { budget_request: any }) => {
+        emmiter.emit("showToast", {
+          message: "New budget request received",
+          type: "success"
+        });
+        router.refresh();
+      });
+    }
+
+    // Manejar actualizaciones de status (para todos los usuarios)
+    channel.bind('request-approved', (data: { budget_request: any }) => {
+      emmiter.emit("showToast", {
+        message: `Budget request ${data.budget_request.id} has been approved`,
+        type: "success"
+      });
+      router.refresh();
+    });
+
+    channel.bind('request-rejected', (data: { budget_request: any }) => {
+      emmiter.emit("showToast", {
+        message: `Budget request ${data.budget_request.id} has been rejected`,
+        type: "error"
+      });
+      router.refresh();
+    });
+
+    // Limpiar suscripción al desmontar
+    return () => {
+      channel.unbind_all();
+      pusher.unsubscribe('budget-requests');
+    };
+  }, [userRole, router]);
 
   return (
     <div className="space-y-6">
