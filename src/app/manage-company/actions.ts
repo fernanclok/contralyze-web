@@ -198,7 +198,15 @@ export async function editUser(prevState: any, formData: FormData) {
     };
   }
 
-  const { first_name, last_name, email, role, isActive, department_id, new_password } = result.data;
+  const {
+    first_name,
+    last_name,
+    email,
+    role,
+    isActive,
+    department_id,
+    new_password,
+  } = result.data;
   const userId = formData.get("user_id") as string;
 
   try {
@@ -346,33 +354,16 @@ export async function addDepartment(
   }
 }
 
-export async function deleteDepartment(prevState: any, departmentId: string) {
-  try {
-    const token = (await cookies()).get("access_token")?.value;
-
-    if (!token) {
-      return { error: "No authentication token found" };
-    }
-
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
-    const response = await axios.delete(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/departments/delete/${departmentId}`,
-      {
-        headers,
-      }
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error("Error deleting department:", error);
-    return { error: "Error deleting department" };
-  }
-}
+const EditDepartmentSchema = z.object({
+  department_name: z.string().nonempty("Department name is required"),
+  department_description: z
+    .string()
+    .nonempty("Department description is required"),
+  isActive: z.string(),
+});
 
 export async function editDepartment(prevState: any, formData: FormData) {
-  const result = DepartmentSchema.safeParse(Object.fromEntries(formData));
+  const result = EditDepartmentSchema.safeParse(Object.fromEntries(formData));
 
   if (!result.success) {
     return {
@@ -380,7 +371,7 @@ export async function editDepartment(prevState: any, formData: FormData) {
     };
   }
 
-  const { department_name, department_description } = result.data;
+  const { department_name, department_description, isActive } = result.data;
   const departmentId = formData.get("department_id") as string;
 
   try {
@@ -402,6 +393,7 @@ export async function editDepartment(prevState: any, formData: FormData) {
       {
         department_name,
         department_description,
+        isActive,
       },
       {
         headers,
