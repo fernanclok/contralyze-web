@@ -12,6 +12,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { addUser } from "../actions";
@@ -23,22 +30,30 @@ export function AddUserSheet({ departments }: { departments: any[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState("");
   const [department, setDepartment] = useState("");
-  const [filteredDepartments, setFilteredDepartments] = useState<any[]>(departments);
+  const [filteredDepartments, setFilteredDepartments] =
+    useState<any[]>(departments);
   const [state, setState] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
+    const activeDepartments = departments.filter((dept) => dept.isActive);
     if (role === "admin") {
-      // Si el rol es admin, preseleccionar "General department"
-      setDepartment("Admin");
-      // Filtrar para mostrar solo el "General department"
-      setFilteredDepartments(departments.filter(dept => dept.name === "Admin"));
+      // Si el rol es admin, preseleccionar "Admin" department
+      const adminDept = activeDepartments.find((dept) => dept.name === "Admin");
+      if (adminDept) {
+        setDepartment(adminDept.id.toString());
+        setFilteredDepartments([adminDept]);
+      } else {
+        setDepartment("");
+        setFilteredDepartments([]);
+      }
     } else if (role === "user") {
-      // Si el rol es user, mostrar todos menos "General department"
-      setFilteredDepartments(departments.filter(dept => dept.name !== "Admin"));
+      // Si el rol es user, mostrar todos menos "Admin" department
+      setDepartment("");
+      setFilteredDepartments(activeDepartments.filter((dept) => dept.name !== "Admin"));
     } else {
       setDepartment("");
-      setFilteredDepartments(departments);
+      setFilteredDepartments(activeDepartments);
     }
   }, [role, departments]);
 
@@ -150,19 +165,15 @@ export function AddUserSheet({ departments }: { departments: any[] }) {
           </div>
           <div className="mt-4 space-y-2">
             <Label htmlFor="role">Role</Label>
-            <select
-              id="role"
-              name="role"
-              value={role}
-              onChange={handleRoleChange}
-              className="border border-neutral-200 text-gray-900 text-sm rounded-md focus:ring-primary focus:border-primary block w-full p-2.5"
-            >
-              <option value="" disabled>
-                Choose a role
-              </option>
-              <option value="admin">Admin</option>
-              <option value="user">User</option>
-            </select>
+            <Select name="role" value={role} onValueChange={setRole}>
+              <SelectTrigger className="w-full text-black">
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="user">User</SelectItem>
+              </SelectContent>
+            </Select>
             {role === "admin" && (
               <p className="text-sm text-neutral-500 mt-2">
                 As an admin, you will have access to all areas and be able to
@@ -175,21 +186,25 @@ export function AddUserSheet({ departments }: { departments: any[] }) {
           </div>
           <div className="mt-4 space-y-2">
             <Label htmlFor="department">Department</Label>
-            <select
-              id="department"
+            <Select
               name="department_id"
               value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="border border-neutral-200 text-gray-900 text-sm rounded-md focus:ring-primary focus:border-primary block w-full p-2.5"
-              disabled={!role || (role === "user" && filteredDepartments.length === 0)}
+              onValueChange={setDepartment}
+              disabled={
+                !role || (role === "user" && filteredDepartments.length === 0)
+              }
             >
-              <option value="">Select a department</option>
-              {Array.isArray(filteredDepartments) && filteredDepartments.map((dept) => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full text-black">
+                <SelectValue placeholder="Select a department" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredDepartments.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.id.toString()}>
+                    {dept.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {role === "user" && filteredDepartments.length === 0 && (
               <p className="text-sm text-red-500 mt-2">
                 For this role, you need to create a department first.
@@ -202,7 +217,9 @@ export function AddUserSheet({ departments }: { departments: any[] }) {
             )}
           </div>
           <div className="mt-6">
-            <SubmitButton disabled={role === "user" && filteredDepartments.length === 0} />
+            <SubmitButton
+              disabled={role === "user" && filteredDepartments.length === 0}
+            />
           </div>
         </form>
       </SheetContent>

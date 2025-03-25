@@ -12,6 +12,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Edit } from "lucide-react";
 
@@ -31,33 +38,13 @@ export function EditUserSheet({
   const [role, setRole] = useState("");
   const [department, setDepartment] = useState("");
   const [isActive, setIsActive] = useState(user.isActive);
-  const [filteredDepartments, setFilteredDepartments] = useState(departments);
   const [state, setState] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
     setRole(user.role);
-    setDepartment(user.department_id);
+    setDepartment(user.department_id.toString());
   }, [user]);
-
-  useEffect(() => {
-    if (role === "admin") {
-      // Si el rol es admin, preseleccionar "General department"
-      setDepartment("Admin");
-      // Filtrar para mostrar solo el "General department"
-      setFilteredDepartments(
-        departments.filter((dept) => dept.name === "Admin")
-      );
-    } else if (role === "user") {
-      // Si el rol es user, mostrar todos menos "General department"
-      setFilteredDepartments(
-        departments.filter((dept) => dept.name !== "Admin")
-      );
-    } else {
-      setDepartment("");
-      setFilteredDepartments(departments);
-    }
-  }, [role, departments]);
 
   const handleEditUser = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -72,18 +59,27 @@ export function EditUserSheet({
 
     const result = await editUser(state, formData);
     if (!result.errors) {
-      setIsOpen(false); // Cierra el modal si no hay errores
+      setIsOpen(false);
       emmiter.emit("showToast", {
         message: "User updated successfully",
         type: "success",
       });
-      router.refresh(); // Refresca la tabla de usuarios
+      router.refresh();
     }
     setState(result);
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        setState(null);
+        setRole(user.role);
+        setDepartment(user.department_id.toString());
+        setIsActive(user.isActive);
+      }}
+    >
       <SheetTrigger asChild>
         <Button
           variant="ghost"
@@ -96,11 +92,11 @@ export function EditUserSheet({
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Edit User</SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="pb-4">
             Fill in the details to edit the user.
           </SheetDescription>
         </SheetHeader>
-        <form onSubmit={handleEditUser}>
+        <form onSubmit={handleEditUser} className="space-y-6">
           {state?.errors?.server && (
             <Alert variant="destructive">
               <AlertTitle>Error</AlertTitle>
@@ -151,16 +147,15 @@ export function EditUserSheet({
                 className="bg-neutral-100"
               />
             ) : (
-              <select
-                name="role"
-                id="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="border border-neutral-200 text-gray-900 text-sm rounded-md focus:ring-primary focus:border-primary block w-full p-2.5"
-              >
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-              </select>
+              <Select value={role} onValueChange={setRole} name="role">
+                <SelectTrigger className="w-full text-black">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
+                </SelectContent>
+              </Select>
             )}
           </div>
           <div className="mt-4 space-y-2">
@@ -170,7 +165,7 @@ export function EditUserSheet({
                 <Input
                   type="text"
                   id="department_display"
-                  value={department}
+                  value={user.department.name}                  
                   readOnly
                   className="bg-neutral-100"
                 />
@@ -181,19 +176,22 @@ export function EditUserSheet({
                 />
               </>
             ) : (
-              <select
-                name="department_id"
-                id="department_id"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                className="border border-neutral-200 text-gray-900 text-sm rounded-md focus:ring-primary focus:border-primary block w-full p-2.5"
-              >
-                {filteredDepartments.map((dept) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
+              <Select
+              value={department}
+              onValueChange={setDepartment}
+              name="department_id"
+            >
+              <SelectTrigger className="w-full text-black">
+                <SelectValue placeholder="Select a department" />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.id.toString()}>
+                    {department.name}
+                  </SelectItem>
                 ))}
-              </select>
+              </SelectContent>
+            </Select>
             )}
           </div>
 
@@ -209,20 +207,23 @@ export function EditUserSheet({
                 className="bg-neutral-100"
               />
             ) : (
-              <select
+              <Select
                 name="isActive"
-                id="isActive"
                 value={isActive ? "true" : "false"}
-                onChange={(e) => setIsActive(e.target.value === "true")}
-                className="border border-neutral-200 text-gray-900 text-sm rounded-md focus:ring-primary focus:border-primary block w-full p-2.5"
+                onValueChange={(value) => setIsActive(value === "true")}
               >
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
+                <SelectTrigger className="w-full text-black">
+                  <SelectValue placeholder="Select a status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Active</SelectItem>
+                  <SelectItem value="false">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
             )}
           </div>
           {!isActive && (
-            <div className="mt-2 text-red-600">
+            <div className="mt-2 text-red-500">
               The user will lose access to the system.
             </div>
           )}
