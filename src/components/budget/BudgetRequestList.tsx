@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import Pusher from 'pusher-js';
 import {
   Table,
   TableBody,
@@ -26,7 +27,7 @@ import { EditBudgetRequestModal } from './EditBudgetRequestModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Pagination } from '@/components/ui/pagination';
 import { getSession } from '@/app/lib/session';
-import { type Department, type Category } from '@/app/dashboard/budgets/actions';
+import { type Department, type Category } from '@/types/budget';
 
 interface BudgetRequest {
   id: string;
@@ -60,7 +61,7 @@ interface BudgetRequest {
   };
 }
 
-export function BudgetRequestList({ requests, categories, departments, userRole, hasConnectionError = false, userDepartmentId }: { 
+export function BudgetRequestList({ requests: initialRequests, categories, departments, userRole, hasConnectionError = false, userDepartmentId }: { 
   requests: BudgetRequest[],
   categories: Category[],
   departments: Department[],
@@ -68,6 +69,7 @@ export function BudgetRequestList({ requests, categories, departments, userRole,
   hasConnectionError?: boolean,
   userDepartmentId?: string
 }) {
+  const [requests, setRequests] = useState<BudgetRequest[]>(initialRequests);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -433,38 +435,122 @@ export function BudgetRequestList({ requests, categories, departments, userRole,
     }
   };
 
+  // Efecto para Pusher
+  useEffect(() => {
+    try {
+      if (!process.env.NEXT_PUBLIC_PUSHER_KEY || !process.env.NEXT_PUBLIC_PUSHER_CLUSTER) {
+        console.error('Pusher configuration is missing');
+        return;
+      }
+
+      // Inicializar Pusher
+      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER
+      });
+
+      // Suscribirse al canal de budget requests
+      const channel = pusher.subscribe('budget-requests');
+
+      // Manejar nuevo budget request (solo para admin)
+      if (userRole === 'admin') {
+        channel.bind('new-request', (data: { budget_request: BudgetRequest }) => {
+          setRequests(prev => [data.budget_request, ...prev]);
+          emmiter.emit("showToast", {
+            message: "New budget request received",
+            type: "success"
+          });
+        });
+      }
+
+      // Manejar actualizaciones de status (para todos los usuarios)
+      channel.bind('request-approved', (data: { budget_request: BudgetRequest }) => {
+        setRequests(prev => prev.map(req => 
+          req.id === data.budget_request.id ? data.budget_request : req
+        ));
+        emmiter.emit("showToast", {
+          message: `Budget request ${data.budget_request.id} has been approved`,
+          type: "success"
+        });
+      });
+
+      channel.bind('request-rejected', (data: { budget_request: BudgetRequest }) => {
+        setRequests(prev => prev.map(req => 
+          req.id === data.budget_request.id ? data.budget_request : req
+        ));
+        emmiter.emit("showToast", {
+          message: `Budget request ${data.budget_request.id} has been rejected`,
+          type: "error"
+        });
+      });
+
+      channel.bind('request-updated', (data: { budget_request: BudgetRequest }) => {
+        setRequests(prev => prev.map(req => 
+          req.id === data.budget_request.id ? data.budget_request : req
+        ));
+        emmiter.emit("showToast", {
+          message: `Budget request ${data.budget_request.id} has been updated`,
+          type: "success"
+        });
+      });
+
+      // Limpiar suscripción al desmontar
+      return () => {
+        try {
+          channel.unbind_all();
+          pusher.unsubscribe('budget-requests');
+        } catch (error) {
+          console.error('Error cleaning up Pusher:', error);
+        }
+      };
+    } catch (error) {
+      console.error('Error setting up Pusher:', error);
+    }
+  }, [userRole]);
+
+  // Actualizar el estado local cuando cambian los props
+  useEffect(() => {
+    setRequests(initialRequests);
+  }, [initialRequests]);
+
   // Filter requests based on status, department and search
-  const filteredRequests = requests.filter(request => {
+  const filteredRequests = useMemo(() => requests.filter(request => {
     // Status filter
     if (filterStatus !== 'all' && request.status !== filterStatus) {
       return false;
     }
-    
-    // Department filter
-    if (filterDepartment !== 'all') {
-      const departmentId = request.department?.id || request.category.department_id;
-      if (departmentId !== filterDepartment) {
+
+    // Department filter (only for admin)
+    if (isAdmin && filterDepartment !== 'all') {
+      // Si la categoría no existe, no mostrar el request
+      if (!request.category) return false;
+      
+      // Si el department_id no existe en la categoría, no mostrar el request
+      if (!request.category.department_id) return false;
+      
+      // Si el department_id no coincide con el filtro, no mostrar el request
+      if (request.category.department_id !== filterDepartment) {
         return false;
       }
     }
-    
-    // Search by requester or category
+
+    // Search term filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      
-      const requesterName = getUserDisplayName(request).toLowerCase();
-      const categoryName = request.category.name.toLowerCase();
-      const departmentName = getDepartmentName(request).toLowerCase();
-      
-      if (!requesterName.includes(searchLower) && 
-          !categoryName.includes(searchLower) && 
-          !departmentName.includes(searchLower)) {
-        return false;
-      }
+      const userName = request.user?.name?.toLowerCase() || '';
+      const firstName = (request.user?.first_name || request.user?.firstName || '').toLowerCase();
+      const lastName = (request.user?.last_name || request.user?.lastName || '').toLowerCase();
+      const categoryName = request.category?.name?.toLowerCase() || '';
+      const description = request.description.toLowerCase();
+
+      return userName.includes(searchLower) ||
+        firstName.includes(searchLower) ||
+        lastName.includes(searchLower) ||
+        categoryName.includes(searchLower) ||
+        description.includes(searchLower);
     }
-    
+
     return true;
-  });
+  }), [requests, filterStatus, filterDepartment, searchTerm, isAdmin]);
   
   // Paginación - Calcular elementos para la página actual
   const indexOfLastItem = currentPage * pageSize;
