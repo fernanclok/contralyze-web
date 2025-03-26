@@ -22,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   Eye,
+  FilterX,
   Search,
 } from "lucide-react";
 
@@ -155,6 +156,21 @@ export default function RequisitionsList({
                   </>
                 )}
               </div>
+              {(filter !== "All status" || priorityFilter !== "All priorities" || departmentFilter !== "All departments") && (
+                <Button
+                variant="ghost"
+                size="sm"
+                className="whitespace-nowrap"
+                  onClick={() => {
+                    setFilter("All status");
+                    setPriorityFilter("All priorities");
+                    setDepartmentFilter("All departments");
+                  }}
+                >
+                  <FilterX className="h-4 w-4" />
+                  Clear filters
+                </Button>
+              )}
             </div>
           </div>
 

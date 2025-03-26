@@ -184,8 +184,8 @@ export default function ManageCompanyClient({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={5}
-                  className="px-6 py-4 text-center text-gray-500"
+                  colSpan={8}
+                  className=" py-6 text-center text-gray-500"
                 >
                   No users found
                 </TableCell>
@@ -287,11 +287,14 @@ export default function ManageCompanyClient({
                 </TableRow>
               ))
             ) : (
-              <tr>
-                <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+              <TableRow>
+                <TableCell 
+                colSpan={8} 
+                className="py-6 text-center text-gray-500"
+                >
                   No departments found
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>

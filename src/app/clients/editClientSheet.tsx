@@ -49,7 +49,7 @@ export function EditClientSheet({ client }: { client: any }) {
             <SheetContent>
                 <SheetHeader>
                 <SheetTitle>Edit Client</SheetTitle>
-                <SheetDescription>
+                <SheetDescription className="pb-4">
                     Fill in the details to edit the client.
                 </SheetDescription>
                 </SheetHeader>

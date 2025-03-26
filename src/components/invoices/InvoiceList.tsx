@@ -83,10 +83,10 @@ export function InvoiceList({
     setIsLoading(true);
     try {
       // Mostrar mensaje de enviando...
-      emmiter.emit('showToast', {
-        message: 'Creating invoice...',
-        type: 'default'
-      });
+      // emmiter.emit('showToast', {
+      //   message: 'Creating invoice...',
+      //   type: 'default'
+      // });
       
       // Recargar la página para mostrar los datos actualizados (puedes mejorar esto con SWR o React Query)
       router.refresh();
@@ -114,10 +114,10 @@ export function InvoiceList({
     setIsLoading(true);
     try {
       // Mostrar mensaje de enviando...
-      emmiter.emit('showToast', {
-        message: 'Updating invoice...',
-        type: 'default'
-      });
+      // emmiter.emit('showToast', {
+      //   message: 'Updating invoice...',
+      //   type: 'default'
+      // });
       
       // Recargar la página para mostrar los datos actualizados (puedes mejorar esto con SWR o React Query)
       router.refresh();

@@ -7,8 +7,6 @@ import { formatCurrency } from "@/lib/utils";
 import { ArrowUpCircle, ArrowDownCircle, Banknote, CreditCard, AlertCircle, Loader2 } from "lucide-react";
 import { Suspense } from "react";
 
-export const dynamic = 'force-dynamic';
-
 export default async function TransactionsPage() {
   const session = await getSession();
 

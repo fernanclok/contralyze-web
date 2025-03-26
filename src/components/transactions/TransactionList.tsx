@@ -537,11 +537,11 @@ export function TransactionList({
       {/* Paginación */}
       {filteredTransactions.length > itemsPerPage && (
         <div className="flex justify-center mt-4">
-          <Pagination
+          {/* <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={goToPage}
-          />
+          /> */}
         </div>
       )}
       

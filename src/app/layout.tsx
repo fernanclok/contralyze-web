@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getSession } from "@/app/lib/session";
 import { ToastContainer } from "@/components/ui/toast";
+import ClientWrapper from "@/components/ClientWrapper"; // Importa el nuevo componente
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,14 +26,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getSession();
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
         <ToastContainer />
+        <ClientWrapper /> {/* Se ejecutará el useEffect desde aquí */}
       </body>
     </html>
   );

@@ -226,7 +226,7 @@ export function EditInvoiceModal({
                 ) : (
                   transactions.map((transaction) => (
                     <SelectItem key={transaction.id} value={transaction.id}>
-                      {transaction.reference_number || transaction.id} ({formatCurrency(transaction.amount)})
+                      {transaction.reference_number || transaction.id} ({transaction.amount})
                     </SelectItem>
                   ))
                 )}
@@ -320,7 +320,7 @@ export function EditInvoiceModal({
                   selected={dueDate}
                   onSelect={setDueDate}
                   initialFocus
-                  disabled={(date) => (issueDate ? date < issueDate : false)}
+                  disabled={issueDate ? [{ from: new Date(0), to: issueDate }] : undefined}
                 />
               </PopoverContent>
             </Popover>

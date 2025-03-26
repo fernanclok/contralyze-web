@@ -57,7 +57,7 @@ export function AddSupplierSheet() {
         <SheetContent className="overflow-y-auto">
             <SheetHeader>
                 <SheetTitle>Add Supplier</SheetTitle>
-                <SheetDescription>Add a new supplier to the system</SheetDescription>
+                <SheetDescription className="pb-4">Add a new supplier to the system</SheetDescription>
             </SheetHeader>
             <form onSubmit={handleAddSupplier} className="space-y-6">
                 {state?.errors?.server && (

@@ -23,7 +23,7 @@ export async function getClients() {
       }
     );
 
-    return { client: response.data || [], error: null };
+    return { clients: response.data || [], error: null };
   } catch (error: any) {
     console.error("Error fetching clients:", error);
 

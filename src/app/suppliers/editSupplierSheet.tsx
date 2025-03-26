@@ -49,7 +49,7 @@ export function EditSupplierSheet({ supplier }: { supplier: any }) {
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Edit Supplier</SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="pb-4">
             Fill in the details to edit the supplier.
           </SheetDescription>
         </SheetHeader>
