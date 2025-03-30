@@ -30,7 +30,8 @@ import { EditInvoiceModal } from './EditInvoiceModal';
 import { ViewInvoiceModal } from './ViewInvoiceModal';
 import { 
   deleteInvoice, 
-  downloadInvoiceFile
+  downloadInvoiceFile,
+  createInvoice
 } from '@/app/invoices/actions';
 import { emmiter } from "@/lib/emmiter";
 
@@ -85,8 +86,17 @@ export function InvoiceList({
       // Mostrar mensaje de enviando...
       emmiter.emit('showToast', {
         message: 'Creating invoice...',
-        type: 'default'
+        type: 'success'
       });
+      
+      // Llamar a la API para crear la factura
+      const { invoice, error } = await createInvoice(data);
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      console.log("Invoice creada:", invoice);
       
       // Recargar la página para mostrar los datos actualizados (puedes mejorar esto con SWR o React Query)
       router.refresh();
@@ -102,7 +112,7 @@ export function InvoiceList({
     } catch (error) {
       console.error('Error creating invoice:', error);
       emmiter.emit('showToast', {
-        message: 'Error creating invoice',
+        message: error instanceof Error ? error.message : 'Error creating invoice',
         type: 'error'
       });
     } finally {
@@ -116,7 +126,7 @@ export function InvoiceList({
       // Mostrar mensaje de enviando...
       emmiter.emit('showToast', {
         message: 'Updating invoice...',
-        type: 'default'
+        type: 'success'
       });
       
       // Recargar la página para mostrar los datos actualizados (puedes mejorar esto con SWR o React Query)
@@ -353,6 +363,7 @@ export function InvoiceList({
                           setViewModalOpen(true);
                         }}
                         aria-label="View invoice details"
+                        title="View details"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -364,6 +375,7 @@ export function InvoiceList({
                           onClick={() => handleDownloadInvoice(invoice.id)}
                           disabled={isLoading || hasConnectionError}
                           aria-label="Download invoice"
+                          title="Download invoice"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
@@ -378,6 +390,7 @@ export function InvoiceList({
                         }}
                         disabled={hasConnectionError}
                         aria-label="Edit invoice"
+                        title="Edit invoice"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -389,8 +402,9 @@ export function InvoiceList({
                           onClick={() => handleDeleteInvoice(invoice.id)}
                           disabled={isLoading || hasConnectionError}
                           aria-label="Delete invoice"
+                          title="Delete invoice"
                         >
-                          <Trash2 className="h-4 w-4 text-red-600" />
+                          <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       )}
                     </div>
