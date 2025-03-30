@@ -13,7 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarDays,
-  AlarmClock,
+  AlertCircle,
   EqualIcon as EqualApproximately,
   WalletMinimal,
   ShoppingCart,
@@ -21,38 +21,23 @@ import {
 import { useState, useEffect } from "react"
 import Dibises from "./dibises"
 
-// Función de paginación general
-const usePagination = (data: any[], itemsPerPage: number) => {
-  const [currentPage, setCurrentPage] = useState(1)
-  const totalPages = Math.ceil(data.length / itemsPerPage)
-
-  const handleNextPage = () => {
-    setCurrentPage((prevPage) => Math.min(prevPage + 1, totalPages))
-  }
-
-  const handlePreviousPage = () => {
-    setCurrentPage((prevPage) => Math.max(prevPage - 1, 1))
-  }
-
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const selectedData = data.slice(startIndex, startIndex + itemsPerPage)
-
-  return {
-    currentPage,
-    totalPages,
-    selectedData,
-    handleNextPage,
-    handlePreviousPage,
-  }
-}
 
 export default function InfoCards({Info}: {Info: any}) {
-  const [progress, setProgress] = useState(0) // Estado para el progreso
+  const [progress, setProgress] = useState(0); // Progreso dinámico para budgets
+  const [progressBudgets, setProgressBudgets] = useState(0); // Progreso dinámico para budgets
+  const [progressExpenses, setProgressExpenses] = useState(0); // Progreso dinámico para expenses
 
-  
-    // parser target date 
-    if (!Info.info) return null
-    const target_date = new Date(Info.info.target_date)
+    // Verificar si hay errores en los datos originales
+    const errors: string[] = [];
+    if (!Info) errors.push("Info object is missing.");
+    if (!Info?.changes) errors.push("Changes data is missing.");
+    if (Info?.emergency_fund == null) errors.push("Emergency fund data is missing.");
+    if (Info?.total_budget_amount == null) errors.push("Total budget amount data is missing.");
+    if (Info?.total_expenses == null) errors.push("Total expenses data is missing.");
+
+    const hasError = errors.length > 0;
+
+    const target_date = new Date(Info.target_date)
 
     
     const target_date_formatted = target_date.toLocaleDateString('en-US', {
@@ -65,9 +50,9 @@ export default function InfoCards({Info}: {Info: any}) {
     const getStatusIcon = (status: string) => {
         switch (status) {
         case "increased":
-            return <ArrowUpIcon className="h-4 w-4 text-green-600" />;
+            return <ArrowUpIcon className="h-5 w-5 text-green-600" />;
         case "decreased":
-            return <ArrowDownIcon className="h-4 w-4 text-red-600" />;
+            return <ArrowDownIcon className="h-5 w-5 text-red-600" />;
         default:
             return null;
         }
@@ -87,152 +72,43 @@ export default function InfoCards({Info}: {Info: any}) {
         }
     };
 
-  const recent_transactions = [
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$250.00",
-      Status: "Denied",
-    },
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$250.00",
-      Status: "Denied",
-    },
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$250.00",
-      Status: "Denied",
-    },
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$150.00",
-      Status: "Completed",
-    },
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$150.00",
-      Status: "Pending",
-    },
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$150.00",
-      Status: "Completed",
-    },
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$150.00",
-      Status: "Completed",
-    },
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$150.00",
-      Status: "Completed",
-    },
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$150.00",
-      Status: "Completed",
-    },
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$150.00",
-      Status: "Completed",
-    },
-    {
-      Date: "2025-03-01",
-      Description: "Grocery Shopping",
-      Amount: "$150.00",
-      Status: "Completed",
-    },
-  ]
+  // Función para calcular el porcentaje dinámico
+  const calculatePercentage = (value: number, total: number) => {
+    if (total === 0) return 0; // Evitar división por cero
+    return Math.min((value / total) * 100, 100); // Limitar el porcentaje a un máximo de 100%
+  };
 
-  const activity = [
-    {
-      icon: "Activity",
-      department: "Sales",
-      description: "Recent Activity",
-      date: "2025-03-01",
-      status: "Completed",
-    },
-    {
-      icon: "Activity",
-      department: "Sales",
-      description: "Recent Activity",
-      date: "2025-03-01",
-      status: "Denied",
-    },
-    {
-      icon: "Activity",
-      department: "Development",
-      description: "Recent Activity",
-      date: "2025-03-01",
-      status: "Completed",
-    },
-    {
-      icon: "Activity",
-      department: "Sales",
-      description: "Recent Activity",
-      date: "2025-03-01",
-      status: "Pending",
-    },
-    {
-      icon: "Activity",
-      department: "Sales",
-      description: "Recent Activity",
-      date: "2025-03-01",
-      status: "Pending",
-    },
-    {
-      icon: "Activity",
-      department: "Sales",
-      description: "Recent Activity",
-      date: "2025-03-01",
-      status: "Pending",
-    },
-  ]
+  // useEffect para calcular los porcentajes dinámicos
+  useEffect(() => {
+    if (Info) {
+      // Calcular el porcentaje para budgets
+      const totalBudgets = Info.total_budget_amount || 0; // Total de budgets
+      const currentBudgets = Info.changes.total_budget_amount?.current || 0; // Valor actual de budgets
+      setProgressBudgets(calculatePercentage(currentBudgets, totalBudgets));
 
-// Simula un llenado dinámico
-// useEffect(() => {
-//     const interval = setInterval(() => {
-//         setProgress((prevProgress) => {
-//             if (prevProgress >= 100) {
-//                 clearInterval(interval); // Detiene el intervalo cuando llega al 100%
-//                 return 100;
-//             }
-//             return prevProgress + 10; // Incrementa el progreso en 10% cada vez
-//         });
-//     }, 1000); // Actualiza cada 1 segundo
-
-//     return () => clearInterval(interval); // Limpia el intervalo al desmontar el componente
-// }, []);
-const {
-    currentPage: transactionsPage,
-    totalPages: transactionsTotalPages,
-    selectedData: selectedTransactions,
-    handleNextPage: handleNextTransactionsPage,
-    handlePreviousPage: handlePreviousTransactionsPage,
-  } = usePagination(recent_transactions, 9)
-  
-  const {
-    currentPage: activityPage,
-    totalPages: activityTotalPages,
-    selectedData: selectedActivity,
-    handleNextPage: handleNextActivityPage,
-    handlePreviousPage: handlePreviousActivityPage,
-  } = usePagination(activity, 3)
+      // Calcular el porcentaje para expenses
+      const totalExpenses = Info.total_expenses || 0; // Total de expenses
+      const currentExpenses = Info.changes.total_expenses?.current || 0; // Valor actual de expenses
+      setProgressExpenses(calculatePercentage(currentExpenses, totalExpenses));
+    }
+  }, [Info]);
   
   return (
     <>
+      {/* Mostrar mensaje de error solo si los datos originales son inválidos */}
+      {hasError && (
+        <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 mt-0.5" />
+          <div>
+            <p className="font-medium">Data Error</p>
+            <p className="text-sm">
+              Could not load the information cards. Displaying default values instead. Please check your connection or try again later.
+            </p>
+          </div>
+        </div>
+      )}
+      {!hasError && (
+        <>
       <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3">
         {/* Emergency fund */}
         <Card>
@@ -243,30 +119,30 @@ const {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">Emergency Fund</div>
-                <nav className="flex justify-center gap-2 items-center rounded-lg">
+                <nav className="flex justify-center gap-2 items-center rounded-lg w-full">
                     <div
-                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
-                            Info.info.changes.emergency_fund.previous_status
+                        className={`flex justify-center gap-2 items-center text-xs p-2 my-3 rounded-lg w-full ${getStatusColor(
+                            Info.changes.emergency_fund.previous_status
                         )}`}
                         >
-                        {getStatusIcon(Info.info.changes.emergency_fund.previous_status)}
+                        {getStatusIcon(Info.changes.emergency_fund.previous_status)}
                         <p className="text-sm font-semibold">
-                            {Info.info.changes.emergency_fund.previous_status === "unchanged"
+                            {Info.changes.emergency_fund.previous_status === "unchanged"
                             ? "Unchanged"
-                            : `${Info.info.changes.emergency_fund.percentage} % ${Info.info.changes.emergency_fund.previous_status}`}
+                            : `${Info.changes.emergency_fund.percentage} % `}
                         </p> {" "}
                         from last update.
                     </div>
                     <div
-                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
-                            Info.info.changes.emergency_fund.status
+                        className={`flex justify-center gap-2 items-center p-2 text-xs my-3 rounded-lg w-full ${getStatusColor(
+                            Info.changes.emergency_fund.status
                         )}`}
                         >
-                        {getStatusIcon(Info.info.changes.emergency_fund.status)}
+                        {getStatusIcon(Info.changes.emergency_fund.status)}
                         <p className="text-sm font-semibold">
-                            {Info.info.changes.emergency_fund.status === "unchanged"
+                            {Info.changes.emergency_fund.status === "unchanged"
                             ? "Unchanged"
-                            : `${Info.info.changes.emergency_fund.percentage} % ${Info.info.changes.emergency_fund.status}`}
+                            : `${Info.changes.emergency_fund.percentage} % ${Info.changes.emergency_fund.status}`}
                         </p> {" "}
                         from last update.
                     </div>
@@ -274,15 +150,20 @@ const {
                 <div className="w-ful rounded-full mt-2">
                 <div className="flex justify-between items-center p-2">
                     <p className="text-gray-400 text-sm font-thin">Progress</p>
-                    <p className="text-gray-500 font-bold text-base">{progress}%</p>
+                    <p className="text-gray-500 font-bold text-base">{Math.min((Info.emergency_fund / (Info.total_budget_amount * 0.1)) * 100, 100).toFixed(2)}%</p>
                 </div>
                 <div
                     className="bg-green-500 text-xs font-medium text-white text-center p-0.5 leading-none rounded-full transition-all duration-300"
-                    style={{ width: `${progress}%` }}
+                    style={{
+                      width: `${Math.min((Info.emergency_fund / (Info.total_budget_amount * 0.1)) * 100, 100).toFixed(2)}%`,
+                    }}
                 ></div>
                 </div>
                 <p className="text-base text-gray-400 mt-2">
-                <strong>${Info.info.emergency_fund}</strong> is 10% of total budget.
+                <strong>${Info.emergency_fund}</strong> is  {((Info.emergency_fund / Info.total_budget_amount) * 100).toFixed(2)}% of total budget.
+                </p>
+                <p className="text-sm text-gray-500">
+                (${(Info.total_budget_amount * 0.1).toFixed(2)}). This bar shows how much of the goal has been achieved.
                 </p>
                 <div className="flex justify-start gap-2 items-center mt-3">
                 <CalendarDays className="text-gray-400 w-4 h-4" />
@@ -302,30 +183,30 @@ const {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">Expenses</div>
-            <nav className="flex justify-center gap-2 items-center rounded-lg">
+            <nav className="flex justify-center gap-2 items-center rounded-lg w-full">
                 <div
-                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
-                            Info.info.changes.total_expenses.previous_status
+                        className={`flex justify-center text-xs gap-2 items-center p-2 my-3 rounded-lg w-full ${getStatusColor(
+                            Info.changes.total_expenses.previous_status
                         )}`}
                         >
-                {getStatusIcon(Info.info.changes.total_expenses.previous_status)}
+                {getStatusIcon(Info.changes.total_expenses.previous_status)}
                 <p className="text-sm font-semibold">
-                    {Info.info.changes.total_expenses.previous_status === "unchanged"
+                    {Info.changes.total_expenses.previous_status === "unchanged"
                     ? "Unchanged"
-                    : `${Info.info.changes.total_expenses.percentage} % ${Info.info.changes.total_expenses.previous_status}`}
+                    : `${Info.changes.total_expenses.percentage} %`}
                 </p> {" "}
                 from last update.
                 </div>
                 <div
-                    className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
-                        Info.info.changes.total_expenses.status
+                    className={`flex justify-center gap-2 items-center text-xs p-2 my-3 rounded-lg w-full ${getStatusColor(
+                        Info.changes.total_expenses.status
                     )}`}
                     >
-                {getStatusIcon(Info.info.changes.total_expenses.status)}
+                {getStatusIcon(Info.changes.total_expenses.status)}
                 <p className="text-sm font-semibold">
-                    {Info.info.changes.total_expenses.status === "unchanged"
+                    {Info.changes.total_expenses.status === "unchanged"
                     ? "Unchanged"
-                    : `${Info.info.changes.total_expenses.percentage} % ${Info.info.changes.total_expenses.status}`}
+                    : `${Info.changes.total_expenses.percentage} % ${Info.changes.total_expenses.status}`}
                 </p> {" "}
                 from last update.
                 </div>
@@ -333,15 +214,22 @@ const {
             <div className="w-ful rounded-full mt-2">
               <div className="flex justify-between items-center p-2">
                 <p className="text-gray-400 text-sm font-thin">Progress</p>
-                <p className="text-gray-500 font-bold text-base">{progress}%</p>
+                <p className="text-gray-500 font-bold text-base">
+                  {Math.min((Info.total_expenses / Info.total_budget_amount) * 100, 100).toFixed(2)}%
+                </p>
               </div>
               <div
                 className="bg-yellow-500 text-xs font-medium text-white text-center p-0.5 leading-none rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
+                style={{
+                  width: `${Math.min((Info.total_expenses / Info.total_budget_amount) * 100, 100).toFixed(2)}%`,
+                }}
               ></div>
             </div>
             <p className="text-base text-gray-400 mt-2">
-              <strong>${Info.info.total_expenses}</strong> target
+              <strong>${Info.total_expenses}</strong> is {((Info.total_expenses / Info.total_budget_amount) * 100).toFixed(2)}% of the total budget.
+            </p>
+            <p className="text-sm text-gray-500">
+              (${Info.total_budget_amount.toFixed(2)}). This bar shows how much of the total budget has been spent.
             </p>
             <div className="flex justify-start gap-2 items-center mt-3">
               <CalendarDays className="text-gray-400 w-4 h-4" />
@@ -363,28 +251,28 @@ const {
             <div className="text-2xl font-bold text-black">Budgets</div>
                 <nav className="flex justify-center gap-2 items-center rounded-lg">
                     <div
-                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
-                            Info.info.changes.total_budget_amount.previous_status
+                        className={`flex justify-center gap-2 items-center text-xs p-2 my-3 rounded-lg w-full ${getStatusColor(
+                            Info.changes.total_budget_amount.previous_status
                         )}`}
                         >
-                        {getStatusIcon(Info.info.changes.total_budget_amount.previous_status)}
+                        {getStatusIcon(Info.changes.total_budget_amount.previous_status)}
                         <p className="text-sm font-semibold">
-                            {Info.info.changes.total_budget_amount.previous_status === "unchanged"
+                            {Info.changes.total_budget_amount.previous_status === "unchanged"
                             ? "Unchanged"
-                            : `${Info.info.changes.total_budget_amount.percentage} % ${Info.info.changes.total_budget_amount.previous_status}`}
+                            : `${Info.changes.total_budget_amount.percentage} %`}
                         </p> {" "}
                         from last update.
                     </div>
                     <div
-                        className={`flex justify-center gap-2 items-center p-2 my-3 rounded-lg ${getStatusColor(
-                            Info.info.changes.total_budget_amount.status
+                        className={`flex justify-center gap-2 items-center p-2 my-3 text-xs w-full rounded-lg ${getStatusColor(
+                            Info.changes.total_budget_amount.status
                         )}`}
                         >
-                        {getStatusIcon(Info.info.changes.total_budget_amount.status)}
+                        {getStatusIcon(Info.changes.total_budget_amount.status)}
                         <p className="text-sm font-semibold">
-                            {Info.info.changes.total_budget_amount.status === "unchanged"
+                            {Info.changes.total_budget_amount.status === "unchanged"
                             ? "Unchanged"
-                            : `${Info.info.changes.total_budget_amount.percentage} % ${Info.info.changes.total_budget_amount.status}`}
+                            : `${Info.changes.total_budget_amount.percentage} % ${Info.changes.total_budget_amount.status}`}
                         </p> {" "}
                         from last update.
                     </div>
@@ -400,7 +288,7 @@ const {
               ></div>
             </div>
             <p className="text-base text-gray-400 mt-2">
-              <strong>${Info.info.total_budget_amount}</strong> for Budgets
+              <strong>${Info.total_budget_amount}</strong> for Budgets
             </p>
             <div className="flex justify-start gap-2 items-center mt-3">
               <CalendarDays className="text-gray-400 w-4 h-4" />
@@ -411,173 +299,8 @@ const {
           </CardContent>
         </Card>
       </div>
-      <div className="grid grid-flow-col grid-rows-2 gap-4">
-        <Card className="row-span-3 h-fit">
-          <CardHeader className="flex flex-row items-center justify-start gap-2 space-y-0 pb-2 px-12">
-            <WalletMinimal className="h-5 w-5 font-blod text-gray-600" />
-            <CardTitle className="text-2xl text-gray-600 font-bold">Recent Transactions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="shadow-xl rounded-lg p-2">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Date
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Description
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Amount
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {selectedTransactions.map((item, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500">{item.Date}</td>
-                      <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500">{item.Description}</td>
-                      <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500">{item.Amount}</td>
-                      <td
-                        className={`px-6 py-5 whitespace-nowrap text-sm ${item.Status === "Completed" ? "text-green-500" : item.Status === "Denied" ? "text-red-500" : "text-orange-300"}`}
-                      >
-                        {item.Status}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="flex justify-between mt-4">
-                <button
-                  onClick={handlePreviousTransactionsPage}
-                  disabled={transactionsPage === 1}
-                  className="px-4 py-2 text-gray-600 rounded disabled:opacity-50"
-                  title="Previous Transactions"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={handleNextTransactionsPage}
-                  disabled={transactionsPage === transactionsTotalPages}
-                  className="px-4 py-2  text-gray-600 rounded disabled:opacity-50"
-                  title="Next Transactions"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* DIBISES CARD */} 
-        <Dibises />
-
-        <Card className="col-span-2 row-span-2 h-fit">
-          <CardHeader className="flex flex-row items-center  justify-start gap-4 pb-2">
-            <div className="bg-blue-100/50 p-2 rounded-lg flex justify-center items-center gap-2">
-              <UsersIcon className="h-4 w-4 text-black" />
-              <CardTitle className="text-lg  font-semibold text-black">Activity</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="shadow-xl rounded-lg p-2">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    ></th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Department
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Description
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Date
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {selectedActivity.map((item, index) => (
-                    <tr key={index}>
-                      <td>
-                        <p
-                          className={` flex justify-center items-center ${index % 2 === 0 ? "bg-green  -100" : " bg-blue-100"} p-2 rounded-lg`}
-                        >
-                          <ShoppingCart className={`h-5 w-5 text-gray-600`} />
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.department}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.description}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.date}</td>
-                      <td
-                        className={`px-6 py-4 whitespace-nowrap text-sm ${item.status === "Completed" ? "text-green-100" : item.status === "Denied" ? "text-red-500" : "text-orange-300"}`}
-                      >
-                        <div
-                          className={`p-1 rounded-xl flex justify-center items-center ${item.status === "Completed" ? "bg-green-100 text-green-700" : item.status === "Denied" ? "text-red-700 bg-red-100" : "text-yellow-600 bg-orange-100 "}`}
-                        >
-                          {item.status}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="flex justify-between mt-4">
-                <button
-                  onClick={handlePreviousActivityPage}
-                  disabled={activityPage === 1}
-                  className="px-4 py-2 text-gray-600 rounded disabled:opacity-50"
-                  title="Previous activity"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={handleNextActivityPage}
-                  disabled={activityPage === activityTotalPages}
-                  className="px-4 py-2  text-gray-600 rounded disabled:opacity-50"
-                  title="Next Activity"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      </>
+    )}
     </>
   )
 }
