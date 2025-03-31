@@ -79,7 +79,7 @@ export async function addRequisition(
   } catch (error: any) {
     console.error("Error adding requisition:", error);
 
-    if (error.response && error.response.status === 422) {
+    if (error.response && error.response.status === 403 || error.response.status === 422) {
       return { errors: error.response.data.errors };
     }
     return { errors: { server: "An error occurred while adding the requisition" } };

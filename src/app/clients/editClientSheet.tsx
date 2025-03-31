@@ -19,7 +19,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { emmiter } from "@/lib/emmiter";
 
-export function EditClientSheet({ client }: { client: any }) {
+export function EditClientSheet({ client, onClientUpdated }: { client: any, onClientUpdated: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [state, editClientAction] = useActionState(
         async (prevState: any, formData: FormData) => {
@@ -31,6 +31,7 @@ export function EditClientSheet({ client }: { client: any }) {
                     type: "success",
                 });
                 router.refresh(); // Refresca la tabla de departamentos
+                onClientUpdated(); // Notifica a ManageClientsClient para actualizar la lista
             }
             return result;
         },
@@ -49,7 +50,7 @@ export function EditClientSheet({ client }: { client: any }) {
             <SheetContent>
                 <SheetHeader>
                 <SheetTitle>Edit Client</SheetTitle>
-                <SheetDescription>
+                <SheetDescription className="pb-4">
                     Fill in the details to edit the client.
                 </SheetDescription>
                 </SheetHeader>

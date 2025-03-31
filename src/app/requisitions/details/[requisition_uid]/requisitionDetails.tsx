@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ import {
 import { useReactToPrint } from "react-to-print";
 import { RejectRequisitionSheet } from "./rejectRequisitionSheet";
 import { approveRequisition } from "@/app/requisitions/actions";
+import { getRequisitionByUIDFromDB } from "@/app/utils/indexedDB";
 
 export default function RequisitionDetails({
   requisition,
@@ -44,12 +45,28 @@ export default function RequisitionDetails({
   const router = useRouter();
   const id = params.requisition_uid;
 
-  const requisitionData = requisition.find(
-    (req: any) => req.requisition_uid === id
+  const [requisitionData, setRequisitionData] = useState(
+    requisition.find((req: any) => req.requisition_uid === id) || null
   );
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Recuperar datos de IndexedDB si no hay conexión
+  useEffect(() => {
+    if (!requisitionData && typeof window !== "undefined" && window.indexedDB) {
+      getRequisitionByUIDFromDB(id)
+        .then((data) => {
+          if (data) {
+            setRequisitionData(data);
+          } else {
+            console.warn("Requisition not found in IndexedDB for UID:", id);
+          }
+        })
+        .catch((error) => {
+          console.error("Error retrieving requisition from IndexedDB:", error);
+        });
+    }
+  }, [id, requisitionData]);
 
   const handleApproveRequisition = async () => {
     setLoading(true);
@@ -108,21 +125,20 @@ export default function RequisitionDetails({
   const reactToPrintFn = useReactToPrint({ contentRef });
   
 
+  if (!requisitionData) {
+    return (
+      <div className="text-center py-6 text-gray-500">
+        {hasError ? (
+          <p>Could not load requisition details. Please check your connection.</p>
+        ) : (
+          <p>Loading requisition details...</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
-      {hasError && (
-        <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 mt-0.5" />
-          <div>
-            <p className="font-medium">Connection Error</p>
-            <p className="text-sm">
-                Could not connect to the server.
-                All creation and editing actions have been disabled.
-              </p>
-          </div>
-        </div>
-      )}
-
       {error && (
         <Alert variant="destructive" className="mb-6">
           <AlertTitle>Error</AlertTitle>
@@ -187,7 +203,9 @@ export default function RequisitionDetails({
                       <FileText className="h-4 w-4 mr-2" />
                       <span>Priority:</span>
                     </div>
-                    <Badge className={getPriorityColor(requisitionData.priority)}>
+                    <Badge
+                      className={getPriorityColor(requisitionData.priority)}
+                    >
                       {requisitionData.priority}
                     </Badge>
                   </div>
@@ -255,7 +273,9 @@ export default function RequisitionDetails({
                           </div>
                           <div className="md:col-span-2 flex flex-col">
                             <span className="text-black">Quantity</span>
-                            <span className="text-gray-500">{item.quantity}</span>
+                            <span className="text-gray-500">
+                              {item.quantity}
+                            </span>
                           </div>
                           <div className="md:col-span-3 flex flex-col">
                             <span className="text-black">Price</span>
@@ -289,32 +309,54 @@ export default function RequisitionDetails({
                 <CardTitle className="text-lg text-black">Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {requisitionData.status === "Pending" && (
+                {hasError ? (
+                  // Mostrar solo el botón de "Descargar PDF" cuando no hay conexión
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => reactToPrintFn()}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                ) : (
+                  // Mostrar todas las opciones cuando hay conexión
                   <>
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={handleApproveRequisition}
-                      disabled={loading}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      {loading ? "Approving..." : "Approve Requisition"}
-                    </Button>
-                    <RejectRequisitionSheet id={requisitionData.id} />
-                  </>
-                )}
+                    {requisitionData.status === "Pending" && (
+                      <>
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          onClick={handleApproveRequisition}
+                          disabled={loading}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          {loading ? "Approving..." : "Approve Requisition"}
+                        </Button>
+                        <RejectRequisitionSheet id={requisitionData.id} />
+                      </>
+                    )}
 
-                <Button variant="outline" className="w-full" onClick={() => reactToPrintFn()}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </Button>
-                {requisitionData.status === "Pending" && (
-                  <Link href={`/requisitions/details/${requisitionData.requisition_uid}/edit`}>
-                    <Button variant="outline" className="w-full mt-4">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Requisition
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => reactToPrintFn()}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download PDF
                     </Button>
-                  </Link>
+
+                    {requisitionData.status === "Pending" && (
+                      <Link
+                        href={`/requisitions/details/${requisitionData.requisition_uid}/edit`}
+                      >
+                        <Button variant="outline" className="w-full mt-4">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Requisition
+                        </Button>
+                      </Link>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>

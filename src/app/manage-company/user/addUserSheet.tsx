@@ -96,7 +96,7 @@ export function AddUserSheet({ departments }: { departments: any[] }) {
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Add New User</SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="pb-4">
             Fill in the details to add a new user to the system.
           </SheetDescription>
         </SheetHeader>
