@@ -89,12 +89,12 @@ export function NewBudgetRequestModal({
         if (matchingDepartment) {
           setUserDepartment(matchingDepartment);
           setDepartmentId(matchingDepartment.id);
-          console.log('Departamento seleccionado automáticamente:', matchingDepartment.name);
+          console.log('Department automatically selected:', matchingDepartment.name);
           
           // Filtrar categorías para este departamento
           filterCategoriesByDepartment(matchingDepartment.id);
         } else {
-          console.log('No se encontró el departamento en la lista:', userDepartmentId);
+          console.log('Department not found in the list:', userDepartmentId);
           // Si el usuario no es admin, intentar usar el ID del departamento directamente
           setDepartmentId(String(userDepartmentId));
           filterCategoriesByDepartment(String(userDepartmentId));

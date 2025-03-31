@@ -1,7 +1,7 @@
 import { BudgetRequestList } from '@/components/budget/BudgetRequestList';
 import AuthenticatedLayout from "@/components/layouts/authenticatedLayout";
 import { getSession } from "@/app/lib/session";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { BarChart3, Clock, XCircle, CheckCircle } from "lucide-react";
 import { getBudgetRequests, getCategories, getDepartments } from '../budgets/actions';
@@ -72,57 +72,62 @@ export default async function BudgetRequestsPage() {
         {/* Dashboard Cards */}
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-4">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Total Requests</p>
-                  <h3 className="text-2xl font-bold mt-1">{filteredRequests.length}</h3>
-                </div>
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <BarChart3 className="h-6 w-6 text-blue-600" />
-                </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-black">
+                Total Requests
+              </CardTitle>
+              <BarChart3 className="h-4 w-4 bg-blue-100 text-blue-800 rounded-full border" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-black">
+                {filteredRequests.length}
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Pending</p>
-                  <h3 className="text-2xl font-bold mt-1">{pendingCount}</h3>
-                </div>
-                <div className="p-2 bg-amber-100 rounded-full">
-                  <Clock className="h-6 w-6 text-amber-600" />
-                </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-black">
+                Pending
+              </CardTitle>
+              <Clock className="h-4 w-4 bg-amber-100 text-amber-800 rounded-full border" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-black">
+                {pendingCount}
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Approved</p>
-                  <h3 className="text-2xl font-bold mt-1">{approvedCount}</h3>
-                </div>
-                <div className="p-2 bg-green-100 rounded-full">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-black">
+                Approved
+              </CardTitle>
+              <CheckCircle className="h-4 w-4 bg-green-100 text-green-800 rounded-full border" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-black">
+                {approvedCount}
               </div>
+              {approvedCount > 0 && (
+                <p className="text-xs text-gray-500">
+                  Total approved: {formatCurrency(totalRequested)}
+                </p>
+              )}
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Total Approved</p>
-                  <h3 className="text-2xl font-bold mt-1">{formatCurrency(totalRequested)}</h3>
-                </div>
-                <div className="p-2 bg-green-100 rounded-full">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-black">
+                Rejected
+              </CardTitle>
+              <XCircle className="h-4 w-4 bg-red-100 text-red-800 rounded-full border" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-black">
+                {rejectedCount}
               </div>
             </CardContent>
           </Card>
