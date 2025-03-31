@@ -101,7 +101,7 @@ export async function addClient(
   } catch (error: any) {
     console.error("Error adding client:", error);
 
-    if (error.response && error.response.status === 422) {
+    if (error.response && error.response.status === 403 || error.response.status === 422) {
       return { errors: error.response.data.errors };
     }
     return { errors: { server: "Error adding client" } };

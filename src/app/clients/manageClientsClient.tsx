@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Search } from "lucide-react";
+import { getClientsFromDB, saveClientsToDB } from "@/app/utils/indexedDB";
 
 export default function ManageClientsClient({
   clients,
@@ -25,10 +26,50 @@ export default function ManageClientsClient({
   user: any;
   hasError: boolean;
 }) {
+  const [localClients, setLocalClients] = useState(clients || []);
   const [searchClients, setSearchClients] = useState("");
 
+  // Recuperar datos de IndexedDB o del servidor
+  useEffect(() => {
+    if (clients.length === 0 && typeof window !== "undefined" && window.indexedDB) {
+      console.log("No clients from server. Retrieving from IndexedDB...");
+      getClientsFromDB()
+        .then((clientsFromDB) => {
+          if (clientsFromDB && clientsFromDB.length > 0) {
+            setLocalClients(clientsFromDB);
+          }
+        })
+        .catch((error) => {
+          console.error("Error retrieving clients from IndexedDB:", error);
+        });
+    } else {
+      setLocalClients(clients);
+    }
+  }, [clients]);
+
+  // Guardar datos en IndexedDB cuando los datos del servidor cambian
+  useEffect(() => {
+    if (clients.length > 0 && typeof window !== "undefined" && window.indexedDB) {
+      saveClientsToDB(clients).catch((error) => {
+        console.error("Error saving clients to IndexedDB:", error);
+      });
+    }
+  }, [clients]);
+
+  // Función para actualizar localClients después de crear/editar un cliente
+  const updateLocalClients = async () => {
+    if (typeof window !== "undefined" && window.indexedDB) {
+      try {
+        const updatedClients = await getClientsFromDB();
+        setLocalClients(updatedClients || []);
+      } catch (error) {
+        console.error("Error updating local clients:", error);
+      }
+    }
+  };
+
   const filteredClients =
-    clients?.filter((client: any) =>
+    localClients?.filter((client: any) =>
       `${client.name}`.toLowerCase().includes(searchClients.toLowerCase())
     ) || [];
 
@@ -36,30 +77,30 @@ export default function ManageClientsClient({
     <>
       <div className="w-full flex justify-between items-center mb-4">
         <div className="relative w-full sm:w-1/3 md:w-1/2 lg:w-[395px]">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-        <Input
-          type="search"
-          placeholder="Search clients..."
-          value={searchClients}
-          onChange={(e) => setSearchClients(e.target.value)}
-          className="pl-8 w-full"
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            type="search"
+            placeholder="Search clients..."
+            value={searchClients}
+            onChange={(e) => setSearchClients(e.target.value)}
+            className="pl-8 w-full"
           />
         </div>
-         {hasError ? (
-           <Button className="bg-primary hover:bg-primary-ligth text-white" disabled>
-           Add Client
-         </Button>
-          ) : (
-            <AddClientSheet />
-          )}
+        {hasError ? (
+          <Button className="bg-primary hover:bg-primary-ligth text-white" disabled>
+            Add Client
+          </Button>
+        ) : (
+          <AddClientSheet />
+        )}
       </div>
 
       {filteredClients.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full">
           {filteredClients.map((client: any) => (
             <Card key={client.id} className="relative">
-              {client.created_by.id === user.id && (
-                <EditClientSheet client={client} />
+              {!hasError && client.created_by.id === user.id && (
+                <EditClientSheet client={client} onClientUpdated={updateLocalClients} />
               )}
               <CardHeader>
                 <CardTitle className="text-black">
@@ -80,27 +121,21 @@ export default function ManageClientsClient({
               </CardHeader>
               <CardContent>
                 <p className="text-gray-500">
-                  <strong className="text-black">Phone:</strong>{" "}{client.phone}
+                  <strong className="text-black">Phone:</strong> {client.phone}
                 </p>
                 <p className="text-gray-500">
-                  <strong className="text-black">Address:</strong>{" "}
-                  {client.address}
+                  <strong className="text-black">Address:</strong> {client.address}
                 </p>
                 {user.role === "admin" && client.created_by.id !== user.id && (
-                  <p>
-                    <strong>Created by:</strong> {client.created_by.first_name}{" "}
-                    {client.created_by.last_name}
+                  <p className="text-gray-500">
+                    <strong className="text-black">Created by:</strong> {client.created_by.first_name} {client.created_by.last_name}
                   </p>
                 )}
               </CardContent>
               <CardFooter>
                 <p className="text-gray-500">
-                  You have <strong className="text-black">5</strong>{" "}
-                  transactions with this client. You can see more info in{" "}
-                  <Link
-                    href={`/transactions/${client.id}`}
-                    className="hover:underline"
-                  >
+                  You have <strong className="text-black">5</strong> transactions with this client. You can see more info in{" "}
+                  <Link href={`/transactions/${client.id}`} className="hover:underline">
                     transactions
                   </Link>
                 </p>

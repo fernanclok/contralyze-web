@@ -92,7 +92,6 @@ export default async function RequisitionsPage(
         </div>
         <TabsContent value="dashboard" className="mt-0">
           <RequisitionDashboard
-            requisitions={dashboardData.last_5_requisitions || []}
             dashboardData={dashboardData}
             user={user}
             hasError={hasError}

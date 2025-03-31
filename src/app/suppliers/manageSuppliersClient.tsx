@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Search } from "lucide-react";
+import { getSuppliersFromDB, saveSuppliersToDB } from "@/app/utils/indexedDB";
 
 export default function ManageSuppliersClient({
   suppliers,
@@ -25,10 +26,47 @@ export default function ManageSuppliersClient({
   user: any;
   hasError: boolean;
 }) {
+  const [localSuppliers, setLocalSuppliers] = useState(suppliers || []);
   const [searchSuppliers, setSearchSuppliers] = useState("");
 
+  useEffect(() => {
+    if (suppliers.length === 0 && typeof window !== "undefined" && window.indexedDB) {
+      getSuppliersFromDB()
+      .then((suppliersFromDB) => {
+        if(suppliersFromDB && suppliersFromDB.length > 0) {
+          setLocalSuppliers(suppliersFromDB);
+        }
+      })
+      .catch((error) => {
+        console.error("Error retrieving suppliers from IndexedDB:", error)
+      })
+    } else {
+      setLocalSuppliers(suppliers)
+    }
+  }, [suppliers]);
+
+  useEffect(() => {
+    if(suppliers.length > 0 && typeof window !== "undefined" && window.indexedDB) {
+      saveSuppliersToDB(suppliers).catch((error) => {
+        console.error("Error saving suppliers to IndexedDB:", error)
+      });
+    }
+  }, [suppliers]);
+
+  //funcion para actualizar localSuppliers despues de crear/editar un supplier
+  const updateLocalSuppliers = async () => {
+    if (typeof window !== "undefined" && window.indexedDB) {
+      try {
+        const updatedSuppliers = await getSuppliersFromDB();
+        setLocalSuppliers(updatedSuppliers || [])
+      } catch (error) {
+        console.error("Error updating local suppliers:", error);
+      }
+    }
+  }
+
   const filteredSuppliers =
-    suppliers?.filter((supplier: any) =>
+    localSuppliers?.filter((supplier: any) =>
       `${supplier.name}`.toLowerCase().includes(searchSuppliers.toLowerCase())
     ) || [];
 
@@ -58,7 +96,7 @@ export default function ManageSuppliersClient({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full">
           {filteredSuppliers.map((supplier: any) => (
             <Card key={supplier.id} className="relative">
-              {supplier.created_by.id === user.id && (
+              {!hasError && supplier.created_by.id === user.id && (
                 <EditSupplierSheet supplier={supplier} />
               )}
               <CardHeader>

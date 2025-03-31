@@ -25,6 +25,7 @@ import {
   FilterX,
   Search,
 } from "lucide-react";
+import { getRequisitionsFromDB, saveRequisitionsToDB } from "../utils/indexedDB";
 
 export default function RequisitionsList({
   requisitions,
@@ -35,12 +36,37 @@ export default function RequisitionsList({
   user: any;
   departments: any[];
 }) {
+  const [localRequisitions, setLocalRequisitions] = useState(requisitions || []);
   const [filter, setFilter] = useState("All status");
   const [priorityFilter, setPriorityFilter] = useState("All priorities");
   const [departmentFilter, setDepartmentFilter] = useState("All departments");
   const [search, setSearch] = useState("");
 
-  const filteredRequisitions = requisitions.filter((req: any) => {
+  useEffect(() => {
+    if (requisitions.length === 0 && typeof window !== "undefined" && window.indexedDB) {
+      getRequisitionsFromDB()
+      .then((requisionsFromDB) => {
+        if (requisionsFromDB && requisionsFromDB.length > 0) {
+          setLocalRequisitions(requisionsFromDB);
+        }
+      })
+      .catch((error) => {
+        console.error("Error retrieving requisitions from IndexedDB:", error)
+      })
+    } else (
+      setLocalRequisitions(requisitions)
+    )
+  }, [requisitions]);
+
+  useEffect(() => {
+    if (requisitions.length > 0 &&typeof window !== "undefined" && window.indexedDB) {
+      saveRequisitionsToDB(requisitions).catch((error) => {
+        console.error("Error saving requisitions to IndexedDB:", error)
+      })
+    }
+  }, [requisitions]);
+
+  const filteredRequisitions = localRequisitions.filter((req: any) => {
     const matchesFilter =
       filter === "All status" || req.status.toLowerCase() === filter.toLowerCase();
     const matchesPriorityFilter =
