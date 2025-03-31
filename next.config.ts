@@ -28,6 +28,12 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   },
 });
 
-const nextConfig = {};
+const nextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb', // Increase the body size limit to 10MB
+    },
+  },
+};
 
 module.exports = withPWA(nextConfig);

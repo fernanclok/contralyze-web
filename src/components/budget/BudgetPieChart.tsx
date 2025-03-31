@@ -16,29 +16,29 @@ ChartJS.register(
   Title
 );
 
-// Paleta de colores consistente con la aplicación
+// Paleta de colores pastel
 const appColors = {
   // Colores primarios
-  primary: '#2563eb',    // Azul principal
-  secondary: '#4f46e5',  // Indigo
+  primary: '#93c5fd',    // Azul pastel
+  secondary: '#a5b4fc',  // Indigo pastel
   
   // Estados
-  success: '#16a34a',    // Verde para aprobados/activos
-  warning: '#eab308',    // Amarillo para pendientes
-  danger: '#dc2626',     // Rojo para rechazados
-  info: '#0891b2',       // Cyan para información
+  success: '#86efac',    // Verde pastel para aprobados/activos
+  warning: '#fde68a',    // Amarillo pastel para pendientes
+  danger: '#fca5a5',     // Rojo pastel para rechazados
+  info: '#67e8f9',       // Cyan pastel para información
   
   // Categorías
-  category1: '#2563eb',  // Azul
-  category2: '#7c3aed',  // Violeta
-  category3: '#0891b2',  // Cyan
-  category4: '#059669',  // Esmeralda
-  category5: '#84cc16',  // Lima
-  category6: '#eab308',  // Ámbar
+  category1: '#93c5fd',  // Azul pastel
+  category2: '#c4b5fd',  // Violeta pastel
+  category3: '#67e8f9',  // Cyan pastel
+  category4: '#6ee7b7',  // Esmeralda pastel
+  category5: '#bef264',  // Lima pastel
+  category6: '#fde68a',  // Ámbar pastel
   
   // Estados adicionales
-  inactive: '#94a3b8',   // Gris para inactivos
-  expired: '#f97316',    // Naranja para expirados
+  inactive: '#cbd5e1',   // Gris pastel para inactivos
+  expired: '#fdba74',    // Naranja pastel para expirados
 };
 
 interface BudgetPieChartProps {
@@ -295,9 +295,9 @@ export function BudgetActiveStatusPieChart({ budgets, withCard = true }: BudgetA
       {
         data: Object.values(statusCounts),
         backgroundColor: [
-          appColors.success,    // Verde - Active
-          appColors.inactive,   // Gris - Inactive
-          appColors.expired,    // Naranja - Expired
+          appColors.success,    // Verde pastel - Active
+          appColors.inactive,   // Gris pastel - Inactive
+          appColors.expired,    // Naranja pastel - Expired
         ],
         borderWidth: 1,
         borderColor: '#ffffff',
@@ -344,9 +344,9 @@ export function RequestStatusPieChart({ requests, withCard = true }: RequestStat
       {
         data: Object.values(statusCounts),
         backgroundColor: [
-          appColors.success,    // Verde - Approved
-          appColors.danger,     // Rojo - Rejected
-          appColors.warning,    // Amarillo - Pending
+          appColors.success,    // Verde pastel - Approved
+          appColors.danger,     // Rojo pastel - Rejected
+          appColors.warning,    // Amarillo pastel - Pending
         ],
         borderWidth: 1,
         borderColor: '#ffffff',
