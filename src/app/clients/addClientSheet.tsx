@@ -19,7 +19,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { emmiter } from "@/lib/emmiter";
 
-export function AddClientSheet() {
+export function AddClientSheet({ onClientUpdated }: { onClientUpdated: () => void}) {
   const [isOpen, setIsOpen] = useState(false);
   const [state, setState] = useState<any>(null);
   const router = useRouter();
@@ -35,6 +35,7 @@ export function AddClientSheet() {
         type: "success",
       });
       router.refresh(); // Refresca la tabla de clientes
+      onClientUpdated();
     }
     setState(result);
   };
@@ -57,7 +58,7 @@ export function AddClientSheet() {
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Add Client</SheetTitle>
-          <SheetDescription>Add a new client to the system</SheetDescription>
+          <SheetDescription className="pb-4">Add a new client to the system</SheetDescription>
         </SheetHeader>
         <form onSubmit={handleAddClient} className="space-y-6">
           {state?.errors?.server && (

@@ -80,6 +80,7 @@ export default function EditRequisition({ requisition }: { requisition: any }) {
 
     const result = await editRequisition(requisition.id, formData);
     console.log(result);
+    setState(result)
     if (!result.errors) {
       emmiter.emit("showToast", {
         message: "Requisition edited successfully",

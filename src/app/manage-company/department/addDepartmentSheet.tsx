@@ -49,7 +49,7 @@ export function AddDepartmentSheet() {
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Add Department</SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="pb-4">
             Fill in the details to add a new department to the system.
           </SheetDescription>
         </SheetHeader>

@@ -21,7 +21,6 @@ export async function getBudgets() {
           headers,
         }
       );
-  
       return { budgets: response.data, error: null };
     } catch (error: any) {
       console.error("Error fetching budget info:", error);
@@ -90,13 +89,13 @@ export async function getBudgets() {
   }
   }
 
-  export async function getTransactions() 
+  export async function getTransactionsStatics() 
   {
     try {
       const token = (await cookies()).get("access_token")?.value;
   
       if (!token) {
-        return { error: "No authentication token found", company: {} };
+        return { error: "No authentication token found", transactions: {} };
       }
   
       const headers = {
@@ -109,15 +108,108 @@ export async function getBudgets() {
           headers,
         }
       );
-  
-      return { transactions: response.data, error: null };
+      const transactions = response.data.data;
+      return { transactions: transactions, error: null };
     } catch (error: any) {
       console.error("Error fetching transactions:", error);
   
       if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
-        return { error: "Error connecting to the server", Budgets: {} };
+        return { error: "Error connecting to the server", transactions: {} };
       }
   
-      return { error: "Error fetching transactions", Budgets: {} };
+      return { error: "Error fetching transactions", transactions: {} };
+    }
+  }
+
+  export async function getDeptoData() {
+    try {
+      const token = (await cookies()).get("access_token")?.value;
+  
+      if (!token) {
+        return { error: "No authentication token found", deptoData: {} };
+      }
+  
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+  
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transactions/department/statics`,
+        {
+          headers,
+        }
+      );
+      const DeptoData = response.data.data;
+      return { DeptoData: DeptoData, error: null };
+    } catch (error: any) {
+      console.error("Error fetching DeptoData:", error);
+  
+      if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
+        return { error: "Error connecting to the server", DeptoData: {} };
+      }
+  
+      return { error: "Error fetching DeptoData", DeptoData: {} };
+    }
+  }
+
+  export async function getLastTransactions(){
+    try{
+      const token = (await cookies()).get("access_token")?.value;
+
+      if(!token) {
+        return {error: "No authentication token found", transactionsList: {}};
+      }
+
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };  
+    
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transactions/last/transactions`,
+        {
+          headers,
+        }
+      );
+      const transactionsList = response.data.data;
+      return { transactionsList: transactionsList, error: null };
+    } catch(error:any){
+      console.error("Error fetching transactions:", error);
+
+      if(error.code === "ECONNREFUSED" || error.response?.status === 429){
+        return { error: "Error connecting to the server", transactionsList: {} };
+      }
+
+      return { error: "Error fetching transactions", transactionsList: {} };
+    }
+  }
+
+  export async function getLastTransanctionByDepto(){
+    try{
+      const token = (await cookies()).get("access_token")?.value;
+
+      if(!token) {
+        return {error: "No authentication token found", transactionsDepto: {}};
+      }
+
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };  
+    
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transactions/last/department`,
+        {
+          headers,
+        }
+      );
+      const transactionsDepto = response.data.data;
+      return { transactionsDepto: transactionsDepto, error: null };
+    } catch(error:any){
+      console.error("Error fetching transactions:", error);
+
+      if(error.code === "ECONNREFUSED" || error.response?.status === 429){
+        return { error: "Error connecting to the server", transactionsDepto: {} };
+      }
+
+      return { error: "Error fetching transactions by depto", transactionsDepto: {} };
     }
   }

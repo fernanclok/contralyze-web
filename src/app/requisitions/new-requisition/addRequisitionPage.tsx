@@ -16,11 +16,6 @@ import {
 } from "@/components/ui/select";
 import {
   ArrowLeft,
-  type File,
-  FileText,
-  Paperclip,
-  Upload,
-  X,
   Calendar as CalendarIcon,
 } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
