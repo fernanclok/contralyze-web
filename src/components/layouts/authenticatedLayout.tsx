@@ -29,7 +29,6 @@ const menuItems: {
   admin: [
     { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
     { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
-    { path: "/invoices", label: "Invoices", icon: mdiReceiptText },
     { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
     { path: "/budgets", label: "Budgets", icon: mdiCashMultiple },
     { path: "/clients", label: "Clients", icon: mdiAccountBoxMultiple },
@@ -38,7 +37,6 @@ const menuItems: {
   user: [
     { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
     { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
-    { path: "/invoices", label: "Invoices", icon: mdiReceiptText },
     { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
     { path: "/budget-requests", label: "Budget Requests", icon: mdiCashMultiple },
     { path: "/clients", label: "Clients", icon: mdiAccountBoxMultiple },
