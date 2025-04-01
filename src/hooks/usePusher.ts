@@ -40,7 +40,7 @@ interface UsePusherReturn {
  * @returns Object with connection state and methods
  */
 export function usePusher(
-  appKey: string = process.env.NEXT_PUBLIC_PUSHER_APP_KEY || '',
+  appKey: string = process.env.NEXT_PUBLIC_PUSHER_KEY || '',
   options: PusherOptions = {}
 ): UsePusherReturn {
   const [isConnected, setIsConnected] = useState(false);
