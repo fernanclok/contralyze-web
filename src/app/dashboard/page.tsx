@@ -41,10 +41,24 @@ export default async function ServerDashboardPage() {
     : "Guest";
 
 
-    // Verificar si hay errores de API
-    const hasError = !!transactionsError || !!Budgeterror || !!Infoerror || !!DeptoDataError ;
-
-
+    const hasError =
+    !!transactionsError ||
+    !!Budgeterror ||
+    !!Infoerror ||
+    !!DeptoDataError ||
+    !!transactionslistError ||
+    !!transactionsDeptoError;
+  
+  if (hasError) {
+    console.error("One or more API requests failed:", {
+      transactionsError,
+      Budgeterror,
+      Infoerror,
+      DeptoDataError,
+      transactionslistError,
+      transactionsDeptoError,
+    });
+  }
     return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
       {hasError && (
