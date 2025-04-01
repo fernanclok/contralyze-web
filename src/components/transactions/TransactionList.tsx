@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Pusher from 'pusher-js';
 import {
   Table,
   TableBody,
@@ -12,10 +13,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
-import { Transaction, Category, Client, Supplier } from '@/app/transactions/actions';
+import { Transaction, Category, Client, Supplier, Department } from '@/app/transactions/actions';
 import { NewTransactionModal } from './NewTransactionModal';
 import { EditTransactionModal } from './EditTransactionModal';
-import { PlusCircle, Edit, Search, Calendar, FilterX, X, Trash2, Info } from 'lucide-react';
+import { TransactionDetailsModal } from './TransactionDetailsModal';
+import CreateInvoiceModal from './CreateInvoiceModal';
+import { PlusCircle, Edit, Search, Calendar, FilterX, X, Info, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
@@ -31,7 +34,9 @@ interface TransactionListProps {
   categories: Category[];
   suppliers: Supplier[];
   clients: Client[];
+  departments: Department[];
   userRole: string;
+  userDepartmentId?: string;
   hasConnectionError?: boolean;
 }
 
@@ -40,13 +45,19 @@ export function TransactionList({
   categories = [], 
   suppliers = [], 
   clients = [],
+  departments = [],
   userRole, 
+  userDepartmentId,
   hasConnectionError = false 
 }: TransactionListProps) {
   const router = useRouter();
   const [isNewTransactionModalOpen, setIsNewTransactionModalOpen] = useState(false);
   const [isEditTransactionModalOpen, setIsEditTransactionModalOpen] = useState(false);
+  const [isViewTransactionModalOpen, setIsViewTransactionModalOpen] = useState(false);
+  const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -54,18 +65,334 @@ export function TransactionList({
   const [startDateFilter, setStartDateFilter] = useState('');
   const [endDateFilter, setEndDateFilter] = useState('');
   const [dateFilterVisible, setDateFilterVisible] = useState(false);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>(transactions);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const itemsPerPage = 10;
   const isAdmin = userRole === 'admin';
-
-  // Aplicar filtros cada vez que cambian los filtros o transactions
+  
+  // Configuración de Pusher para actualizaciones en tiempo real
   useEffect(() => {
-    let filtered = [...transactions].filter(Boolean); // Asegurar que no hay elementos nulos
+    console.log("Inicializando con", transactions.length, "transacciones");
+    
+    // Inicializar allTransactions con los datos iniciales
+    if (transactions && transactions.length > 0) {
+      setAllTransactions(transactions);
+      applyFilters(transactions);
+    } else {
+      setFilteredTransactions([]);
+    }
+    
+    // Configurar Pusher solo si no hay error de conexión
+    if (!hasConnectionError) {
+      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_APP_KEY || '', {
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
+      });
+      
+      // Suscribirse al canal de transacciones
+      const channel = pusher.subscribe('transactions');
+      
+      // Escuchar evento de nueva transacción
+      channel.bind('transaction-created', (data: Transaction) => {
+        console.log('Nueva transacción recibida:', data);
+        setAllTransactions(current => {
+          const updated = [data, ...current];
+          // Forzar la actualización de los filtros
+          applyFilters(updated);
+          return updated;
+        });
+      });
+      
+      // Escuchar evento de actualización de transacción
+      channel.bind('transaction-updated', (data: Transaction) => {
+        console.log('Transacción actualizada:', data);
+        setAllTransactions(current => {
+          const updated = current.map(item => 
+            item.id === data.id ? { ...item, ...data } : item
+          );
+          // Forzar la actualización de los filtros
+          applyFilters(updated);
+          return updated;
+        });
+      });
+      
+      // Escuchar evento de eliminación de transacción
+      channel.bind('transaction-deleted', (data: { id: string }) => {
+        console.log('Transacción eliminada:', data);
+        setAllTransactions(current => {
+          const updated = current.filter(item => item.id !== data.id);
+          // Forzar la actualización de los filtros
+          applyFilters(updated);
+          return updated;
+        });
+      });
+      
+      // Limpiar al desmontar
+      return () => {
+        channel.unbind_all();
+        channel.unsubscribe();
+        pusher.disconnect();
+      };
+    }
+  }, [transactions, hasConnectionError]);
+
+  // Aplicar filtros cuando cambien los datos o los filtros
+  useEffect(() => {
+    if (allTransactions.length > 0) {
+      applyFilters(allTransactions);
+    }
+  }, [
+    allTransactions,
+    searchTerm,
+    typeFilter,
+    statusFilter,
+    categoryFilter,
+    startDateFilter,
+    endDateFilter
+  ]);
+
+  // Calcular transacciones para la página actual
+  const currentTransactions = filteredTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+
+  // Funciones para cambiar de página
+  const goToPage = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setTypeFilter('');
+    setStatusFilter('');
+    setCategoryFilter('');
+    setStartDateFilter('');
+    setEndDateFilter('');
+    setDateFilterVisible(false);
+  };
+
+  const toggleDateFilter = () => {
+    setDateFilterVisible(!dateFilterVisible);
+    if (dateFilterVisible) {
+      setStartDateFilter('');
+      setEndDateFilter('');
+    }
+  };
+
+  const handleCreateTransaction = async (data: any) => {
+    setIsLoading(true);
+    try {
+      const result = await createTransaction(data);
+      if (!result.error) {
+        // Refresh the transactions list
+        router.refresh();
+        
+        emmiter.emit('showToast', {
+          message: 'Transaction created successfully',
+          type: 'success'
+        });
+        
+        setIsNewTransactionModalOpen(false);
+      } else {
+        emmiter.emit('showToast', {
+          message: result.error,
+          type: 'error'
+        });
+      }
+      return result;
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+      emmiter.emit('showToast', {
+        message: 'Failed to create transaction',
+        type: 'error'
+      });
+      return {
+        error: 'Failed to create transaction',
+        transaction: null
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateTransaction = async (id: string, data: {
+    type?: 'income' | 'expense' | 'transfer';
+    amount?: number;
+    description?: string;
+    category_id?: string;
+    supplier_id?: string;
+    client_id?: string;
+    transaction_date?: string;
+    status?: 'pending' | 'completed' | 'cancelled';
+    payment_method?: string;
+    reference_number?: string;
+  }) => {
+    setIsLoading(true);
+    try {
+      const result = await updateTransaction(id, data);
+      
+      if (result.error) {
+        emmiter.emit('showToast', {
+          message: result.error,
+          type: 'error'
+        });
+        return;
+      }
+      
+      emmiter.emit('showToast', {
+        message: 'Transaction updated successfully',
+        type: 'success'
+      });
+
+      // Si la transacción se marcó como completada, mostrar el modal de factura
+      if (data.status === 'completed') {
+        setSelectedTransaction(result.transaction);
+        setIsCreateInvoiceModalOpen(true);
+      }
+      
+      setIsEditTransactionModalOpen(false);
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      emmiter.emit('showToast', {
+        message: 'Error updating transaction',
+        type: 'error'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteTransaction = async () => {
+    if (!transactionToDelete) return;
+    
+    setIsLoading(true);
+    try {
+      const result = await deleteTransaction(transactionToDelete);
+      
+      if (result.error) {
+        emmiter.emit('showToast', {
+          message: result.error,
+          type: 'error'
+        });
+        return;
+      }
+      
+      emmiter.emit('showToast', {
+        message: 'Transaction deleted successfully',
+        type: 'success'
+      });
+      
+      setIsDeleteAlertOpen(false);
+      setTransactionToDelete(null);
+      // No es necesario refrescar la página, Pusher enviará la actualización
+      // router.refresh();
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      emmiter.emit('showToast', {
+        message: 'Error deleting transaction',
+        type: 'error'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditClick = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setIsEditTransactionModalOpen(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setTransactionToDelete(id);
+    setIsDeleteAlertOpen(true);
+  };
+
+  const handleViewClick = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setIsViewTransactionModalOpen(true);
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  const getTypeText = (type: string) => {
+    switch (type) {
+      case 'income': return 'Income';
+      case 'expense': return 'Expense';
+      case 'transfer': return 'Transfer';
+      default: return type;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Completed';
+      case 'pending': return 'Pending';
+      case 'cancelled': return 'Cancelled';
+      default: return status;
+    }
+  };
+
+  // Función para actualizar rápidamente el estado de una transacción
+  const handleQuickStatusUpdate = async (transactionId: string, newStatus: 'pending' | 'completed' | 'cancelled') => {
+    setIsLoading(true);
+    try {
+      const result = await updateTransaction(transactionId, { status: newStatus });
+      
+      if (result.error) {
+        emmiter.emit('showToast', {
+          message: result.error,
+          type: 'error'
+        });
+        return;
+      }
+      
+      emmiter.emit('showToast', {
+        message: `Transaction marked as ${newStatus}`,
+        type: 'success'
+      });
+      
+      // La transacción actualizada será reflejada en la UI a través de Pusher
+      // Pero en caso de que Pusher fallara, actualizamos localmente
+      if (result.transaction) {
+        setAllTransactions(current => {
+          const updated = current.map(item => 
+            item.id === transactionId ? { ...item, status: newStatus } : item
+          );
+          // Actualizar los filtros
+          applyFilters(updated);
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error('Error updating transaction status:', error);
+      emmiter.emit('showToast', {
+        message: 'Error updating transaction status',
+        type: 'error'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const applyFilters = (transactions: Transaction[]) => {
+    console.log('Aplicando filtros a', transactions.length, 'transacciones');
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+      setFilteredTransactions([]);
+      return;
+    }
+
+    let filtered = transactions.filter(Boolean); // Asegurar que no hay elementos nulos
 
     // Filtrar por término de búsqueda
     if (searchTerm) {
@@ -124,189 +451,6 @@ export function TransactionList({
 
     setFilteredTransactions(filtered);
     setCurrentPage(1);
-  }, [transactions, searchTerm, typeFilter, statusFilter, categoryFilter, startDateFilter, endDateFilter]);
-
-  // Calcular transacciones para la página actual
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentTransactions = filteredTransactions.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
-
-  // Funciones para cambiar de página
-  const goToPage = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-  };
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setTypeFilter('');
-    setStatusFilter('');
-    setCategoryFilter('');
-    setStartDateFilter('');
-    setEndDateFilter('');
-    setDateFilterVisible(false);
-  };
-
-  const toggleDateFilter = () => {
-    setDateFilterVisible(!dateFilterVisible);
-    if (dateFilterVisible) {
-      setStartDateFilter('');
-      setEndDateFilter('');
-    }
-  };
-
-  const handleCreateTransaction = async (data: {
-    type: 'income' | 'expense' | 'transfer';
-    amount: number;
-    description?: string;
-    category_id?: string;
-    supplier_id?: string;
-    client_id?: string;
-    transaction_date: string;
-    status?: 'pending' | 'completed' | 'cancelled';
-    payment_method?: string;
-    reference_number?: string;
-  }) => {
-    setIsLoading(true);
-    try {
-      const result = await createTransaction(data);
-      
-      if (result.error) {
-        emmiter.emit('showToast', {
-          message: result.error,
-          type: 'error'
-        });
-        return;
-      }
-      
-      emmiter.emit('showToast', {
-        message: 'Transaction created successfully',
-        type: 'success'
-      });
-      
-      setIsNewTransactionModalOpen(false);
-      router.refresh();
-    } catch (error) {
-      console.error('Error creating transaction:', error);
-      emmiter.emit('showToast', {
-        message: 'Error creating transaction',
-        type: 'error'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleUpdateTransaction = async (id: string, data: {
-    type?: 'income' | 'expense' | 'transfer';
-    amount?: number;
-    description?: string;
-    category_id?: string;
-    supplier_id?: string;
-    client_id?: string;
-    transaction_date?: string;
-    status?: 'pending' | 'completed' | 'cancelled';
-    payment_method?: string;
-    reference_number?: string;
-  }) => {
-    setIsLoading(true);
-    try {
-      const result = await updateTransaction(id, data);
-      
-      if (result.error) {
-        emmiter.emit('showToast', {
-          message: result.error,
-          type: 'error'
-        });
-        return;
-      }
-      
-      emmiter.emit('showToast', {
-        message: 'Transaction updated successfully',
-        type: 'success'
-      });
-      
-      setIsEditTransactionModalOpen(false);
-      router.refresh();
-    } catch (error) {
-      console.error('Error updating transaction:', error);
-      emmiter.emit('showToast', {
-        message: 'Error updating transaction',
-        type: 'error'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteTransaction = async () => {
-    if (!transactionToDelete) return;
-    
-    setIsLoading(true);
-    try {
-      const result = await deleteTransaction(transactionToDelete);
-      
-      if (result.error) {
-        emmiter.emit('showToast', {
-          message: result.error,
-          type: 'error'
-        });
-        return;
-      }
-      
-      emmiter.emit('showToast', {
-        message: 'Transaction deleted successfully',
-        type: 'success'
-      });
-      
-      setIsDeleteAlertOpen(false);
-      router.refresh();
-    } catch (error) {
-      console.error('Error deleting transaction:', error);
-      emmiter.emit('showToast', {
-        message: 'Error deleting transaction',
-        type: 'error'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEditClick = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setIsEditTransactionModalOpen(true);
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setTransactionToDelete(id);
-    setIsDeleteAlertOpen(true);
-  };
-
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
-
-  const getTypeText = (type: string) => {
-    switch (type) {
-      case 'income': return 'Income';
-      case 'expense': return 'Expense';
-      case 'transfer': return 'Transfer';
-      default: return type;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed': return 'Completed';
-      case 'pending': return 'Pending';
-      case 'cancelled': return 'Cancelled';
-      default: return status;
-    }
   };
 
   return (
@@ -438,7 +582,7 @@ export function TransactionList({
             {currentTransactions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                  {filteredTransactions.length === 0 && transactions.length > 0 ? (
+                  {filteredTransactions.length === 0 && allTransactions.length > 0 ? (
                     'No transactions found that match the filters.'
                   ) : (
                     'No transactions registered.'
@@ -511,18 +655,61 @@ export function TransactionList({
                         size="icon" 
                         onClick={() => handleEditClick(transaction)}
                         disabled={hasConnectionError}
+                        title="Edit Transaction"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      {isAdmin && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleViewClick(transaction)}
+                        disabled={hasConnectionError}
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {transaction.status === 'pending' && (
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleQuickStatusUpdate(transaction.id, 'completed')}
+                            disabled={hasConnectionError}
+                            title="Mark as Completed"
+                          >
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleQuickStatusUpdate(transaction.id, 'cancelled')}
+                            disabled={hasConnectionError}
+                            title="Mark as Cancelled"
+                          >
+                            <XCircle className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </>
+                      )}
+                      {transaction.status === 'completed' && (
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          onClick={() => handleDeleteClick(transaction.id)}
+                          onClick={() => handleQuickStatusUpdate(transaction.id, 'pending')}
                           disabled={hasConnectionError}
-                          className="text-red-500 hover:text-red-700"
+                          title="Mark as Pending"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Info className="h-4 w-4 text-yellow-500" />
+                        </Button>
+                      )}
+                      {transaction.status === 'cancelled' && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleQuickStatusUpdate(transaction.id, 'pending')}
+                          disabled={hasConnectionError}
+                          title="Mark as Pending"
+                        >
+                          <Info className="h-4 w-4 text-yellow-500" />
                         </Button>
                       )}
                     </div>
@@ -537,11 +724,12 @@ export function TransactionList({
       {/* Paginación */}
       {filteredTransactions.length > itemsPerPage && (
         <div className="flex justify-center mt-4">
-          <Pagination
+          {/* <Pagination
             currentPage={currentPage}
-            totalPages={totalPages}
+            totalCount={filteredTransactions.length}
+            pageSize={itemsPerPage}
             onPageChange={goToPage}
-          />
+          /> */}
         </div>
       )}
       
@@ -553,6 +741,8 @@ export function TransactionList({
         categories={categories}
         suppliers={suppliers}
         clients={clients}
+        departments={departments}
+        userDepartmentId={userDepartmentId}
         loading={isLoading}
       />
       
@@ -568,6 +758,27 @@ export function TransactionList({
         loading={isLoading}
       />
       
+      {/* Modal para ver detalles de transacción */}
+      <TransactionDetailsModal
+        isOpen={isViewTransactionModalOpen}
+        onClose={() => setIsViewTransactionModalOpen(false)}
+        transaction={selectedTransaction}
+      />
+      
+      {/* Modal para crear factura */}
+      <CreateInvoiceModal
+        open={isCreateInvoiceModalOpen}
+        onOpenChange={setIsCreateInvoiceModalOpen}
+        transactionId={selectedTransaction?.id || ''}
+        onSuccess={() => {
+          emmiter.emit('showToast', {
+            message: 'Invoice created successfully',
+            type: 'success'
+          });
+          setIsCreateInvoiceModalOpen(false);
+        }}
+      />
+      
       {/* Alerta de confirmación para eliminar */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
@@ -578,7 +789,7 @@ export function TransactionList({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isLoading}>Ca</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteTransaction}
               className="bg-red-600 hover:bg-red-700"
@@ -591,4 +802,4 @@ export function TransactionList({
       </AlertDialog>
     </div>
   );
-} 
+}

@@ -400,7 +400,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
               value={filterStatus} 
               onValueChange={setFilterStatus}
             >
-              <SelectTrigger className="bg-white">
+              <SelectTrigger className="w-[130px] bg-white text-black">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="bg-white shadow-md">
@@ -416,7 +416,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
               value={filterDepartment} 
               onValueChange={setFilterDepartment}
             >
-              <SelectTrigger className="bg-white">
+              <SelectTrigger className="w-[130px] bg-white text-black">
                 <SelectValue placeholder="Department" />
               </SelectTrigger>
               <SelectContent className="bg-white shadow-md">

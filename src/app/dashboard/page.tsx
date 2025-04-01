@@ -22,7 +22,6 @@ export default async function ServerDashboardPage() {
   const { DeptoData = [], error: DeptoDataError } = await getDeptoData();
   const { transactionsList = [], error: transactionslistError } = await getLastTransactions();
   const { transactionsDepto = [], error: transactionsDeptoError } = await getLastTransanctionByDepto();
-
   
   // Usar datos reales o valores predeterminados si ocurrieron errores
   const budgetsData = budgets && Object.keys(budgets).length > 0

@@ -25,7 +25,7 @@ import { format } from 'date-fns';
 import { Transaction } from '@/app/transactions/actions';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { emmiter } from "@/lib/emmiter";
 
 interface NewInvoiceModalProps {
@@ -34,13 +34,12 @@ interface NewInvoiceModalProps {
   onSubmit: (data: {
     transaction_id: string;
     invoice_number: string;
-    amount: number;
-    issue_date: string;
     due_date?: string;
     status: string;
+    type: string;
     notes?: string;
     file?: File;
-  }) => void;
+  }) => Promise<any>;
   transactions: Transaction[];
   loading?: boolean;
 }
@@ -54,17 +53,16 @@ export function NewInvoiceModal({
 }: NewInvoiceModalProps) {
   const [transactionId, setTransactionId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [amount, setAmount] = useState('');
-  const [issueDate, setIssueDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [status, setStatus] = useState<string>('pending');
+  const [type, setType] = useState<string>('invoice');
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
   
   const [errors, setErrors] = useState<{
     invoiceNumber?: string;
-    amount?: string;
     transactionId?: string;
+    file?: string;
   }>({});
 
   // Reset form when modal opens
@@ -77,25 +75,24 @@ export function NewInvoiceModal({
   const resetForm = () => {
     setTransactionId('');
     setInvoiceNumber('');
-    setAmount('');
-    setIssueDate(new Date());
     setDueDate(undefined);
     setStatus('pending');
+    setType('invoice');
     setNotes('');
     setFile(null);
     setErrors({});
   };
 
   const handleClose = () => {
-    resetForm();
     onOpenChange(false);
+    resetForm();
   };
 
   const validateForm = () => {
     const newErrors: {
       invoiceNumber?: string;
-      amount?: string;
       transactionId?: string;
+      file?: string;
     } = {};
 
     // Validar número de factura
@@ -103,14 +100,14 @@ export function NewInvoiceModal({
       newErrors.invoiceNumber = 'Invoice number is required';
     }
 
-    // Validar monto
-    if (!amount || parseFloat(amount) <= 0) {
-      newErrors.amount = 'Enter a valid amount greater than 0';
-    }
-
     // Validar transacción
     if (!transactionId) {
       newErrors.transactionId = 'Please select a transaction';
+    }
+    
+    // Validar archivo
+    if (!file) {
+      newErrors.file = 'Please upload an invoice file';
     }
 
     setErrors(newErrors);
@@ -128,18 +125,64 @@ export function NewInvoiceModal({
       return;
     }
 
+    // Verificación adicional de campos obligatorios
+    if (!transactionId || !type || !file) {
+      console.error("Campos obligatorios faltantes:", { transactionId, type, file });
+      emmiter.emit("showToast", {
+        message: "Missing required fields. Please check the form.",
+        type: "error"
+      });
+      return;
+    }
+
+    // Verificamos explícitamente el archivo
+    if (!file) {
+      emmiter.emit("showToast", {
+        message: "An invoice file is required.",
+        type: "error"
+      });
+      return;
+    }
+
+    // Verificamos que el archivo tenga un tamaño válido
+    if (file.size <= 0) {
+      emmiter.emit("showToast", {
+        message: "The selected file appears to be empty.",
+        type: "error"
+      });
+      return;
+    }
+
     const data = {
       transaction_id: transactionId,
       invoice_number: invoiceNumber,
-      amount: parseFloat(amount),
-      issue_date: format(issueDate, 'yyyy-MM-dd'),
       due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined,
       status,
+      type, // Aseguramos que type siempre se envía
       notes: notes.trim() || undefined,
-      file: file || undefined
+      file // El archivo es obligatorio
     };
 
-    onSubmit(data);
+    console.log("Enviando datos de factura:", {
+      ...data,
+      file: {
+        name: data.file.name,
+        type: data.file.type,
+        size: data.file.size
+      }
+    });
+
+    onSubmit(data)
+      .catch(error => {
+        console.error("Error en el envío del formulario:", error);
+        emmiter.emit("showToast", {
+          message: "Failed to create invoice. Please try again.",
+          type: "error"
+        });
+      })
+      .finally(() => {
+        // No hacer nada, ya que se utiliza la prop loading
+      });
   };
 
   return (
@@ -151,93 +194,46 @@ export function NewInvoiceModal({
             Create a new invoice in the system
           </SheetDescription>
         </SheetHeader>
-        <div className="grid gap-4 py-4">
-          {/* Transaction selector */}
+        <div className="flex flex-col space-y-4 py-4">
+          {/* Transaction selection */}
           <div className="space-y-2">
-            <Label htmlFor="transaction" className="flex justify-between">
-              <span>Transaction</span>
-              {errors.transactionId && <span className="text-red-500 text-xs">{errors.transactionId}</span>}
-            </Label>
+            <Label htmlFor="transaction">Related Transaction</Label>
             <Select value={transactionId} onValueChange={setTransactionId}>
               <SelectTrigger id="transaction" className="w-full bg-white">
-                <SelectValue placeholder="Select related transaction" />
+                <SelectValue placeholder="Select a transaction" />
               </SelectTrigger>
-              <SelectContent className="bg-white shadow-md max-h-60">
-                {transactions.length === 0 ? (
-                  <SelectItem value="none" disabled>No transactions available</SelectItem>
-                ) : (
+              <SelectContent className="bg-white shadow-md max-h-[300px]">
+                {transactions.length > 0 ? (
                   transactions.map((transaction) => (
                     <SelectItem key={transaction.id} value={transaction.id}>
-                      {transaction.reference_number || transaction.id} ({formatCurrency(transaction.amount)})
+                      {transaction.description} - {formatCurrency(transaction.amount)}
                     </SelectItem>
                   ))
+                ) : (
+                  <SelectItem value="no-transactions" disabled>
+                    No transactions available
+                  </SelectItem>
                 )}
               </SelectContent>
             </Select>
+            {errors.transactionId && (
+              <p className="text-xs text-red-500">{errors.transactionId}</p>
+            )}
           </div>
 
           {/* Invoice Number */}
           <div className="space-y-2">
-            <Label htmlFor="invoice-number" className="flex justify-between">
-              <span>Invoice Number</span>
-              {errors.invoiceNumber && <span className="text-red-500 text-xs">{errors.invoiceNumber}</span>}
-            </Label>
+            <Label htmlFor="invoice-number">Invoice Number</Label>
             <Input
               id="invoice-number"
               value={invoiceNumber}
               onChange={(e) => setInvoiceNumber(e.target.value)}
-              placeholder="e.g. INV-001"
+              placeholder="e.g. INV-2023-001"
+              className="bg-white"
             />
-          </div>
-
-          {/* Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="amount" className="flex justify-between">
-              <span>Amount</span>
-              {errors.amount && <span className="text-red-500 text-xs">{errors.amount}</span>}
-            </Label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                $
-              </span>
-              <Input
-                id="amount"
-                type="number"
-                className="pl-6 w-full"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                step="0.01"
-                min="0"
-              />
-            </div>
-          </div>
-
-          {/* Issue Date */}
-          <div className="space-y-2">
-            <Label htmlFor="issue-date">Issue Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !issueDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {issueDate ? format(issueDate, "PPP") : <span>Select date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={issueDate}
-                  onSelect={(date) => date && setIssueDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            {errors.invoiceNumber && (
+              <p className="text-xs text-red-500">{errors.invoiceNumber}</p>
+            )}
           </div>
 
           {/* Due Date */}
@@ -248,21 +244,20 @@ export function NewInvoiceModal({
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal",
+                    "w-full justify-start text-left font-normal bg-white",
                     !dueDate && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dueDate ? format(dueDate, "PPP") : <span>Select due date</span>}
+                  {dueDate ? format(dueDate, "PP") : "Select due date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0 bg-white shadow-md" align="start">
                 <Calendar
                   mode="single"
                   selected={dueDate}
                   onSelect={setDueDate}
                   initialFocus
-                  disabled={(date) => (issueDate ? date < issueDate : false)}
                 />
               </PopoverContent>
             </Popover>
@@ -279,15 +274,30 @@ export function NewInvoiceModal({
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Type */}
+          <div className="space-y-2">
+            <Label htmlFor="type">Type</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger id="type" className="w-full bg-white">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent className="bg-white shadow-md">
+                <SelectItem value="receipt">Receipt</SelectItem>
+                <SelectItem value="invoice">Invoice</SelectItem>
+                <SelectItem value="purchase_order">Purchase Order</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* File Upload */}
           <div className="space-y-2">
-            <Label htmlFor="file">Invoice File (Optional)</Label>
+            <Label htmlFor="file">Invoice File <span className="text-red-500">*</span></Label>
             <div className="flex items-center gap-2">
               <Input
                 id="file"
@@ -301,6 +311,9 @@ export function NewInvoiceModal({
               <p className="text-xs text-green-600">
                 File selected: {file.name}
               </p>
+            )}
+            {errors.file && (
+              <p className="text-xs text-red-500">{errors.file}</p>
             )}
           </div>
 
@@ -336,4 +349,4 @@ export function NewInvoiceModal({
       </SheetContent>
     </Sheet>
   );
-} 
+}
