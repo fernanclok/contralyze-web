@@ -5,12 +5,12 @@ import EditRequisition from "./editRequisitionPage";
 import { AlertCircle } from "lucide-react";
 
 interface PageProps {
-  params: { requisition_uid: string }; // Cambia `slug` a `requisition_uid`
-  searchParams: { tab?: string }; // Mantén `searchParams` como está
+  params: Promise<{ requisition_uid: string }>; // Cambia `slug` a `requisition_uid`
+  searchParams: Promise<{ tab?: string }>; // Mantén `searchParams` como está
 }
 
 export default async function RequisitionEditPage({ params }: PageProps) {
-  const { requisition_uid } = params; // Accede directamente a `requisition_uid`
+  const { requisition_uid } = await params; // Accede directamente a `requisition_uid`
   const session = await getSession();
 
   const userRole = session?.role || "user";
