@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getSession } from "@/app/lib/session";
 import { ToastContainer } from "@/components/ui/toast";
+import { PusherProvider } from "@/contexts/PusherContext";
+import { RealtimeNotification } from "@/components/ui/RealtimeNotification";
 import ClientWrapper from "@/components/ClientWrapper"; // Importa el nuevo componente
 
 const geistSans = Geist({
@@ -28,10 +30,15 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        <ToastContainer />
-        <ClientWrapper /> {/* Se ejecutará el useEffect desde aquí */}
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <PusherProvider>
+          {children}
+          <ToastContainer />
+          <RealtimeNotification />
+          <ClientWrapper /> {/* Se ejecutará el useEffect desde aquí */}
+        </PusherProvider>
       </body>
     </html>
   );
