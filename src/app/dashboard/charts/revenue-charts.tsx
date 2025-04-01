@@ -22,7 +22,7 @@ const months = [
 ]
 
 
-export function RevenueChart({ transaction, Year }: { transaction: any, Year: any }) {
+export function RevenueChart({ transaction, Year }: { transaction: any, Year: (string | number)[] }) {
   const [selectedYear, setSelectedYear] = useState(Year[0]);
 
   const filteredData = Array.isArray(transaction)
@@ -50,7 +50,7 @@ export function RevenueChart({ transaction, Year }: { transaction: any, Year: an
                     onChange={(e) => setSelectedYear(e.target.value)}
                     className="border border-gray-300 rounded-md p-2 text-sm"
                   >
-                    {Year.map((year) => (
+                    {Year.map((year: string | number) => (
                       <option key={year} value={year}>
                         {year}
                       </option>

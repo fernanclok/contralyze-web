@@ -396,6 +396,12 @@ export async function downloadInvoiceFile(id: string) {
     if (error.response?.status === 404) {
       try {
         console.log("Trying direct file endpoint");
+        const token = (await cookies()).get("access_token")?.value;
+
+        if (!token) {
+          return { error: "Authorization required. Please log in.", url: null };
+        }
+
         const fileResponse = await axios.get(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices/${id}/file`,
           {

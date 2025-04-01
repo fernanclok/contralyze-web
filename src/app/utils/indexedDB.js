@@ -1,7 +1,7 @@
 export const openDB = () => {
   return new Promise((resolve, reject) => {
     if (typeof window !== "undefined" && window.indexedDB) {
-      const request = indexedDB.open("Contralyze", 9); // Incrementa la versión si haces cambios
+      const request = indexedDB.open("Contralyze", 10); // Incrementa la versión si haces cambios
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
