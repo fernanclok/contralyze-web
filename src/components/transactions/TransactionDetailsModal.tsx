@@ -7,12 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Download, FileText, Eye } from 'lucide-react';
+import { Download, FileText, Eye, Plus, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import axios from 'axios';
+import CreateInvoiceModal from './CreateInvoiceModal';
 
 interface TransactionDetailsModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export function TransactionDetailsModal({
 }: TransactionDetailsModalProps) {
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
 
   if (!transaction) return null;
 
@@ -172,153 +174,187 @@ export function TransactionDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px]">
-        <DialogHeader>
-          <DialogTitle className="flex justify-between items-center">
-            <span>Transaction Details</span>
-          </DialogTitle>
-          <DialogDescription>
-            Transaction #{transaction.reference_number || transaction.id?.substring(0, 8)}
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="bg-slate-50 p-6 sticky top-0 z-10 border-b">
+          <div className="flex justify-between items-center">
+            <div>
+              <DialogTitle className="text-xl font-bold">
+                Transaction Details
+              </DialogTitle>
+              <DialogDescription className="mt-1">
+                View details for this transaction
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge 
+                className={cn(
+                  "text-sm px-3 py-1",
+                  transaction.status === 'completed' ? "bg-green-100 text-green-800" : 
+                  transaction.status === 'pending' ? "bg-yellow-100 text-yellow-800" : 
+                  "bg-red-100 text-red-800"
+                )}
+              >
+                {transaction.status}
+              </Badge>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onClose} 
+                className="h-8 w-8 rounded-full"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500">Status</p>
-              <p className={`font-semibold ${getStatusColor(transaction.status)}`}>
-                {getStatusText(transaction.status)}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500">Type</p>
-              <p className={`font-semibold ${getTypeColor(transaction.type)}`}>
-                {getTypeText(transaction.type)}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-gray-500">Amount</p>
-            <p className={`text-xl font-bold ${getTypeColor(transaction.type)}`}>
-              {formatCurrency(transaction.amount)}
-            </p>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-gray-500">Date</p>
-            <p className="font-semibold">{formatDate(transaction.transaction_date)}</p>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-gray-500">Description</p>
-            <p className="font-semibold">{transaction.description || 'No description'}</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500">Category</p>
-              <p className="font-semibold">{transaction.category?.name || 'No category'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500">Payment Method</p>
-              <p className="font-semibold">{transaction.payment_method || 'N/A'}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500">Supplier</p>
-              <p className="font-semibold">{transaction.supplier?.name || 'N/A'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500">Client</p>
-              <p className="font-semibold">{transaction.client?.name || 'N/A'}</p>
-            </div>
-          </div>
-
-          {transaction.reference_number && (
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500">Reference Number</p>
-              <p className="text-sm">{transaction.reference_number}</p>
+        <div className="p-6">
+          {/* Botón Add Invoice */}
+          {transaction && transaction.status === 'completed' && (
+            <div className="flex justify-end mb-6">
+              <Button
+                onClick={() => setIsCreateInvoiceModalOpen(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4" />
+                Add Invoice
+              </Button>
             </div>
           )}
 
-          {/* Invoice section with preview */}
-          {transaction.invoices && transaction.invoices.length > 0 && (
-            <div className="space-y-4 mt-4">
-              <div className="flex justify-between items-center">
-                <p className="text-lg font-semibold">Invoice Information</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-8">
-                {/* Invoice details */}
+          {/* Información principal */}
+          <div className="bg-white rounded-lg border p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4 border-b pb-2">Transaction Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
                 <div className="space-y-4">
-                  {transaction.invoices.map((invoice) => (
-                    <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex justify-between items-center">
-                        <p className="font-semibold">Invoice #{invoice.invoice_number}</p>
-                        <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Type</p>
+                    <p className="font-medium">{transaction.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Amount</p>
+                    <p className="font-medium text-lg">{formatCurrency(transaction.amount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Date</p>
+                    <p className="font-medium">{format(new Date(transaction.transaction_date), 'PPP')}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Category</p>
+                    <p className="font-medium">{transaction.category?.name || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">
+                      {transaction.type === 'income' ? 'Client' : transaction.type === 'expense' ? 'Supplier' : 'Reference'}
+                    </p>
+                    <p className="font-medium">
+                      {transaction.type === 'income' 
+                        ? transaction.client?.name || '-'
+                        : transaction.type === 'expense'
+                          ? transaction.supplier?.name || '-'
+                          : transaction.reference_number || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Payment Method</p>
+                    <p className="font-medium">{transaction.payment_method || '-'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {transaction.description && (
+              <div className="mt-4 pt-4 border-t">
+                <p className="text-sm font-medium text-gray-500">Description</p>
+                <p className="mt-1">{transaction.description}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Facturas asociadas */}
+          {transaction.invoices && transaction.invoices.length > 0 && (
+            <div className="bg-white rounded-lg border p-6">
+              <h3 className="text-lg font-semibold mb-4 border-b pb-2">Invoices</h3>
+              <div className="space-y-4">
+                {transaction.invoices.map((invoice) => (
+                  <div key={invoice.id} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{invoice.invoice_number}</p>
+                        <p className="text-sm text-gray-500">
+                          {invoice.issue_date && format(new Date(invoice.issue_date), 'PPP')}
+                          {invoice.due_date && ` - Due: ${format(new Date(invoice.due_date), 'PPP')}`}
+                        </p>
+                        <Badge 
+                          className={cn(
+                            "mt-2 text-xs",
+                            invoice.status === 'paid' ? "bg-green-100 text-green-800" : 
+                            invoice.status === 'pending' ? "bg-yellow-100 text-yellow-800" : 
+                            invoice.status === 'overdue' ? "bg-red-100 text-red-800" :
+                            "bg-slate-100 text-slate-800"
+                          )}
+                        >
                           {invoice.status}
                         </Badge>
                       </div>
-                      
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <p className="text-sm text-gray-500">Due Date</p>
-                          <p className="text-sm">{invoice.due_date ? formatDate(invoice.due_date) : 'N/A'}</p>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-2">
-                          <p className="text-sm text-gray-500">Type</p>
-                          <p className="text-sm capitalize">{invoice.type}</p>
-                        </div>
-                        
-                        {invoice.notes && (
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-500">Notes</p>
-                            <p className="text-sm mt-1">{invoice.notes}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2 mt-3">
+                      <div className="flex space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handlePreviewInvoice(invoice.id)}
+                          className="flex items-center gap-1"
                         >
-                          <Eye className="h-4 w-4 mr-1" />
+                          <Eye className="h-3 w-3" />
                           Preview
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDownloadInvoice(invoice.id)}
+                          className="flex items-center gap-1"
                         >
-                          <Download className="h-4 w-4 mr-1" />
+                          <Download className="h-3 w-3" />
                           Download
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* File preview */}
-                <div id="invoice-preview" className="border rounded-lg p-4">
-                  {previewUrl && (
-                    <img 
-                      src={previewUrl} 
-                      alt="Invoice preview" 
-                      className="max-w-full h-auto"
-                    />
-                  )}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
+
+          {/* Área de previsualización */}
+          <div id="invoice-preview" className="mt-6">
+            {previewUrl && (
+              <div className="border rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-4 border-b pb-2">Invoice Preview</h3>
+                <img 
+                  src={previewUrl} 
+                  alt="Invoice preview" 
+                  className="max-w-full h-auto rounded"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </DialogContent>
+
+      {/* Modal para crear factura */}
+      <CreateInvoiceModal
+        open={isCreateInvoiceModalOpen}
+        onOpenChange={setIsCreateInvoiceModalOpen}
+        transactionId={transaction?.id || ''}
+        onSuccess={() => {
+          setIsCreateInvoiceModalOpen(false);
+          // Opcionalmente podrías refrescar los datos de la transacción aquí
+        }}
+      />
     </Dialog>
   );
 }
