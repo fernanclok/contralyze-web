@@ -91,7 +91,7 @@ export default function ManageClientsClient({
             Add Client
           </Button>
         ) : (
-          <AddClientSheet />
+          <AddClientSheet onClientUpdated={updateLocalClients} />
         )}
       </div>
 

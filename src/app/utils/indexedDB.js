@@ -1,7 +1,7 @@
 export const openDB = () => {
   return new Promise((resolve, reject) => {
     if (typeof window !== "undefined" && window.indexedDB) {
-      const request = indexedDB.open("Contralyze", 7); // Incrementa la versión si haces cambios
+      const request = indexedDB.open("Contralyze", 8); // Incrementa la versión si haces cambios
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
@@ -39,6 +39,10 @@ export const openDB = () => {
           if (!requisitionsStore.indexNames.contains("requisition_uid")) {
             requisitionsStore.createIndex("requisition_uid", "requisition_uid", { unique: true });
           }
+        }
+
+        if (!db.objectStoreNames.contains("budgets")) {
+          db.createObjectStore("budgets", { keyPath: "id" });
         }
       };
 
@@ -349,6 +353,47 @@ export const getRequisitionsDashboardFromDB = () => {
           console.error("Error opening database:", error); // Log para depuración
           reject(error);
         });
+    });
+  };
+
+  //budgets
+  export const saveBudgetsToDB = (budgets) => {
+    return new Promise((resolve, reject) => {
+      openDB().then((db) => {
+        const transaction = db.transaction(["budgets"], "readwrite");
+        const store = transaction.objectStore("budgets");
+  
+        budgets.forEach((supplier) => {
+          store.put(supplier);
+        });
+  
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (error) => reject(error);
+      }).catch((error) => reject(error));
+    });
+  };
+
+  export const getBudgetsFromDB = () => {
+    return new Promise((resolve, reject) => {
+      openDB().then((db) => {
+        const transaction = db.transaction(["budgets"], "readonly");
+        const store = transaction.objectStore("budgets");
+  
+        const budgets = [];
+        const request = store.openCursor();
+  
+        request.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor) {
+            budgets.push(cursor.value);
+            cursor.continue();
+          } else {
+            resolve(budgets);
+          }
+        };
+  
+        request.onerror = (error) => reject(error);
+      }).catch((error) => reject(error));
     });
   };
   
