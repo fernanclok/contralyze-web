@@ -88,7 +88,7 @@ export default function ManageSuppliersClient({
             Add Supplier
           </Button>
         ) : (
-          <AddSupplierSheet />
+          <AddSupplierSheet onSupplierUpdated={updateLocalSuppliers} />
         )}
       </div>
 
@@ -97,7 +97,7 @@ export default function ManageSuppliersClient({
           {filteredSuppliers.map((supplier: any) => (
             <Card key={supplier.id} className="relative">
               {!hasError && supplier.created_by.id === user.id && (
-                <EditSupplierSheet supplier={supplier} />
+                <EditSupplierSheet supplier={supplier} onSupplierUpdated={updateLocalSuppliers} />
               )}
               <CardHeader>
                 <CardTitle className="text-black">

@@ -19,7 +19,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { emmiter } from "@/lib/emmiter";
 
-export function AddSupplierSheet() {
+export function AddSupplierSheet({ onSupplierUpdated }: { onSupplierUpdated: () => void}) {
   const [isOpen, setIsOpen] = useState(false);
   const [state, setState] = useState<any>(null);
   const router = useRouter();
@@ -35,6 +35,7 @@ export function AddSupplierSheet() {
         type: "success",
       });
       router.refresh(); // Refresca la tabla de proveedores
+      onSupplierUpdated();
     }
     setState(result);
   };

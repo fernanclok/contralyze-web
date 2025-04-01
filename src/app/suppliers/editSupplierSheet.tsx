@@ -26,7 +26,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { emmiter } from "@/lib/emmiter";
 
-export function EditSupplierSheet({ supplier }: { supplier: any }) {
+export function EditSupplierSheet({ supplier, onSupplierUpdated }: { supplier: any, onSupplierUpdated: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isActive, setIsActive] = useState(supplier.isActive)
   const [state, setState] = useState<any>(null);
@@ -43,6 +43,7 @@ export function EditSupplierSheet({ supplier }: { supplier: any }) {
         type: "success",
       });
       router.refresh();
+      onSupplierUpdated();
     }
     setState(result);
   }
