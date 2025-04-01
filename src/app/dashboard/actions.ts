@@ -25,9 +25,9 @@ export async function getBudgets() {
     } catch (error: any) {
       console.error("Error fetching budget info:", error);
   
-      if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
-        return { error: "Error connecting to the server", Budgets: {} };
-      }
+      // if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
+      //   return { error: "Error connecting to the server", Budgets: {} };
+      // }
   
       return { error: "Error fetching budget info", Budgets: {} };
     }
@@ -81,9 +81,9 @@ export async function getBudgets() {
     } catch (error: any) {
       console.error("Error fetching info cards:", error);
   
-      if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
-        return { error: "Error connecting to the server", Budgets: {} };
-      }
+      // if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
+      //   return { error: "Error connecting to the server", Budgets: {} };
+      // }
   
       return { error: "Error fetching info cards", Budgets: {} };
   }
@@ -113,9 +113,9 @@ export async function getBudgets() {
     } catch (error: any) {
       console.error("Error fetching transactions:", error);
   
-      if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
-        return { error: "Error connecting to the server", transactions: {} };
-      }
+      // if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
+      //   return { error: "Error connecting to the server", transactions: {} };
+      // }
   
       return { error: "Error fetching transactions", transactions: {} };
     }
@@ -144,9 +144,9 @@ export async function getBudgets() {
     } catch (error: any) {
       console.error("Error fetching DeptoData:", error);
   
-      if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
-        return { error: "Error connecting to the server", DeptoData: {} };
-      }
+      // if (error.code === "ECONNREFUSED" || error.response?.status === 429) {
+      //   return { error: "Error connecting to the server", DeptoData: {} };
+      // }
   
       return { error: "Error fetching DeptoData", DeptoData: {} };
     }
@@ -175,9 +175,9 @@ export async function getBudgets() {
     } catch(error:any){
       console.error("Error fetching transactions:", error);
 
-      if(error.code === "ECONNREFUSED" || error.response?.status === 429){
-        return { error: "Error connecting to the server", transactionsList: {} };
-      }
+      // if(error.code === "ECONNREFUSED" || error.response?.status === 429){
+      //   return { error: "Error connecting to the server", transactionsList: {} };
+      // }
 
       return { error: "Error fetching transactions", transactionsList: {} };
     }
@@ -187,9 +187,9 @@ export async function getBudgets() {
     try{
       const token = (await cookies()).get("access_token")?.value;
 
-      if(!token) {
-        return {error: "No authentication token found", transactionsDepto: {}};
-      }
+      // if(!token) {
+      //   return {error: "No authentication token found", transactionsDepto: {}};
+      // }
 
       const headers = {
         Authorization: `Bearer ${token}`,
