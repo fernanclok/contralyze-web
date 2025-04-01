@@ -110,10 +110,7 @@ export default async function TransactionsPage() {
   return (
     <AuthenticatedLayout userRole={userRole} userName={userName}>
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Transaction Management</h1>
-          <p className="text-gray-500">Manage income, expenses and transfers</p>
-        </div>
+          <h1 className="text-2xl font-bold mb-4">Transaction Management</h1>
         
         {hasConnectionError && (
           <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
@@ -151,7 +148,7 @@ export default async function TransactionsPage() {
               <ArrowUpCircle className="h-4 w-4 bg-green-100 text-green-800 rounded-full border" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-black">
                 {formatCurrency(totalIncome)}
               </div>
             </CardContent>
@@ -165,7 +162,7 @@ export default async function TransactionsPage() {
               <ArrowDownCircle className="h-4 w-4 bg-red-100 text-red-800 rounded-full border" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-2xl font-bold text-black">
                 {formatCurrency(totalExpense)}
               </div>
             </CardContent>

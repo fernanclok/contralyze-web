@@ -30,7 +30,7 @@ import {
 import { useReactToPrint } from "react-to-print";
 import { RejectRequisitionSheet } from "./rejectRequisitionSheet";
 import { approveRequisition } from "@/app/requisitions/actions";
-import { getRequisitionByUIDFromDB } from "@/app/utils/indexedDB";
+import { getRequisitionByUIDFromDB,updateRequisitionInDB  } from "@/app/utils/indexedDB";
 
 export default function RequisitionDetails({
   requisition,
@@ -68,16 +68,44 @@ export default function RequisitionDetails({
     }
   }, [id, requisitionData]);
 
+  const updateRequisitionData = async () => {
+    if (typeof window !== "undefined" && window.indexedDB) {
+      try {
+        const updatedRequisition = await getRequisitionByUIDFromDB(id)
+        setRequisitionData(updatedRequisition || [])
+      } catch (error) {
+        console.error("Error updating local requisition", error)
+      }
+    }
+  }
+
   const handleApproveRequisition = async () => {
     setLoading(true);
     setError(null);
-    const result = await approveRequisition(requisitionData.id);
-    setLoading(false);
-
-    if (result.errors) {
-      setError(result.errors);
-    } else {
-      router.refresh();
+  
+    try {
+      // Aprobar la requisición en el servidor
+      const result = await approveRequisition(requisitionData.id);
+  
+      if (result.errors) {
+        setError(result.errors);
+      } else {
+        // Actualizar la requisición en IndexedDB
+        const updatedRequisition = {
+          ...requisitionData,
+          status: "approved",
+          reviewed_by: user,
+          updated_at: new Date().toISOString(),
+        };
+        await updateRequisitionInDB(updatedRequisition);
+  
+        // Actualizar el estado local
+        setRequisitionData(updatedRequisition);
+      }
+    } catch (error) {
+      console.error("Error approving requisition:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -333,7 +361,7 @@ export default function RequisitionDetails({
                           <CheckCircle className="h-4 w-4 mr-2" />
                           {loading ? "Approving..." : "Approve Requisition"}
                         </Button>
-                        <RejectRequisitionSheet id={requisitionData.id} />
+                        <RejectRequisitionSheet id={requisitionData.id} onRequisitionUpdated={updateRequisitionData}/>
                       </>
                     )}
 

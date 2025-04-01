@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter
 } from "@/components/ui/sheet";
 import {
   Select,
@@ -49,9 +50,11 @@ export function EditSupplierSheet({ supplier, onSupplierUpdated }: { supplier: a
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => {
-      setIsOpen(open);
-      setIsActive(supplier.isActive)
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        setIsActive(supplier.isActive);
       }}
     >
       <SheetTrigger asChild>
@@ -137,8 +140,8 @@ export function EditSupplierSheet({ supplier, onSupplierUpdated }: { supplier: a
                 <SelectValue placeholder="Select a status" />
               </SelectTrigger>
               <SelectContent>
-              <SelectItem value="true">Active</SelectItem>
-              <SelectItem value="false">Inactive</SelectItem>
+                <SelectItem value="true">Active</SelectItem>
+                <SelectItem value="false">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -147,9 +150,9 @@ export function EditSupplierSheet({ supplier, onSupplierUpdated }: { supplier: a
               <p>This supplier is inactive.</p>
             </div>
           )}
-          <div className="mt-6">
+          <SheetFooter>
             <SubmitButton />
-          </div>
+          </SheetFooter>
         </form>
       </SheetContent>
     </Sheet>

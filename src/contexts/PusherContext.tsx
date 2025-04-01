@@ -43,12 +43,12 @@ export function PusherProvider({
       });
     }
     
-    if (pusher.isConnected) {
-      emmiter.emit('showToast', {
-        message: 'Conexión en tiempo real establecida',
-        type: 'success'
-      });
-    }
+    // if (pusher.isConnected) {
+    //   emmiter.emit('showToast', {
+    //     message: 'Conexión en tiempo real establecida',
+    //     type: 'success'
+    //   });
+    // }
   }, [pusher.connectionError, pusher.isConnected]);
   
   return (

@@ -20,7 +20,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { emmiter } from "@/lib/emmiter";
 
-export function RejectRequisitionSheet({ id }: { id: string }) {
+export function RejectRequisitionSheet({ id, onRequisitionUpdated }: { id: string, onRequisitionUpdated: () => void; }) {
   const [isOpen, setIsOpen] = useState(false);
   const [state, setState] = useState<any>(null);
   const router = useRouter();
@@ -38,6 +38,7 @@ export function RejectRequisitionSheet({ id }: { id: string }) {
         type: "success",
       });
       router.refresh(); // Refresca la tabla de requisiciones
+      onRequisitionUpdated();
     }
     setState(result);
   };
