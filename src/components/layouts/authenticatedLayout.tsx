@@ -35,7 +35,6 @@ const menuItems: {
     { path: "/suppliers", label: "Suppliers", icon: mdiTruck },
   ],
   user: [
-    { path: "/dashboard", label: "Dashboard", icon: mdiViewDashboard },
     { path: "/transactions", label: "Transactions", icon: mdiArchiveOutline },
     { path: "/requisitions", label: "Requisitions", icon: mdiFileDocumentOutline },
     { path: "/budget-requests", label: "Budget Requests", icon: mdiCashMultiple },

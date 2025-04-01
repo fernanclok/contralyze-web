@@ -151,7 +151,7 @@ export default function Dibises() {
   }
 
   return (
-    <Card className="col-span-2">
+    <Card className="col-span-1 w-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-sm text-gray-400 font-medium">Exchange Rates</CardTitle>
         <UsersIcon className="h-5 w-5 text-gray-600" />

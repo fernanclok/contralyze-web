@@ -15,6 +15,7 @@ const PROTECTED_ROUTES = [
 
 // Rutas que requieren rol de admin
 const ADMIN_ROUTES = [
+  '/dashboard',
   '/budgets',      // Solo admins pueden ver esta página, usuarios normales ven budget-requests
   '/manage-company'
 ];
