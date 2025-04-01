@@ -40,7 +40,7 @@ interface UsePusherReturn {
  * @returns Object with connection state and methods
  */
 export function usePusher(
-  appKey: string = process.env.NEXT_PUBLIC_PUSHER_APP_KEY || '',
+  appKey: string = process.env.NEXT_PUBLIC_PUSHER_KEY || '',
   options: PusherOptions = {}
 ): UsePusherReturn {
   const [isConnected, setIsConnected] = useState(false);
@@ -81,7 +81,7 @@ export function usePusher(
     try {
       // Initialize Pusher client
       pusherRef.current = new Pusher(appKey, {
-        cluster: mergedOptions.cluster,
+        cluster: mergedOptions.cluster || 'us2',
         forceTLS: mergedOptions.forceTLS,
         enabledTransports: mergedOptions.enabledTransports as any,
         disabledTransports: mergedOptions.disabledTransports as any,
