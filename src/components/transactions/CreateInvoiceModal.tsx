@@ -81,7 +81,7 @@ export default function CreateInvoiceModal({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
+      <SheetContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Create Invoice</SheetTitle>
           <SheetDescription>

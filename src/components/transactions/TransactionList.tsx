@@ -17,6 +17,7 @@ import { Transaction, Category, Client, Supplier, Department } from '@/app/trans
 import { NewTransactionModal } from './NewTransactionModal';
 import { EditTransactionModal } from './EditTransactionModal';
 import { TransactionDetailsModal } from './TransactionDetailsModal';
+import CreateInvoiceModal from './CreateInvoiceModal';
 import { PlusCircle, Edit, Search, Calendar, FilterX, X, Info, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -53,6 +54,7 @@ export function TransactionList({
   const [isNewTransactionModalOpen, setIsNewTransactionModalOpen] = useState(false);
   const [isEditTransactionModalOpen, setIsEditTransactionModalOpen] = useState(false);
   const [isViewTransactionModalOpen, setIsViewTransactionModalOpen] = useState(false);
+  const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
@@ -245,10 +247,14 @@ export function TransactionList({
         message: 'Transaction updated successfully',
         type: 'success'
       });
+
+      // Si la transacción se marcó como completada, mostrar el modal de factura
+      if (data.status === 'completed') {
+        setSelectedTransaction(result.transaction);
+        setIsCreateInvoiceModalOpen(true);
+      }
       
       setIsEditTransactionModalOpen(false);
-      // No es necesario refrescar la página, Pusher enviará la actualización
-      // router.refresh();
     } catch (error) {
       console.error('Error updating transaction:', error);
       emmiter.emit('showToast', {
@@ -757,6 +763,20 @@ export function TransactionList({
         isOpen={isViewTransactionModalOpen}
         onClose={() => setIsViewTransactionModalOpen(false)}
         transaction={selectedTransaction}
+      />
+      
+      {/* Modal para crear factura */}
+      <CreateInvoiceModal
+        open={isCreateInvoiceModalOpen}
+        onOpenChange={setIsCreateInvoiceModalOpen}
+        transactionId={selectedTransaction?.id || ''}
+        onSuccess={() => {
+          emmiter.emit('showToast', {
+            message: 'Invoice created successfully',
+            type: 'success'
+          });
+          setIsCreateInvoiceModalOpen(false);
+        }}
       />
       
       {/* Alerta de confirmación para eliminar */}
