@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useActionState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Edit } from "lucide-react";
 
 import { editDepartment } from "../actions";
 import { useFormStatus } from "react-dom";
@@ -21,39 +29,53 @@ import { emmiter } from "@/lib/emmiter";
 
 export function EditDepartmentSheet({ department }: { department: any }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [state, editDepartmentAction] = useActionState(
-    async (prevState: any, formData: FormData) => {
-      const result = await editDepartment(prevState, formData);
-      if (!result.errors) {
-        setIsOpen(false); // Cierra el modal si no hay errores
-        emmiter.emit("showToast", {
-          message: "Department added successfully",
-          type: "success",
-        });
-        router.refresh(); // Refresca la tabla de departamentos
-      }
-      return result;
-    },
-    undefined
-  );
+  const [isActive, setIsActive] = useState(department.isActive);
+  const [state, setState] = useState<any>(null);
+
+  const handleEditDepartment = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const result = await editDepartment(state, formData);
+    if (!result.errors) {
+      setIsOpen(false);
+      emmiter.emit("showToast", {
+        message: "User updated successfully",
+        type: "success",
+      });
+      router.refresh();
+    }
+    setState(result);
+  };
 
   const router = useRouter();
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        setIsActive(department.isActive);
+      }}
+    >
       <SheetTrigger asChild>
-        <button className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
-          Edit
-        </button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hover:bg-primary hover:text-white"
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Edit Department</SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="pb-4">
             Fill in the details to edit the department.
           </SheetDescription>
         </SheetHeader>
-        <form action={editDepartmentAction} className="space-y-6">
+        <form onSubmit={handleEditDepartment} className="space-y-6">
           {state?.errors?.server && (
             <Alert variant="destructive">
               <AlertTitle>Error</AlertTitle>
@@ -61,24 +83,47 @@ export function EditDepartmentSheet({ department }: { department: any }) {
             </Alert>
           )}
           <input type="hidden" name="department_id" value={department.id} />
-            <div className="mt-4 space-y-2">
-              <Label>Department Name</Label>
-              <Input
-                type="text"
-                name="department_name"
-                defaultValue={department.name}
-                placeholder="Department Name"
-              />
+          <div className="mt-4 space-y-2">
+            <Label>Department Name</Label>
+            <Input
+              type="text"
+              name="department_name"
+              defaultValue={department.name}
+              placeholder="Department Name"
+            />
+          </div>
+          <div className="mt-4 space-y-2">
+            <Label>Department Description</Label>
+            <Input
+              type="text"
+              name="department_description"
+              defaultValue={department.description}
+              placeholder="Department Description"
+            />
+          </div>
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="isActive">status</Label>
+            <Select
+              name="isActive"
+              value={isActive ? "true" : "false"}
+              onValueChange={(value) => setIsActive(value === "true")}
+            >
+              <SelectTrigger className="w-full text-black">
+                <SelectValue placeholder="Select a status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Active</SelectItem>
+                <SelectItem value="false">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {!isActive && (
+            <div className="mt-4 text-red-500">
+              If you Inactivate this department, You Can not added new users to
+              the deparment. And also the existing users in this department will
+              can not make any action.
             </div>
-            <div className="mt-4 space-y-2">
-              <Label>Department Description</Label>
-              <Input
-                type="text"
-                name="department_description"
-                defaultValue={department.description}
-                placeholder="Department Description"
-              />
-            </div>
+          )}
           <SubmitButton />
         </form>
       </SheetContent>

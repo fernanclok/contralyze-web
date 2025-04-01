@@ -12,6 +12,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { editSupplier } from "./actions";
@@ -19,28 +26,34 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { emmiter } from "@/lib/emmiter";
 
-export function EditSupplierSheet({ supplier }: { supplier: any }) {
+export function EditSupplierSheet({ supplier, onSupplierUpdated }: { supplier: any, onSupplierUpdated: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [state, editSupplierAction] = useActionState(
-    async (prevState: any, formData: FormData) => {
-      const result = await editSupplier(prevState, formData);
-      if (!result.errors) {
-        setIsOpen(false); // Cierra el modal si no hay errores
-        emmiter.emit("showToast", {
-          message: "Supplier edited successfully",
-          type: "success",
-        });
-        router.refresh(); // Refresca la tabla de departamentos
-      }
-      return result;
-    },
-    undefined
-  );
-
+  const [isActive, setIsActive] = useState(supplier.isActive)
+  const [state, setState] = useState<any>(null);
   const router = useRouter();
 
+  const handleEditSupplier = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget)
+    const result = await editSupplier(state, formData);
+    if (!result.errors) {
+      setIsOpen(false);
+      emmiter.emit('showToast', {
+        message: "User updated successfully",
+        type: "success",
+      });
+      router.refresh();
+      onSupplierUpdated();
+    }
+    setState(result);
+  }
+
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      setIsActive(supplier.isActive)
+      }}
+    >
       <SheetTrigger asChild>
         <button className="absolute top-2 right-2 font-medium text-blue-600 dark:text-blue-500 hover:underline">
           Edit
@@ -49,11 +62,11 @@ export function EditSupplierSheet({ supplier }: { supplier: any }) {
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Edit Supplier</SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="pb-4">
             Fill in the details to edit the supplier.
           </SheetDescription>
         </SheetHeader>
-        <form action={editSupplierAction} className="space-y-6">
+        <form onSubmit={handleEditSupplier} className="space-y-6">
           {state?.errors?.server && (
             <Alert variant="destructive">
               <AlertTitle>Error</AlertTitle>
@@ -115,15 +128,19 @@ export function EditSupplierSheet({ supplier }: { supplier: any }) {
           </div>
           <div className="mt-4 space-y-2">
             <Label htmlFor="isActive">Status</Label>
-            <select
+            <Select
               name="isActive"
-              id="isActive"
-              defaultValue={supplier.isActive ? "true" : "false"}
-              className="border border-neutral-200 text-gray-900 text-sm rounded-md focus:ring-primary focus:border-primary block w-full p-2.5"
+              value={isActive ? "true" : "false"}
+              onValueChange={(value) => setIsActive(value === "true")}
             >
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
+              <SelectTrigger className="w-full text-black">
+                <SelectValue placeholder="Select a status" />
+              </SelectTrigger>
+              <SelectContent>
+              <SelectItem value="true">Active</SelectItem>
+              <SelectItem value="false">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {!supplier.isActive && (
             <div className="mt-2 text-red-600">

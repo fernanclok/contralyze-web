@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,20 +21,54 @@ import {
 } from "lucide-react";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import {
+  getRequisitionsDashboardFromDB,
+  saveRequisitionsDashboardToDB,
+} from "@/app/utils/indexedDB";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function RequisitionDashboard({
-  requisitions,
   dashboardData,
   user,
   hasError,
 }: {
-  requisitions: any[];
   dashboardData: any;
   user: any;
   hasError: boolean;
 }) {
+  const [localRequisitionsDashboard, setLocalRequisitionsDashboard] = useState(
+    dashboardData && typeof dashboardData === "object" ? dashboardData : {}
+  );
+
+  useEffect(() => {
+    if (
+      !dashboardData ||
+      (Array.isArray(dashboardData) && dashboardData.length === 0)
+    ) {
+      if (typeof window !== "undefined" && window.indexedDB) {
+        getRequisitionsDashboardFromDB()
+          .then((requisitionsFromDB) => {
+            if (requisitionsFromDB) {
+              setLocalRequisitionsDashboard(requisitionsFromDB);
+            }
+          })
+          .catch((error) => {
+            console.error("Error retrieving requisition from IndexedDB", error);
+          });
+      }
+    } else {
+      setLocalRequisitionsDashboard(dashboardData);
+    }
+  }, [dashboardData]);
+
+  useEffect(() => {
+    if (dashboardData && typeof window !== "undefined" && window.indexedDB) {
+      saveRequisitionsDashboardToDB(dashboardData).catch((error) => {
+        console.error("Error saving requisitions to IndexedDB:", error);
+      });
+    }
+  }, [dashboardData]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -48,24 +83,15 @@ export default function RequisitionDashboard({
     }
   };
 
-  // Ordenar las requisiciones por fecha de creación en orden descendente
-  const sortedRequisitions = requisitions.sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-
-  // Tomar las primeras 5 requisiciones más recientes
-  const recentRequisitions = sortedRequisitions.slice(0, 5);
-
   const pieData = {
     labels: ["Pending", "Approved", "Rejected"],
     datasets: [
       {
         label: "Requisitions by Status",
         data: [
-          dashboardData.pending_requisitions,
-          dashboardData.approved_requisitions,
-          dashboardData.rejected_requisitions,
+          localRequisitionsDashboard.pending_requisitions,
+          localRequisitionsDashboard.approved_requisitions,
+          localRequisitionsDashboard.rejected_requisitions,
         ],
         backgroundColor: [
           "rgba(255, 206, 86, 0.2)",
@@ -96,14 +122,14 @@ export default function RequisitionDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">
-              {dashboardData.total_month_requisitions || 0}
+              {localRequisitionsDashboard.total_month_requisitions || 0}
             </div>
             <p className="text-xs text-gray-500">
-              {dashboardData.total_previous_month_requisitions > 0
+              {localRequisitionsDashboard.total_previous_month_requisitions > 0
                 ? `+${(
-                    ((dashboardData.total_month_requisitions -
-                      dashboardData.total_previous_month_requisitions) /
-                      dashboardData.total_previous_month_requisitions) *
+                    ((localRequisitionsDashboard.total_month_requisitions -
+                      localRequisitionsDashboard.total_previous_month_requisitions) /
+                      localRequisitionsDashboard.total_previous_month_requisitions) *
                     100
                   ).toFixed(2)}% from last month`
                 : "No data from last month"}
@@ -120,14 +146,15 @@ export default function RequisitionDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">
-              {dashboardData.pending_requisitions || 0}
+              {localRequisitionsDashboard.pending_requisitions || 0}
             </div>
             <p className="text-xs text-gray-500">
-              {dashboardData.pending_previous_month_requisitions > 0
+              {localRequisitionsDashboard.pending_previous_month_requisitions >
+              0
                 ? `+${(
-                    ((dashboardData.pending_requisitions -
-                      dashboardData.pending_previous_month_requisitions) /
-                      dashboardData.pending_previous_month_requisitions) *
+                    ((localRequisitionsDashboard.pending_requisitions -
+                      localRequisitionsDashboard.pending_previous_month_requisitions) /
+                      localRequisitionsDashboard.pending_previous_month_requisitions) *
                     100
                   ).toFixed(2)}% from last month`
                 : "No data from last month"}
@@ -144,14 +171,15 @@ export default function RequisitionDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">
-              {dashboardData.approved_requisitions || 0}
+              {localRequisitionsDashboard.approved_requisitions || 0}
             </div>
             <p className="text-xs text-gray-500">
-              {dashboardData.approved_previous_month_requisitions > 0
+              {localRequisitionsDashboard.approved_previous_month_requisitions >
+              0
                 ? `+${(
-                    ((dashboardData.approved_requisitions -
-                      dashboardData.approved_previous_month_requisitions) /
-                      dashboardData.approved_previous_month_requisitions) *
+                    ((localRequisitionsDashboard.approved_requisitions -
+                      localRequisitionsDashboard.approved_previous_month_requisitions) /
+                      localRequisitionsDashboard.approved_previous_month_requisitions) *
                     100
                   ).toFixed(2)}% from last month`
                 : "No data from last month"}
@@ -168,14 +196,15 @@ export default function RequisitionDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">
-              {dashboardData.rejected_requisitions || 0}
+              {localRequisitionsDashboard.rejected_requisitions || 0}
             </div>
             <p className="text-xs text-gray-500">
-              {dashboardData.rejected_previous_month_requisitions > 0
+              {localRequisitionsDashboard.rejected_previous_month_requisitions >
+              0
                 ? `+${(
-                    ((dashboardData.rejected_requisitions -
-                      dashboardData.rejected_previous_month_requisitions) /
-                      dashboardData.rejected_previous_month_requisitions) *
+                    ((localRequisitionsDashboard.rejected_requisitions -
+                      localRequisitionsDashboard.rejected_previous_month_requisitions) /
+                      localRequisitionsDashboard.rejected_previous_month_requisitions) *
                     100
                   ).toFixed(2)}% from last month`
                 : "No data from last month"}
@@ -196,13 +225,13 @@ export default function RequisitionDashboard({
           <CardContent className="pl-2">
             <div className="h-[300px] flex items-center justify-center">
               <div className="ml-4">
-               {hasPieData ? (
+                {hasPieData ? (
                   <div>
                     <Pie data={pieData} />
                   </div>
-                  ) : (
-                    <p className="text-gray-500">No data to show</p>
-                  )}
+                ) : (
+                  <p className="text-gray-500">No data to show</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -217,32 +246,37 @@ export default function RequisitionDashboard({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {recentRequisitions.length > 0 ? (
+          {Array.isArray(localRequisitionsDashboard.last_5_requisitions) &&
+          localRequisitionsDashboard.last_5_requisitions.length > 0 ? (
             <div className="space-y-4">
-              {recentRequisitions.map((req: any) => (
-                <div
-                  key={req.id}
-                  className="flex items-center justify-between border-b pb-4"
-                >
-                  <div className="flex items-center">
-                    <ShoppingCart className="h-5 w-5 text-gray-500 mr-3" />
-                    <div>
+              {localRequisitionsDashboard.last_5_requisitions.map(
+                (req: any) => (
+                  <div
+                    key={req.id}
+                    className="flex items-center justify-between border-b pb-4"
+                  >
+                    <div className="flex items-center">
+                      <ShoppingCart className="h-5 w-5 text-gray-500 mr-3" />
+                      <div>
+                        <p className="font-medium text-black">
+                          {req.requisition_uid}
+                        </p>
+                        <p className="text-sm text-gray-500">{req.title}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
                       <p className="font-medium text-black">
-                        {req.requisition_uid}
+                        ${req.total_amount}
                       </p>
-                      <p className="text-sm text-gray-500">{req.title}</p>
+                      <Badge
+                        className={`text-sm ${getStatusColor(req.status)}`}
+                      >
+                        {req.status}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium text-black">
-                      ${req.total_amount}
-                    </p>
-                    <Badge className={`text-sm ${getStatusColor(req.status)}`}>
-                      {req.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           ) : (
             <div className="text-center">

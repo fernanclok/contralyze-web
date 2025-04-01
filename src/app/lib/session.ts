@@ -83,7 +83,6 @@ export async function getSession() {
 
   // Asegurarse de que departmentId sea string o undefined
   const departmentId = cookie.departmentId ? String(cookie.departmentId) : undefined;
-  console.log('Session departmentId:', departmentId);
 
   return {
     id: cookie.userId,
