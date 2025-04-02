@@ -1,12 +1,12 @@
 export const openDB = () => {
   return new Promise((resolve, reject) => {
     if (typeof window !== "undefined" && window.indexedDB) {
-      const request = indexedDB.open("Contralyze", 10); // Incrementa la versión si haces cambios
+      const request = indexedDB.open("Contralyze", 21); // Increment version if changes are made
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
 
-        // Configuración específica para cada almacén
+        // Specific configuration for each store
         if (!db.objectStoreNames.contains("company")) {
           db.createObjectStore("company", { keyPath: "id" });
         }
@@ -37,7 +37,7 @@ export const openDB = () => {
           });
           requisitionsStore.createIndex("requisition_uid", "requisition_uid", {
             unique: true,
-          }); // Índice para búsquedas por requisition_uid
+          }); // Index for searching by requisition_uid
         } else {
           const requisitionsStore = request.transaction.objectStore(
             "requisitions"
@@ -82,12 +82,12 @@ export const openDB = () => {
         if (!db.objectStoreNames.contains("yearsAvailable")) {
           db.createObjectStore("yearsAvailable", { keyPath: "id" });
         }
-        
+
         if (!db.objectStoreNames.contains("categories")) {
           db.createObjectStore("categories", { keyPath: "id" });
         }
 
-        // Nuevo object store para transactions
+        // New object store for transactions
         if (!db.objectStoreNames.contains("transactions")) {
           const transactionsStore = db.createObjectStore("transactions", {
             keyPath: "id",
@@ -97,7 +97,7 @@ export const openDB = () => {
           });
         }
 
-        // Nuevo object store para invoices
+        // New object store for invoices
         if (!db.objectStoreNames.contains("invoices")) {
           const invoicesStore = db.createObjectStore("invoices", {
             keyPath: "id",
@@ -123,13 +123,15 @@ export const saveCompanyToDB = (company) => {
         const transaction = db.transaction(["company"], "readwrite");
         const store = transaction.objectStore("company");
 
-      store.put(company);
+        store.put(company);
 
-      transaction.oncomplete = () => {
-        console.log("Company saved to IndexedDB:", company); // Log para verificar los datos guardados
-        resolve();
-      };
-      transaction.onerror = (error) => reject(error);
+        transaction.oncomplete = () => {
+          console.log("Company saved to IndexedDB:", company); // Log to verify saved data
+          resolve();
+        };
+        transaction.onerror = (error) => reject(error);
+      })
+      .catch((error) => reject(error));
   });
 };
 
@@ -140,16 +142,17 @@ export const getCompanyFromDB = () => {
         const transaction = db.transaction(["company"], "readonly");
         const store = transaction.objectStore("company");
 
-        const request = store.get(1);
+        const request = store.get(1); // Si la clave es fija o debes manejar múltiples entradas
 
         request.onsuccess = (event) => {
-          resolve(event.target.result || {}); // Devuelve el objeto o un objeto vacío
+          resolve(event.target.result || null); // Retorna `null` si no hay datos
         };
         request.onerror = (error) => reject(error);
       })
       .catch((error) => reject(error));
   });
 };
+
 
 export const saveUsersToDB = (users) => {
   return new Promise((resolve, reject) => {
@@ -374,7 +377,6 @@ export const saveRequisitionsToDB = (requisitions) => {
       const store = transaction.objectStore("requisitions");
 
       requisitions.forEach((requisition) => {
-        console.log("Saving requisition:", requisition); // Log para depuración
         store.put(requisition);
       });
 
@@ -385,20 +387,34 @@ export const saveRequisitionsToDB = (requisitions) => {
 };
 
 export const getRequisitionByUIDFromDB = (requisition_uid) => {
+  return new Promise((resolve, reject) => {
     openDB()
       .then((db) => {
-        const transaction = db.transaction(["requisitions"], "readwrite");
+        const transaction = db.transaction(["requisitions"], "readonly");
         const store = transaction.objectStore("requisitions");
+        const index = store.index("requisition_uid");
 
-        requisitions.forEach((requisition) => {
-          console.log("Saving requisition:", requisition); // Log para depuración
-          store.put(requisition);
-        });
+        const request = index.get(requisition_uid);
 
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = (error) => reject(error);
+        request.onsuccess = (event) => {
+          const result = event.target.result;
+          if (result) {
+            resolve(result);
+          } else {
+            console.log("Requisition not found"); // Log para depuración
+            resolve(null);
+          }
+        };
+
+        request.onerror = (error) => {
+          console.error("Error retrieving requisition:", error); // Log para depuración
+          reject(error);
+        };
       })
-      .catch((error) => reject(error));
+      .catch((error) => {
+        console.error("Error opening database:", error); // Log para depuración
+        reject(error);
+      });
   });
 };
 
@@ -426,44 +442,39 @@ export const getRequisitionsFromDB = () => {
   });
 };
 
-//budgets
-export const saveBudgetsToDB = (budgets) => {
+export const updateRequisitionInDB = (requisition) => {
   return new Promise((resolve, reject) => {
-    openDB().then((db) => {
-      const transaction = db.transaction(["budgets"], "readwrite");
-      const store = transaction.objectStore("budgets");
+    openDB()
+      .then((db) => {
+        const transaction = db.transaction(["requisitions"], "readwrite");
+        const store = transaction.objectStore("requisitions");
 
-      budgets.forEach((supplier) => {
-        store.put(supplier);
+        // Usar el índice para buscar por requisition_uid
+        const index = store.index("requisition_uid");
+        const request = index.get(requisition.requisition_uid);
+
+        request.onsuccess = (event) => {
+          const existingRequisition = event.target.result;
+          if (existingRequisition) {
+            // Fusionar los cambios con el objeto existente
+            const updatedRequisition = { ...existingRequisition, ...requisition };
+            store.put(updatedRequisition);
+            resolve(updatedRequisition);
+          } else {
+            console.warn("Requisition not found in IndexedDB:", requisition.requisition_uid);
+            resolve(null);
+          }
+        };
+
+        request.onerror = (error) => {
+          console.error("Error updating requisition in IndexedDB:", error);
+          reject(error);
+        };
+      })
+      .catch((error) => {
+        console.error("Error opening database:", error);
+        reject(error);
       });
-
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = (error) => reject(error);
-    }).catch((error) => reject(error));
-  });
-};
-
-export const getBudgetsFromDB = () => {
-  return new Promise((resolve, reject) => {
-    openDB().then((db) => {
-      const transaction = db.transaction(["budgets"], "readonly");
-      const store = transaction.objectStore("budgets");
-
-      const budgets = [];
-      const request = store.openCursor();
-
-      request.onsuccess = (event) => {
-        const cursor = event.target.result;
-        if (cursor) {
-          budgets.push(cursor.value);
-          cursor.continue();
-        } else {
-          resolve(budgets);
-        }
-      };
-
-      request.onerror = (error) => reject(error);
-    }).catch((error) => reject(error));
   });
 };
 
@@ -772,43 +783,6 @@ export const getYearsAvailableFromDB = () => {
 
       request.onerror = (error) => reject(error);
     }).catch((error) => reject(error));
-  });
-};
-        request.onerror = (error) => reject(error);
-      })
-      .catch((error) => reject(error));
-  });
-};
-
-export const getRequisitionByUIDFromDB = (requisition_uid) => {
-  return new Promise((resolve, reject) => {
-    openDB()
-      .then((db) => {
-        const transaction = db.transaction(["requisitions"], "readonly");
-        const store = transaction.objectStore("requisitions");
-        const index = store.index("requisition_uid");
-
-        const request = index.get(requisition_uid);
-
-        request.onsuccess = (event) => {
-          const result = event.target.result;
-          if (result) {
-            resolve(result);
-          } else {
-            console.log("Requisition not found"); // Log para depuración
-            resolve(null);
-          }
-        };
-
-        request.onerror = (error) => {
-          console.error("Error retrieving requisition:", error); // Log para depuración
-          reject(error);
-        };
-      })
-      .catch((error) => {
-        console.error("Error opening database:", error); // Log para depuración
-        reject(error);
-      });
   });
 };
 
