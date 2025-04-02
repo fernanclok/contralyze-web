@@ -120,19 +120,6 @@ export default function InfoCards({Info}: {Info: any}) {
                         </p> {" "}
                         from last update.
                     </div>
-                    <div
-                        className={`flex justify-center gap-2 items-center p-2 text-xs my-3 rounded-lg w-full ${getStatusColor(
-                            infoData.changes.emergency_fund.status
-                        )}`}
-                        >
-                        {getStatusIcon(infoData.changes.emergency_fund.status)}
-                        <p className="text-sm font-semibold">
-                            {infoData.changes.emergency_fund.status === "unchanged"
-                            ? "Unchanged"
-                            : `${infoData.changes.emergency_fund.percentage} % ${infoData.changes.emergency_fund.status}`}
-                        </p> {" "}
-                        from last update.
-                    </div>
                 </nav>
                 <div className="w-ful rounded-full mt-2">
                 <div className="flex justify-between items-center p-2">
@@ -181,19 +168,6 @@ export default function InfoCards({Info}: {Info: any}) {
                     {infoData.changes.total_expenses.previous_status === "unchanged"
                     ? "Unchanged"
                     : `${infoData.changes.total_expenses.percentage} %`}
-                </p> {" "}
-                from last update.
-                </div>
-                <div
-                    className={`flex justify-center gap-2 items-center text-xs p-2 my-3 rounded-lg w-full ${getStatusColor(
-                        infoData.changes.total_expenses.status
-                    )}`}
-                    >
-                {getStatusIcon(infoData.changes.total_expenses.status)}
-                <p className="text-sm font-semibold">
-                    {infoData.changes.total_expenses.status === "unchanged"
-                    ? "Unchanged"
-                    : `${infoData.changes.total_expenses.percentage} % ${infoData.changes.total_expenses.status}`}
                 </p> {" "}
                 from last update.
                 </div>
@@ -250,21 +224,9 @@ export default function InfoCards({Info}: {Info: any}) {
                         </p> {" "}
                         from last update.
                     </div>
-                    <div
-                        className={`flex justify-center gap-2 items-center p-2 my-3 text-xs w-full rounded-lg ${getStatusColor(
-                            infoData.changes.total_budget_amount.status
-                        )}`}
-                        >
-                        {getStatusIcon(infoData.changes.total_budget_amount.status)}
-                        <p className="text-sm font-semibold">
-                            {infoData.changes.total_budget_amount.status === "unchanged"
-                            ? "Unchanged"
-                            : `${infoData.changes.total_budget_amount.percentage} % ${infoData.changes.total_budget_amount.status}`}
-                        </p> {" "}
-                        from last update.
-                    </div>
+                    
                 </nav>
-            <div className="w-full rounded-full mt-2">
+            {/* <div className="w-full rounded-full mt-2">
               <div className="flex justify-between items-center p-2">
                 <p className="text-gray-400 text-sm font-thin">Progress</p>
                 <p className="text-gray-500 font-bold text-base">{progress}%</p>
@@ -273,7 +235,7 @@ export default function InfoCards({Info}: {Info: any}) {
                 className="bg-blue-500 text-xs font-medium text-white text-center p-0.5 leading-none rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               ></div>
-            </div>
+            </div> */}
             <p className="text-base text-gray-400 mt-2">
               <strong>${infoData.total_budget_amount}</strong> for Budgets
             </p>
