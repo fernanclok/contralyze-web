@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter
 } from "@/components/ui/sheet";
 import {
   Select,
@@ -26,7 +27,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { emmiter } from "@/lib/emmiter";
 
-export function AddUserSheet({ departments }: { departments: any[] }) {
+export function AddUserSheet({ departments, onUserUpdated }: { departments: any[], onUserUpdated: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState("");
   const [department, setDepartment] = useState("");
@@ -68,6 +69,7 @@ export function AddUserSheet({ departments }: { departments: any[] }) {
         type: "success",
       });
       router.refresh(); // Refresca la tabla de usuarios
+      onUserUpdated();
     }
     setState(result);
   };
@@ -96,7 +98,7 @@ export function AddUserSheet({ departments }: { departments: any[] }) {
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Add New User</SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="pb-4">
             Fill in the details to add a new user to the system.
           </SheetDescription>
         </SheetHeader>
@@ -216,11 +218,11 @@ export function AddUserSheet({ departments }: { departments: any[] }) {
               </p>
             )}
           </div>
-          <div className="mt-6">
+          <SheetFooter>
             <SubmitButton
               disabled={role === "user" && filteredDepartments.length === 0}
             />
-          </div>
+          </SheetFooter>
         </form>
       </SheetContent>
     </Sheet>

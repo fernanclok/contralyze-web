@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { AddUserSheet } from "./user/addUserSheet";
 import { EditUserSheet } from "./user/editUserSheet";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { FilterX, Search, X } from "lucide-react";
+import { saveCompanyToDB, getCompanyFromDB, getUsersFromDB, saveUsersToDB, getDepartmentsFromDB, saveDepartmentsToDB } from "@/app/utils/indexedDB";
 
 export default function ManageCompanyClient({
   company,
@@ -38,12 +39,122 @@ export default function ManageCompanyClient({
   departments: any;
   hasError: boolean;
 }) {
+  const [localCompany, setLocalCompany] = useState(company && typeof company === "object" ? company : {});
+  const [localUsers, setLocalUser] = useState(users || []);
+  const [localDepartments, setLocalDepartments] = useState(departments || []);
+
+  //funcion para obtener el company de indexedDB
+  useEffect(() => {
+    if (!company || Object.keys(company).length === 0) {
+      if (typeof window !== "undefined" && window.indexedDB) {
+        getCompanyFromDB()
+          .then((companyFromDB) => {
+            if (companyFromDB) {
+              setLocalCompany(companyFromDB);
+            } else {
+              console.warn("No company data found");
+            }
+          })
+          .catch((error) => {
+            console.error("Error retrieving company from IndexedDB", error);
+          });
+      }
+    } else {
+      setLocalCompany(company);
+    }
+  }, [company]);
+  
+
+  //funcion para guardar el company en indexedDB
+  useEffect(() => {
+    if (company && typeof window !== "undefined" && window.indexedDB) {
+      saveCompanyToDB(company).catch((error) => {
+        console.error("Error saving company to IndexedDB:", error)
+      })
+    }
+  }, [company]);
+
+  //funcion para obtener usuarios del indexedDB
+  useEffect(() => {
+    if (users.length === 0 && typeof window !== "undefined" && window.indexedDB) {
+      getUsersFromDB()
+      .then((usersFromDB) => {
+        if (usersFromDB && usersFromDB.length > 0) {
+          setLocalUser(usersFromDB);
+        }
+      })
+      .catch((error) => {
+        console.error("Error retrieving users from IndexedDB:", error)
+      })
+    } else {
+      setLocalUser(users)
+    }
+  }, [users]);
+
+  //funcion para guardar usuarios en indexedDB
+  useEffect(() => {
+    if (users.length > 0 && typeof window !== "undefined" && window.indexedDB) {
+      saveUsersToDB(users).catch((error) => {
+        console.error("Error saving users to IndexedDB:", error)
+      })
+    }
+  }, [users]);
+
+  //funcion para actualizar localUsers despues de crear/editar un user
+  const updateLocalUsers = async () => {
+    if (typeof window !== "undefined" && window.indexedDB) {
+      try {
+        const updatedUsers = await getUsersFromDB();
+        setLocalUser(updatedUsers || [])
+      } catch (error) {
+        console.error("Error updating local users:", error)
+      }
+    }
+  }
+
+  //funcion para guardar departamentos en indexedDB
+  useEffect(() => {
+    if (departments.length === 0 && typeof window !== "undefined" && window.indexedDB) {
+      getDepartmentsFromDB()
+      .then((departmentsFromDB) => {
+        if(departmentsFromDB && departmentsFromDB.length > 0) {
+          setLocalDepartments(departmentsFromDB);
+        }
+      })
+      .catch((error) => {
+        console.error("Error retrieving suppliers from IndexedDB:", error)
+      })
+    } else {
+      setLocalDepartments(departments)
+    }
+  }, [departments]);
+
+    useEffect(() => {
+      if(departments.length > 0 && typeof window !== "undefined" && window.indexedDB) {
+        saveDepartmentsToDB(departments).catch((error) => {
+          console.error("Error saving suppliers to IndexedDB:", error)
+        });
+      }
+    }, [departments]);
+
+    //funcion para actualizar localDepartments despues de crear/editar un user
+  const updateLocalDepartments = async () => {
+    if (typeof window !== "undefined" && window.indexedDB) {
+      try {
+        const updatedDepartments = await getDepartmentsFromDB();
+        setLocalDepartments(updatedDepartments || [])
+      } catch (error) {
+        console.error("Error updating local users:", error)
+      }
+    }
+  }
+
   const [searchUsers, setSearchUsers] = useState("");
   const [filterUsers, setFilterUsers] = useState("All Status");
   const [searchDepartments, setSearchDepartments] = useState("");
   const [filterDepartments, setFilterDepartments] = useState("All Status");
 
-  const filteredUsers = users.filter((user: any) => {
+  const filteredUsers = localUsers.filter((user: any) => {
     const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
     const matchesSearch =
       fullName.includes(searchUsers.toLowerCase()) ||
@@ -56,32 +167,31 @@ export default function ManageCompanyClient({
     return matchesSearch && matchesFilter;
   });
 
-  const filteredDepartments = departments.filter((department: any) => {
+  const filteredDepartments = (localDepartments || []).filter((department: any) => {
     const matchesSearch =
-      department.name.toLowerCase().includes(searchDepartments.toLowerCase()) ||
-      department.description
-        .toLowerCase()
-        .includes(searchDepartments.toLowerCase());
+      department.name?.toLowerCase().includes(searchDepartments.toLowerCase()) ||
+      department.description?.toLowerCase().includes(searchDepartments.toLowerCase());
     const matchesFilter =
       filterDepartments === "All Status" ||
       department.isActive === (filterDepartments === "Active");
     return matchesSearch && matchesFilter;
   });
+  
 
   return (
     <>
       {/* Información de la empresa */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {[
-          { label: "Company Name", value: company.name || "Company Name" },
+          { label: "Company Name", value: localCompany.name || "Company Name" },
           {
             label: "Company Email",
-            value: company.email || "[email protected]",
+            value: localCompany.email || "[email protected]",
           },
-          { label: "Company Phone", value: company.phone || "+1234567890" },
-          { label: "Company Address", value: company.address || "null" },
-          { label: "Company City", value: company.city || "City" },
-          { label: "Company Zip", value: company.zip || "12345" },
+          { label: "Company Phone", value: localCompany.phone || "+1234567890" },
+          { label: "Company Address", value: localCompany.address || "null" },
+          { label: "Company City", value: localCompany.city || "City" },
+          { label: "Company Zip", value: localCompany.zip || "12345" },
         ].map((field, index) => (
           <div key={index}>
             <label className="block text-sm text-gray-600 font-medium">
@@ -140,7 +250,7 @@ export default function ManageCompanyClient({
             Add user
           </Button>
         ) : (
-          <AddUserSheet departments={departments || []} />
+          <AddUserSheet departments={departments || []} onUserUpdated={updateLocalUsers} />
         )}
       </div>
       <div className="rounded-md border">
@@ -177,15 +287,25 @@ export default function ManageCompanyClient({
                   </TableCell>
                   <TableCell>{user.role}</TableCell>
                   <TableCell className="text-right">
-                    <EditUserSheet user={user} departments={departments} />
+                    {hasError ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:bg-primary hover:text-white"
+                        disabled
+                      >
+                      </Button>
+                    ) : (
+                      <EditUserSheet user={user} departments={departments} onUserUpdated={updateLocalUsers} />
+                    )}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={5}
-                  className="px-6 py-4 text-center text-gray-500"
+                  colSpan={8}
+                  className=" py-6 text-center text-gray-500"
                 >
                   No users found
                 </TableCell>
@@ -245,7 +365,7 @@ export default function ManageCompanyClient({
             Add Department
           </Button>
         ) : (
-          <AddDepartmentSheet />
+          <AddDepartmentSheet onDepartmentUpdated={updateLocalDepartments} />
         )}
       </div>
       <div className="rounded-md border">
@@ -280,18 +400,21 @@ export default function ManageCompanyClient({
                   <TableCell className="text-right">
                     {department.name !== "Admin" && (
                       <>
-                        <EditDepartmentSheet department={department} />
+                        <EditDepartmentSheet department={department} onDepartmentUpdated={updateLocalDepartments}/>
                       </>
                     )}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
-              <tr>
-                <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+              <TableRow>
+                <TableCell 
+                colSpan={8} 
+                className="py-6 text-center text-gray-500"
+                >
                   No departments found
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>

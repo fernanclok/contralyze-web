@@ -26,7 +26,7 @@ import { Transaction } from '@/app/transactions/actions';
 import { InvoiceDetailed } from '@/app/invoices/actions';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { emmiter } from "@/lib/emmiter";
 
 interface EditInvoiceModalProps {
@@ -35,10 +35,9 @@ interface EditInvoiceModalProps {
   onSubmit: (id: string, data: {
     transaction_id?: string;
     invoice_number?: string;
-    amount?: number;
-    issue_date?: string;
     due_date?: string;
     status?: string;
+    type?: string;
     notes?: string;
     file?: File;
   }) => void;
@@ -57,16 +56,14 @@ export function EditInvoiceModal({
 }: EditInvoiceModalProps) {
   const [transactionId, setTransactionId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [amount, setAmount] = useState('');
-  const [issueDate, setIssueDate] = useState<Date | undefined>(new Date());
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [status, setStatus] = useState<string>('pending');
+  const [type, setType] = useState<string>('invoice');
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
   
   const [errors, setErrors] = useState<{
     invoiceNumber?: string;
-    amount?: string;
   }>({});
 
   // Cargar datos de la factura cuando se abre el modal
@@ -74,26 +71,7 @@ export function EditInvoiceModal({
     if (invoice && open) {
       setTransactionId(invoice.transaction_id || '');
       setInvoiceNumber(invoice.invoice_number || '');
-      setAmount(invoice.amount?.toString() || '');
-      
-      // Convertir fecha de string a Date con manejo de errores mejorado
-      if (invoice.issue_date) {
-        try {
-          const dateObj = new Date(invoice.issue_date);
-          // Verificar si la fecha es válida
-          if (!isNaN(dateObj.getTime())) {
-            setIssueDate(dateObj);
-          } else {
-            console.error('Invalid issue date:', invoice.issue_date);
-            setIssueDate(new Date());
-          }
-        } catch (e) {
-          console.error('Error parsing issue date:', e);
-          setIssueDate(new Date());
-        }
-      } else {
-        setIssueDate(new Date());
-      }
+      setType(invoice.type || 'invoice');
       
       // Configurar fecha de vencimiento si existe
       if (invoice.due_date) {
@@ -102,6 +80,7 @@ export function EditInvoiceModal({
           if (!isNaN(dueDateObj.getTime())) {
             setDueDate(dueDateObj);
           } else {
+            console.error('Invalid due date:', invoice.due_date);
             setDueDate(undefined);
           }
         } catch (e) {
@@ -124,19 +103,10 @@ export function EditInvoiceModal({
   };
 
   const validateForm = () => {
-    const newErrors: {
-      invoiceNumber?: string;
-      amount?: string;
-    } = {};
+    const newErrors: { invoiceNumber?: string } = {};
 
-    // Validar número de factura
-    if (invoiceNumber.trim() === '') {
+    if (!invoiceNumber.trim()) {
       newErrors.invoiceNumber = 'Invoice number is required';
-    }
-
-    // Validar monto
-    if (amount && parseFloat(amount) <= 0) {
-      newErrors.amount = 'Enter a valid amount greater than 0';
     }
 
     setErrors(newErrors);
@@ -150,50 +120,30 @@ export function EditInvoiceModal({
   };
 
   const handleSubmit = () => {
-    if (!invoice || !invoice.id) {
-      console.error('No invoice selected for editing');
-      return;
-    }
-
     if (!validateForm()) {
       return;
     }
 
+    // Solo incluye los campos que cambiaron
     const data: {
       transaction_id?: string;
       invoice_number?: string;
-      amount?: number;
-      issue_date?: string;
       due_date?: string;
       status?: string;
+      type?: string;
       notes?: string;
       file?: File;
     } = {};
 
-    // Solo incluir campos que han cambiado
     if (transactionId !== invoice.transaction_id) data.transaction_id = transactionId;
     if (invoiceNumber !== invoice.invoice_number) data.invoice_number = invoiceNumber;
-    if (amount && parseFloat(amount) !== invoice.amount) data.amount = parseFloat(amount);
     
-    if (issueDate) {
-      const formattedIssueDate = format(issueDate, 'yyyy-MM-dd');
-      if (formattedIssueDate !== invoice.issue_date) {
-        data.issue_date = formattedIssueDate;
-      }
-    }
-    
-    if (dueDate) {
-      const formattedDueDate = format(dueDate, 'yyyy-MM-dd');
-      if (formattedDueDate !== invoice.due_date) {
-        data.due_date = formattedDueDate;
-      }
-    } else if (invoice.due_date && !dueDate) {
-      // Si había una fecha de vencimiento y ahora no, enviarla como undefined
-      data.due_date = undefined;
-    }
+    const formattedDueDate = dueDate ? format(dueDate, 'yyyy-MM-dd') : '';
+    if (formattedDueDate !== invoice.due_date && dueDate) data.due_date = formattedDueDate;
     
     if (status !== invoice.status) data.status = status;
-    if (notes !== invoice.notes) data.notes = notes || undefined;
+    if (type !== invoice.type) data.type = type;
+    if (notes !== invoice.notes) data.notes = notes.trim() || undefined;
     if (file) data.file = file;
 
     onSubmit(invoice.id, data);
@@ -224,9 +174,15 @@ export function EditInvoiceModal({
                 {transactions.length === 0 ? (
                   <SelectItem value="none" disabled>No transactions available</SelectItem>
                 ) : (
-                  transactions.map((transaction) => (
+                  transactions
+                    .filter(transaction => 
+                      // Keep the currently selected transaction in the list even if cancelled
+                      transaction.status !== 'cancelled' || transaction.id === transactionId
+                    )
+                    .map((transaction) => (
                     <SelectItem key={transaction.id} value={transaction.id}>
                       {transaction.reference_number || transaction.id} ({formatCurrency(transaction.amount)})
+                      {transaction.status === 'cancelled' && ' (Cancelled)'}
                     </SelectItem>
                   ))
                 )}
@@ -246,56 +202,6 @@ export function EditInvoiceModal({
               onChange={(e) => setInvoiceNumber(e.target.value)}
               placeholder="e.g. INV-001"
             />
-          </div>
-
-          {/* Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="amount" className="flex justify-between">
-              <span>Amount</span>
-              {errors.amount && <span className="text-red-500 text-xs">{errors.amount}</span>}
-            </Label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                $
-              </span>
-              <Input
-                id="amount"
-                type="number"
-                className="pl-6 w-full"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                step="0.01"
-                min="0"
-              />
-            </div>
-          </div>
-
-          {/* Issue Date */}
-          <div className="space-y-2">
-            <Label htmlFor="issue-date">Issue Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !issueDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {issueDate ? format(issueDate, "PPP") : <span>Select date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={issueDate}
-                  onSelect={(date) => date && setIssueDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
           </div>
 
           {/* Due Date */}
@@ -320,7 +226,6 @@ export function EditInvoiceModal({
                   selected={dueDate}
                   onSelect={setDueDate}
                   initialFocus
-                  disabled={(date) => (issueDate ? date < issueDate : false)}
                 />
               </PopoverContent>
             </Popover>
@@ -346,8 +251,23 @@ export function EditInvoiceModal({
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Type */}
+          <div className="space-y-2">
+            <Label htmlFor="type">Type</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger id="type" className="w-full bg-white">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent className="bg-white shadow-md">
+                <SelectItem value="receipt">Receipt</SelectItem>
+                <SelectItem value="invoice">Invoice</SelectItem>
+                <SelectItem value="purchase_order">Purchase Order</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -407,4 +327,4 @@ export function EditInvoiceModal({
       </SheetContent>
     </Sheet>
   );
-} 
+}

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Pusher from 'pusher-js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -30,7 +31,8 @@ import { EditInvoiceModal } from './EditInvoiceModal';
 import { ViewInvoiceModal } from './ViewInvoiceModal';
 import { 
   deleteInvoice, 
-  downloadInvoiceFile
+  downloadInvoiceFile,
+  createInvoice
 } from '@/app/invoices/actions';
 import { emmiter } from "@/lib/emmiter";
 
@@ -48,36 +50,113 @@ export function InvoiceList({
   hasConnectionError = false 
 }: InvoiceListProps) {
   const router = useRouter();
+  const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
+  const [isEditInvoiceModalOpen, setIsEditInvoiceModalOpen] = useState(false);
+  const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetailed | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [page, setPage] = useState(1);
-  
-  // Modales
-  const [newModalOpen, setNewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [currentInvoice, setCurrentInvoice] = useState<InvoiceDetailed | null>(null);
-  
-  // Estado para manejar operaciones en curso
+  const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [allInvoices, setAllInvoices] = useState<InvoiceDetailed[]>(invoices);
+  const [filteredInvoices, setFilteredInvoices] = useState<InvoiceDetailed[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const perPage = 10;
 
-  // Filtrado de facturas
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesTerm = 
-      (invoice.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       invoice.transaction?.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       invoice.notes?.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
-    
-    return matchesTerm && matchesStatus;
-  });
+  const itemsPerPage = 10;
+  const isAdmin = userRole === 'admin';
 
-  // Paginación
-  const totalPages = Math.ceil(filteredInvoices.length / perPage);
-  const currentInvoices = filteredInvoices.slice((page - 1) * perPage, page * perPage);
+  // Configuración de Pusher para actualizaciones en tiempo real
+  useEffect(() => {
+    console.log("Inicializando con", invoices.length, "facturas");
+    
+    // Inicializar allInvoices con los datos iniciales
+    if (invoices && invoices.length > 0) {
+      setAllInvoices(invoices);
+      applyFilters(invoices);
+    } else {
+      setFilteredInvoices([]);
+    }
+    
+    // Configurar Pusher solo si no hay error de conexión
+    if (!hasConnectionError) {
+      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
+      });
+      
+      // Suscribirse al canal de facturas
+      const channel = pusher.subscribe('invoices');
+      
+      // Escuchar evento de nueva factura
+      channel.bind('invoice-created', (data: InvoiceDetailed) => {
+        console.log('Nueva factura recibida:', data);
+        setAllInvoices(current => {
+          const updated = [data, ...current];
+          // Forzar la actualización de los filtros
+          applyFilters(updated);
+          return updated;
+        });
+      });
+      
+      // Escuchar evento de actualización de factura
+      channel.bind('invoice-updated', (data: InvoiceDetailed) => {
+        console.log('Factura actualizada:', data);
+        setAllInvoices(current => {
+          const updated = current.map(invoice => 
+            invoice.id === data.id ? data : invoice
+          );
+          // Forzar la actualización de los filtros
+          applyFilters(updated);
+          return updated;
+        });
+      });
+      
+      // Escuchar evento de eliminación de factura
+      channel.bind('invoice-deleted', (data: { id: string }) => {
+        console.log('Factura eliminada:', data);
+        setAllInvoices(current => {
+          const updated = current.filter(invoice => invoice.id !== data.id);
+          // Forzar la actualización de los filtros
+          applyFilters(updated);
+          return updated;
+        });
+      });
+      
+      // Limpiar la suscripción al desmontar el componente
+      return () => {
+        channel.unbind_all();
+        channel.unsubscribe();
+      };
+    }
+  }, [invoices, hasConnectionError]);
+
+  // Función para aplicar filtros
+  const applyFilters = (data: InvoiceDetailed[]) => {
+    let filtered = [...data];
+    
+    // Aplicar filtro de búsqueda
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(invoice => 
+        invoice.invoice_number.toLowerCase().includes(term) ||
+        invoice.transaction?.description?.toLowerCase().includes(term) ||
+        invoice.notes?.toLowerCase().includes(term)
+      );
+    }
+    
+    // Aplicar filtro de estado
+    if (statusFilter) {
+      filtered = filtered.filter(invoice => invoice.status === statusFilter);
+    }
+    
+    // Aplicar filtro de tipo
+    if (typeFilter) {
+      filtered = filtered.filter(invoice => invoice.type === typeFilter);
+    }
+    
+    setFilteredInvoices(filtered);
+    // Reset a la primera página cuando cambian los filtros
+    setCurrentPage(1);
+  };
 
   const handleCreateInvoice = async (data: any) => {
     setIsLoading(true);
@@ -85,14 +164,23 @@ export function InvoiceList({
       // Mostrar mensaje de enviando...
       emmiter.emit('showToast', {
         message: 'Creating invoice...',
-        type: 'default'
+        type: 'success'
       });
+      
+      // Llamar a la API para crear la factura
+      const { invoice, error } = await createInvoice(data);
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      console.log("Invoice creada:", invoice);
       
       // Recargar la página para mostrar los datos actualizados (puedes mejorar esto con SWR o React Query)
       router.refresh();
       
       // Cerrar el modal
-      setNewModalOpen(false);
+      setIsNewInvoiceModalOpen(false);
       
       // Mostrar mensaje de éxito
       emmiter.emit('showToast', {
@@ -102,7 +190,7 @@ export function InvoiceList({
     } catch (error) {
       console.error('Error creating invoice:', error);
       emmiter.emit('showToast', {
-        message: 'Error creating invoice',
+        message: error instanceof Error ? error.message : 'Error creating invoice',
         type: 'error'
       });
     } finally {
@@ -116,14 +204,14 @@ export function InvoiceList({
       // Mostrar mensaje de enviando...
       emmiter.emit('showToast', {
         message: 'Updating invoice...',
-        type: 'default'
+        type: 'success'
       });
       
       // Recargar la página para mostrar los datos actualizados (puedes mejorar esto con SWR o React Query)
       router.refresh();
       
       // Cerrar el modal
-      setEditModalOpen(false);
+      setIsEditInvoiceModalOpen(false);
       
       // Mostrar mensaje de éxito
       emmiter.emit('showToast', {
@@ -266,7 +354,7 @@ export function InvoiceList({
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="">All</SelectItem>
               <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -276,7 +364,7 @@ export function InvoiceList({
           </Select>
           
           <Button 
-            onClick={() => setNewModalOpen(true)}
+            onClick={() => setIsNewInvoiceModalOpen(true)}
             disabled={hasConnectionError}
             className="whitespace-nowrap"
           >
@@ -301,7 +389,7 @@ export function InvoiceList({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentInvoices.length === 0 ? (
+            {filteredInvoices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                   <div className="flex flex-col items-center justify-center">
@@ -312,7 +400,7 @@ export function InvoiceList({
                 </TableCell>
               </TableRow>
             ) : (
-              currentInvoices.map((invoice) => (
+              filteredInvoices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">
                     {invoice.invoice_number}
@@ -349,10 +437,11 @@ export function InvoiceList({
                         variant="ghost" 
                         size="icon" 
                         onClick={() => {
-                          setCurrentInvoice(invoice);
-                          setViewModalOpen(true);
+                          setSelectedInvoice(invoice);
+                          setIsViewInvoiceModalOpen(true);
                         }}
                         aria-label="View invoice details"
+                        title="View details"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -364,6 +453,7 @@ export function InvoiceList({
                           onClick={() => handleDownloadInvoice(invoice.id)}
                           disabled={isLoading || hasConnectionError}
                           aria-label="Download invoice"
+                          title="Download invoice"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
@@ -373,24 +463,26 @@ export function InvoiceList({
                         variant="ghost" 
                         size="icon" 
                         onClick={() => {
-                          setCurrentInvoice(invoice);
-                          setEditModalOpen(true);
+                          setSelectedInvoice(invoice);
+                          setIsEditInvoiceModalOpen(true);
                         }}
                         disabled={hasConnectionError}
                         aria-label="Edit invoice"
+                        title="Edit invoice"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       
-                      {(userRole === 'admin') && (
+                      {(isAdmin) && (
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           onClick={() => handleDeleteInvoice(invoice.id)}
                           disabled={isLoading || hasConnectionError}
                           aria-label="Delete invoice"
+                          title="Delete invoice"
                         >
-                          <Trash2 className="h-4 w-4 text-red-600" />
+                          <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       )}
                     </div>
@@ -403,28 +495,28 @@ export function InvoiceList({
       </div>
       
       {/* Paginación */}
-      {totalPages > 1 && (
+      {Math.ceil(filteredInvoices.length / itemsPerPage) > 1 && (
         <div className="flex justify-center mt-4 gap-1">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
           >
             Previous
           </Button>
           
           <div className="flex items-center px-3">
             <span className="text-sm">
-              Page {page} of {totalPages}
+              Page {currentPage} of {Math.ceil(filteredInvoices.length / itemsPerPage)}
             </span>
           </div>
           
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredInvoices.length / itemsPerPage), p + 1))}
+            disabled={currentPage === Math.ceil(filteredInvoices.length / itemsPerPage)}
           >
             Next
           </Button>
@@ -435,28 +527,28 @@ export function InvoiceList({
       {!hasConnectionError && (
         <>
           <NewInvoiceModal
-            open={newModalOpen}
-            onOpenChange={setNewModalOpen}
+            open={isNewInvoiceModalOpen}
+            onOpenChange={setIsNewInvoiceModalOpen}
             onSubmit={handleCreateInvoice}
             transactions={transactions}
             loading={isLoading}
           />
           
-          {currentInvoice && (
+          {selectedInvoice && (
             <>
               <EditInvoiceModal
-                open={editModalOpen}
-                onOpenChange={setEditModalOpen}
+                open={isEditInvoiceModalOpen}
+                onOpenChange={setIsEditInvoiceModalOpen}
                 onSubmit={handleUpdateInvoice}
-                invoice={currentInvoice}
+                invoice={selectedInvoice}
                 transactions={transactions}
                 loading={isLoading}
               />
               
               <ViewInvoiceModal
-                open={viewModalOpen}
-                onOpenChange={setViewModalOpen}
-                invoice={currentInvoice}
+                open={isViewInvoiceModalOpen}
+                onOpenChange={setIsViewInvoiceModalOpen}
+                invoice={selectedInvoice}
               />
             </>
           )}

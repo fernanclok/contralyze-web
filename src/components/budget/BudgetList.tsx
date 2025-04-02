@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import { emmiter } from "@/lib/emmiter";
 import { Pagination } from '@/components/ui/pagination';
 import { type Department, type Category } from '@/app/budgets/actions';
+import { getBudgetsFromDB, saveBudgetsToDB, saveCategoriesToDB, saveDepartmentsToDB, getCategoriesFromDB, getDepartmentsFromDB } from '@/app/utils/indexedDB';
 
 interface Budget {
   id: string;
@@ -63,10 +64,128 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   const router = useRouter();
+
+  // Estados locales para datos offline
+  const [localBudgets, setLocalBudgets] = useState<Budget[]>(budgets);
+  const [localCategories, setLocalCategories] = useState<Category[]>(categories);
+  const [localDepartments, setLocalDepartments] = useState<Department[]>(departments);
 
   // Verificar si el usuario es administrador
   const isAdmin = userRole === 'admin';
+
+  // Monitorear el estado de la conexión
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      router.refresh(); // Recargar datos del servidor cuando vuelve la conexión
+    };
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    setIsOffline(!navigator.onLine || hasConnectionError);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [hasConnectionError]);
+
+  // Cargar datos desde IndexedDB cuando no hay conexión
+  useEffect(() => {
+    if ((budgets.length === 0 || isOffline) && typeof window !== "undefined" && window.indexedDB) {
+      getBudgetsFromDB()
+        .then((budgetsFromDB) => {
+          if (budgetsFromDB && budgetsFromDB.length > 0) {
+            setLocalBudgets(budgetsFromDB);
+            setBudgets(budgetsFromDB);
+          }
+        })
+        .catch((error) => {
+          console.error("Error al recuperar presupuestos de IndexedDB:", error);
+          emmiter.emit('showToast', {
+            message: 'Error al cargar datos offline de presupuestos',
+            type: 'error'
+          });
+        });
+    }
+  }, [budgets.length, isOffline]);
+
+  // Guardar presupuestos en IndexedDB cuando hay cambios y hay conexión
+  useEffect(() => {
+    if (budgets.length > 0 && typeof window !== "undefined" && window.indexedDB && !isOffline) {
+      saveBudgetsToDB(budgets)
+        .catch((error) => {
+          console.error("Error al guardar presupuestos en IndexedDB:", error);
+          emmiter.emit('showToast', {
+            message: 'Error al guardar datos offline de presupuestos',
+            type: 'error'
+          });
+        });
+    }
+  }, [budgets, isOffline]);
+
+  // Cargar categorías desde IndexedDB cuando no hay conexión
+  useEffect(() => {
+    if ((categories.length === 0 || isOffline) && typeof window !== "undefined" && window.indexedDB) {
+      getCategoriesFromDB()
+        .then((categoriesFromDB) => {
+          if (categoriesFromDB && categoriesFromDB.length > 0) {
+            setLocalCategories(categoriesFromDB);
+          }
+        })
+        .catch((error) => {
+          console.error("Error al recuperar categorías de IndexedDB:", error);
+        });
+    }
+  }, [categories.length, isOffline]);
+
+  // Guardar categorías en IndexedDB cuando hay cambios y hay conexión
+  useEffect(() => {
+    if (categories.length > 0 && typeof window !== "undefined" && window.indexedDB && !isOffline) {
+      saveCategoriesToDB(categories)
+        .catch((error) => {
+          console.error("Error al guardar categorías en IndexedDB:", error);
+        });
+    }
+  }, [categories, isOffline]);
+
+  // Cargar departamentos desde IndexedDB cuando no hay conexión
+  useEffect(() => {
+    if ((departments.length === 0 || isOffline) && typeof window !== "undefined" && window.indexedDB) {
+      getDepartmentsFromDB()
+        .then((departmentsFromDB) => {
+          if (departmentsFromDB && departmentsFromDB.length > 0) {
+            setLocalDepartments(departmentsFromDB);
+          }
+        })
+        .catch((error) => {
+          console.error("Error al recuperar departamentos de IndexedDB:", error);
+          emmiter.emit('showToast', {
+            message: 'Error al cargar datos offline de departamentos',
+            type: 'error'
+          });
+        });
+    } else {
+      setLocalDepartments(departments);
+    }
+  }, [departments, isOffline]);
+
+  // Guardar departamentos en IndexedDB cuando hay cambios y hay conexión
+  useEffect(() => {
+    if (departments.length > 0 && typeof window !== "undefined" && window.indexedDB && !isOffline) {
+      saveDepartmentsToDB(departments)
+        .catch((error) => {
+          console.error("Error al guardar departamentos en IndexedDB:", error);
+          emmiter.emit('showToast', {
+            message: 'Error al guardar datos offline de departamentos',
+            type: 'error'
+          });
+        });
+    }
+  }, [departments, isOffline]);
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -215,7 +334,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
     }
     
     if (budget.category && budget.category.department_id) {
-      const department = departments.find(d => d.id === budget.category.department_id);
+      const department = localDepartments.find(d => d.id === budget.category.department_id);
       return department ? department.name : 'Unknown Department';
     }
     
@@ -223,7 +342,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
   };
 
   // Filter budgets based on status, department and search
-  const filteredBudgets = budgets.filter(budget => {
+  const filteredBudgets = localBudgets.filter(budget => {
     // Status filter
     if (filterStatus !== 'all' && budget.status !== filterStatus) {
       return false;
@@ -292,7 +411,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
   };
 
   // Agrupar presupuestos por departamento para calcular totales
-  const budgetsByDepartment = departments.map(dept => {
+  const budgetsByDepartment = localDepartments.map(dept => {
     const deptBudgets = budgets.filter(budget => {
       const budgetDeptId = budget.department?.id || budget.category.department_id;
       return budgetDeptId === dept.id && budget.status === 'active';
@@ -372,83 +491,82 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[180px]">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              type="search"
-              placeholder="Search by category or department..."
-              className="pl-8 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3"
-                onClick={() => setSearchTerm('')}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Clear search</span>
-              </Button>
-            )}
-          </div>
-          <div className="w-[160px] min-w-[140px]">
-            <Select 
-              value={filterStatus} 
-              onValueChange={setFilterStatus}
-            >
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-white shadow-md">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-[160px] min-w-[140px]">
-            <Select 
-              value={filterDepartment} 
-              onValueChange={setFilterDepartment}
-            >
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Department" />
-              </SelectTrigger>
-              <SelectContent className="bg-white shadow-md">
-                <SelectItem value="all">All Departments</SelectItem>
-                {departments.map(dept => (
-                  <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {(searchTerm || filterStatus !== 'all' || filterDepartment !== 'all') && (
-            <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={() => {
-              setSearchTerm('');
-              setFilterStatus('all');
-              setFilterDepartment('all');
-            }}>
-              <FilterX className="mr-2 h-4 w-4" />
-              Clear filters
-            </Button>
-          )}
-        </div>
-        {isAdmin && (
-          <Button 
-            onClick={() => setIsModalOpen(true)} 
-            className="whitespace-nowrap"
-            disabled={hasConnectionError}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Budget
-          </Button>
-        )}
-      </div>
+     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <div className="flex flex-1 items-center gap-x-2 sm:gap-x-4">
+    <div className="relative flex-1 min-w-[180px]">
+      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+      <Input
+        type="search"
+        placeholder="Search by category or department..."
+        className="pl-8 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+      {searchTerm && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute right-0 top-0 h-full px-3"
+          onClick={() => setSearchTerm('')}
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Clear search</span>
+        </Button>
+      )}
+    </div>
+    <div className="w-[130px]">
+      <Select value={filterStatus} onValueChange={setFilterStatus}>
+        <SelectTrigger className="w-full bg-white text-black">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent className="bg-white shadow-md">
+          <SelectItem value="all">All Status</SelectItem>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="inactive">Inactive</SelectItem>
+          <SelectItem value="expired">Expired</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+    <div className="w-[130px]">
+      <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+        <SelectTrigger className="w-full bg-white text-black">
+          <SelectValue placeholder="Department" />
+        </SelectTrigger>
+        <SelectContent className="bg-white shadow-md">
+          <SelectItem value="all">All Departments</SelectItem>
+          {localDepartments.map(dept => (
+            <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+    {(searchTerm || filterStatus !== 'all' || filterDepartment !== 'all') && (
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="whitespace-nowrap"
+        onClick={() => {
+          setSearchTerm('');
+          setFilterStatus('all');
+          setFilterDepartment('all');
+        }}
+      >
+        <FilterX className="mr-2 h-4 w-4" />
+        Clear filters
+      </Button>
+    )}
+  </div>
+  {isAdmin && (
+    <Button 
+      onClick={() => setIsModalOpen(true)} 
+      className="whitespace-nowrap"
+      disabled={hasConnectionError}
+    >
+      Create Budget
+    </Button>
+  )}
+</div>
+
 
       {/* Departament Budget Summary */}
       {budgetsByDepartment.length > 0 && (

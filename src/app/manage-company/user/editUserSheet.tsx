@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter
 } from "@/components/ui/sheet";
 import {
   Select,
@@ -30,9 +31,11 @@ import { emmiter } from "@/lib/emmiter";
 export function EditUserSheet({
   user,
   departments,
+  onUserUpdated
 }: {
   user: any;
   departments: any[];
+  onUserUpdated: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState("");
@@ -65,6 +68,7 @@ export function EditUserSheet({
         type: "success",
       });
       router.refresh();
+      onUserUpdated();
     }
     setState(result);
   };
@@ -165,7 +169,7 @@ export function EditUserSheet({
                 <Input
                   type="text"
                   id="department_display"
-                  value={user.department.name}                  
+                  value={user.department.name}
                   readOnly
                   className="bg-neutral-100"
                 />
@@ -177,21 +181,24 @@ export function EditUserSheet({
               </>
             ) : (
               <Select
-              value={department}
-              onValueChange={setDepartment}
-              name="department_id"
-            >
-              <SelectTrigger className="w-full text-black">
-                <SelectValue placeholder="Select a department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((department) => (
-                  <SelectItem key={department.id} value={department.id.toString()}>
-                    {department.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                value={department}
+                onValueChange={setDepartment}
+                name="department_id"
+              >
+                <SelectTrigger className="w-full text-black">
+                  <SelectValue placeholder="Select a department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((department) => (
+                    <SelectItem
+                      key={department.id}
+                      value={department.id.toString()}
+                    >
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
 
@@ -245,9 +252,9 @@ export function EditUserSheet({
               placeholder="Leave blank to keep current password"
             />
           </div>
-          <div className="mt-6">
+          <SheetFooter>
             <SubmitButton />
-          </div>
+          </SheetFooter>
         </form>
       </SheetContent>
     </Sheet>
