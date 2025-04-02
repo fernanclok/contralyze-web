@@ -38,14 +38,14 @@ export function PusherProvider({
   React.useEffect(() => {
     if (pusher.connectionError) {
       emmiter.emit('showToast', {
-        message: `Error de conexión en tiempo real: ${pusher.connectionError.message}. Intentando reconectar...`,
+        message: `Real-time connection error: ${pusher.connectionError.message}. Attempting to reconnect...`,
         type: 'error'
       });
     }
     
     if (pusher.isConnected) {
       emmiter.emit('showToast', {
-        message: 'Conexión en tiempo real establecida',
+        message: 'Real-time connection established',
         type: 'success'
       });
     }

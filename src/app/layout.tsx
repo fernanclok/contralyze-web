@@ -4,7 +4,6 @@ import "./globals.css";
 import { getSession } from "@/app/lib/session";
 import { ToastContainer } from "@/components/ui/toast";
 import { PusherProvider } from "@/contexts/PusherContext";
-import { RealtimeNotification } from "@/components/ui/RealtimeNotification";
 import ClientWrapper from "@/components/ClientWrapper"; // Importa el nuevo componente
 
 const geistSans = Geist({
@@ -36,7 +35,6 @@ export default async function RootLayout({
         <PusherProvider>
           {children}
           <ToastContainer />
-          <RealtimeNotification />
           <ClientWrapper /> {/* Se ejecutará el useEffect desde aquí */}
         </PusherProvider>
       </body>

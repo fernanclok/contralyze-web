@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Pusher from 'pusher-js';
+import type { ChangeEvent } from 'react';
+import { usePusher } from '@/hooks/usePusher';
+import { useRealtimeBudgets } from '@/hooks/useRealtimeBudgets';
 import {
   Table,
   TableBody,
@@ -11,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { NewBudgetModal } from './NewBudgetModal';
 import { EditBudgetModal } from './EditBudgetModal';
@@ -56,7 +58,6 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
   requests?: any[],
   userDepartmentId?: string
 }) {
-  const [budgets, setBudgets] = useState<Budget[]>(initialBudgets);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
@@ -66,6 +67,43 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
   const [loading, setLoading] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const router = useRouter();
+
+  // Inicializar Pusher usando nuestro hook personalizado
+  const pusher = usePusher(
+    process.env.NEXT_PUBLIC_PUSHER_KEY || '',
+    {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
+      forceTLS: true
+    }
+  );
+
+  // Usar el hook useRealtimeBudgets para manejar los presupuestos en tiempo real
+  const { 
+    budgets, 
+    isLoading: isLoadingBudgets,
+    error: budgetsError
+  } = useRealtimeBudgets({
+    initialBudgets,
+    onBudgetCreated: (budget) => {
+      emmiter.emit('showToast', {
+        message: `Nuevo presupuesto creado: ${budget.category.name}`,
+        type: 'success'
+      });
+    },
+    onBudgetUpdated: (budget) => {
+      emmiter.emit('showToast', {
+        message: `Presupuesto actualizado: ${budget.category.name}`,
+        type: 'info'
+      });
+    },
+    onBudgetDeleted: (id) => {
+      emmiter.emit('showToast', {
+        message: 'Presupuesto eliminado',
+        type: 'warning'
+      });
+    }
+  });
+
 
   // Estados locales para datos offline
   const [localBudgets, setLocalBudgets] = useState<Budget[]>(budgets);
@@ -334,15 +372,15 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
     }
     
     if (budget.category && budget.category.department_id) {
-      const department = localDepartments.find(d => d.id === budget.category.department_id);
-      return department ? department.name : 'Unknown Department';
+      const department = localDepartments.find((d: Department) => d.id === budget.category.department_id);
+      return department ? department.name : 'Departamento desconocido';
     }
     
-    return 'No Department';
+    return 'Sin departamento';
   };
 
   // Filter budgets based on status, department and search
-  const filteredBudgets = localBudgets.filter(budget => {
+  const filteredBudgets = localBudgets.filter((budget: Budget) => {
     // Status filter
     if (filterStatus !== 'all' && budget.status !== filterStatus) {
       return false;
@@ -447,47 +485,43 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
   // Efecto para Pusher
   useEffect(() => {
     // Inicializar Pusher
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-    });
+    if (!pusher.isConnected) return;
 
-    // Suscribirse al canal de budget requests
-    const channel = pusher.subscribe('budget-requests');
+    // Suscribirse al canal de solicitudes de presupuesto
+    const unsubscribe = pusher.subscribe<{ budget_request: any }>(
+      'budget-requests',
+      'new-request',
+      (data) => {
+        if (userRole === 'admin') {
+          router.refresh(); // Solo hacer refresh, no emitir toast
+        }
+      }
+    );
 
-    // Manejar nuevo budget request (solo para admin)
-    if (userRole === 'admin') {
-      channel.bind('new-request', (data: { budget_request: any }) => {
-        emmiter.emit("showToast", {
-          message: "New budget request received",
-          type: "success"
-        });
-        router.refresh();
-      });
-    }
+    // Suscribirse a eventos de aprobación/rechazo
+    const unsubscribeApproved = pusher.subscribe<{ budget_request: any }>(
+      'budget-requests',
+      'request-approved',
+      (data) => {
+        router.refresh(); // Solo hacer refresh, no emitir toast
+      }
+    );
 
-    // Manejar actualizaciones de status (para todos los usuarios)
-    channel.bind('request-approved', (data: { budget_request: any }) => {
-      emmiter.emit("showToast", {
-        message: `Budget request ${data.budget_request.id} has been approved`,
-        type: "success"
-      });
-      router.refresh();
-    });
+    const unsubscribeRejected = pusher.subscribe<{ budget_request: any }>(
+      'budget-requests',
+      'request-rejected',
+      (data) => {
+        router.refresh(); // Solo hacer refresh, no emitir toast
+      }
+    );
 
-    channel.bind('request-rejected', (data: { budget_request: any }) => {
-      emmiter.emit("showToast", {
-        message: `Budget request ${data.budget_request.id} has been rejected`,
-        type: "error"
-      });
-      router.refresh();
-    });
-
-    // Limpiar suscripción al desmontar
+    // Limpiar suscripciones al desmontar
     return () => {
-      channel.unbind_all();
-      pusher.unsubscribe('budget-requests');
+      unsubscribe();
+      unsubscribeApproved();
+      unsubscribeRejected();
     };
-  }, [userRole, router]);
+  }, [pusher.isConnected, userRole, router]);
 
   return (
     <div className="space-y-6">
@@ -500,7 +534,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
               placeholder="Search by category or department..."
               className="pl-8 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
               <Button
@@ -629,7 +663,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentItems.map((budget) => (
+                {budgets.map((budget) => (
                   <TableRow key={budget.id}>
                     <TableCell className="font-medium text-black truncate max-w-[180px]" title={budget.category.name}>
                       {budget.category.name}
