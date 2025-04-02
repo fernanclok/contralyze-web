@@ -23,23 +23,7 @@ export default function DashboardCharts({ Budgets, transaction, years, Info, Dep
 
 
   return (
-    <>
-     {/* Mostrar mensaje de error si hay problemas */}
-     {hasError && (
-        <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 mt-0.5" />
-          <div>
-            <p className="font-medium">Connection Error</p>
-            <p className="text-sm">
-              Could not load the data. Please check your connection or try again later.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {!hasError && (
         <>
-          {/* Info cards */}
             <InfoCards Info={Info} />
            {/* SubInfoCards */}
            <div className="grid grid-cols-4 gap-4 pt-8 ">
@@ -155,8 +139,6 @@ export default function DashboardCharts({ Budgets, transaction, years, Info, Dep
             {/* lists */}
               <Lists  TransactionsList={TransactionsList} Activity={TransactionsDepto}/>
         </>
-        )}
-    </>
   );
 }
 

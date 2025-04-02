@@ -539,41 +539,54 @@ export const getBudgetsStaticsFromDB = () => {
 // info cards dashboard
 export const saveInfoCardsToDB = (infoCards) => {
   return new Promise((resolve, reject) => {
-    openDB().then((db) => {
-      const transaction = db.transaction(["infoCards"], "readwrite");
-      const store = transaction.objectStore("infoCards");
+    openDB()
+      .then((db) => {
+        const transaction = db.transaction(["infoCards"], "readwrite");
+        const store = transaction.objectStore("infoCards");
 
-      infoCards.forEach((infoCard) => {
-        store.put(infoCard);
-      });
+        infoCards.forEach((infoCard) => {
+          console.log("Saving infoCard:", infoCard); // Log para depuración
+          store.put(infoCard);
+        });
 
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = (error) => reject(error);
-    }).catch((error) => reject(error));
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (error) => reject(error);
+      })
+      .catch((error) => reject(error));
   });
 };
 
 export const getInfoCardsFromDB = () => {
   return new Promise((resolve, reject) => {
-    openDB().then((db) => {
-      const transaction = db.transaction(["infoCards"], "readonly");
-      const store = transaction.objectStore("infoCards");
+    openDB()
+      .then((db) => {
+        const transaction = db.transaction(["infoCards"], "readonly");
+        const store = transaction.objectStore("infoCards");
 
-      const infoCards = [];
-      const request = store.openCursor();
+        const infoCards = [];
+        const request = store.openCursor();
 
-      request.onsuccess = (event) => {
-        const cursor = event.target.result;
-        if (cursor) {
-          infoCards.push(cursor.value);
-          cursor.continue();
-        } else {
-          resolve(infoCards);
-        }
-      };
+        request.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor) {
+            console.log("Retrieved infoCard from IndexedDB:", cursor.value); // Log para depuración
+            infoCards.push(cursor.value);
+            cursor.continue();
+          } else {
+            console.log("All infoCards retrieved from IndexedDB:", infoCards); // Confirmación de éxito
+            resolve(infoCards);
+          }
+        };
 
-      request.onerror = (error) => reject(error);
-    }).catch((error) => reject(error));
+        request.onerror = (error) => {
+          console.error("Error retrieving infoCards from IndexedDB:", error); // Log de error
+          reject(error);
+        };
+      })
+      .catch((error) => {
+        console.error("Error opening IndexedDB:", error); // Log de error al abrir la base de datos
+        reject(error);
+      });
   });
 };
 
@@ -717,18 +730,27 @@ export const saveLastActivityToDB = (lastActivity) => {
 
 export const getLastActivityFromDB = () => {
   return new Promise((resolve, reject) => {
-    openDB().then((db) => {
-      const transaction = db.transaction(["lastActivity"], "readonly");
-      const store = transaction.objectStore("lastActivity");
+    openDB()
+      .then((db) => {
+        const transaction = db.transaction(["lastActivity"], "readonly");
+        const store = transaction.objectStore("lastActivity");
 
-      const request = store.get(1); // Cambia el ID según sea necesario
+        const request = store.get("lastactivity_Depto"); // Usa el mismo ID que usaste al guardar
 
-      request.onsuccess = (event) => {
-        resolve(event.target.result || {}); // Devuelve el objeto o un objeto vacío
-      };
+        request.onsuccess = (event) => {
+          console.log("Retrieved from IndexedDB:", event.target.result); // Verifica los datos recuperados
+          resolve(event.target.result || {}); // Devuelve el objeto o un objeto vacío
+        };
 
-      request.onerror = (error) => reject(error);
-    }).catch((error) => reject(error));
+        request.onerror = (error) => {
+          console.error("Error retrieving last activity from IndexedDB:", error);
+          reject(error);
+        };
+      })
+      .catch((error) => {
+        console.error("Error opening IndexedDB:", error);
+        reject(error);
+      });
   });
 };
 
@@ -753,7 +775,7 @@ export const getYearsAvailableFromDB = () => {
       const transaction = db.transaction(["yearsAvailable"], "readonly");
       const store = transaction.objectStore("yearsAvailable");
 
-      const request = store.get(1); // Cambia el ID según sea necesario
+      const request = store.get('years_available'); // Cambia el ID según sea necesario
 
       request.onsuccess = (event) => {
         resolve(event.target.result || {}); // Devuelve el objeto o un objeto vacío
