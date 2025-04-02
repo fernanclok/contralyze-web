@@ -36,6 +36,25 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null) // Estado para la transacción seleccionada
   const [isModalOpen, setIsModalOpen] = useState(false) // Estado para controlar el modal
 
+  // Normalizar TransactionsList para manejar ambos casos
+  const normalizeData = (data: any) => {
+    if (Array.isArray(data)) {
+      // Si es un array con un único objeto, verifica si ese objeto tiene propiedades numeradas
+      if (data.length === 1 && typeof data[0] === "object" && !Array.isArray(data[0])) {
+        return Object.values(data[0]).filter((item) => typeof item === "object");
+      }
+      // Si ya es un array plano, úsalo directamente
+      return data;
+    } else if (typeof data === "object" && data !== null) {
+      // Si es un objeto con índices numéricos, conviértelo en un array
+      return Object.values(data).filter((item) => typeof item === "object");
+    }
+    return []; // Si no es un formato válido, devuelve un array vacío
+  };
+
+  const recent_transactions = normalizeData(TransactionsList);
+  const activity = normalizeData(Activity);
+
   const handleOpenModal = (transaction: any) => {
     setSelectedTransaction(transaction) // Establece la transacción seleccionada
     setIsModalOpen(true) // Abre el modal
@@ -46,17 +65,13 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
     setIsModalOpen(false) // Cierra el modal
   }
 
-  const recent_transactions = TransactionsList
-
-  const activity = Activity
-
   const {
     currentPage: transactionsPage,
     totalPages: transactionsTotalPages,
     selectedData: selectedTransactions,
     handleNextPage: handleNextTransactionsPage,
     handlePreviousPage: handlePreviousTransactionsPage,
-  } = usePagination(recent_transactions, 9)
+  } = usePagination(recent_transactions, 9);
 
   const {
     currentPage: activityPage,
@@ -64,7 +79,7 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
     selectedData: selectedActivity,
     handleNextPage: handleNextActivityPage,
     handlePreviousPage: handlePreviousActivityPage,
-  } = usePagination(activity, 3)
+  } = usePagination(activity, 3);
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -123,32 +138,34 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
                   {selectedTransactions.map((item, index) => (
                     <tr key={index}>
                       <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-gray-500">
-                        {new Date(item.transaction_date).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {item.transaction_date
+                          ? new Date(item.transaction_date).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })
+                          : "N/A"}
                       </td>
                       <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-gray-500">
-                        {item.description}
+                        {item.description || "N/A"}
                       </td>
                       <td
                         className={`px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm font-bold ${
                           item.amount > 10000 ? "text-red-500" : "text-green-500/50"
                         }`}
                       >
-                        ${item.amount.toLocaleString()}
+                        ${item.amount ? Number(item.amount).toLocaleString() : "N/A"}
                       </td>
                       <td
                         className={`px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm ${
                           item.status === "completed"
                             ? "text-green-500"
                             : item.status === "Denied"
-                              ? "text-red-500"
-                              : "text-orange-300"
+                            ? "text-red-500"
+                            : "text-orange-300"
                         }`}
                       >
-                        {item.status}
+                        {item.status || "N/A"}
                       </td>
                       <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-gray-500">
                         <button

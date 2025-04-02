@@ -1,15 +1,12 @@
 "use client"
 
-import { AlertCircle } from "lucide-react";
-import DashboardCharts from "./charts/dashboard-charts";
-import InfoCards from "./info-cards/info-cards";
-import { Card, CardContent } from "@/components/ui/card";
-import 
-{ 
+import { AlertCircle } from "lucide-react"
+import DashboardCharts from "./charts/dashboard-charts"
+import {
   saveBudgetsStaticsToDB,
   getBudgetsStaticsFromDB,
   saveInfoCardsToDB,
-  getInfoCardsFromDB, 
+  getInfoCardsFromDB,
   saveTransactionStaticsToDB,
   getTransactionStaticsFromDB,
   saveDepartmentStaticsToDB,
@@ -19,267 +16,260 @@ import
   saveLastActivityToDB,
   getLastActivityFromDB,
   saveYearsAvailableToDB,
-  getYearsAvailableFromDB
-}
-  from "@/app/utils/indexedDB";
-import { useEffect, useState } from "react";
+  getYearsAvailableFromDB,
+} from "@/app/utils/indexedDB"
+import { useEffect, useState } from "react"
 
-export default function ClientDashboardPage(
-    {
-      Budgets,
-      user, 
-      Information, 
-      Transaction, 
-      AvailableYears, 
-      DeptoData,
-      TransactionsList,
-      TransactionsDepto
-    }
-   :
-     {
-      Budgets:any, 
-      user:any, 
-      Information:any, 
-      Transaction:any, 
-      AvailableYears:any, 
-      DeptoData:any,
-      TransactionsList:any,
-      TransactionsDepto:any
-    }) {
+export default function ClientDashboardPage({
+  Budgets,
+  user,
+  Information,
+  Transaction,
+  AvailableYears,
+  DeptoData,
+  TransactionsList,
+  TransactionsDepto,
+}: {
+  Budgets: any
+  user: any
+  Information: any
+  Transaction: any
+  AvailableYears: any
+  DeptoData: any
+  TransactionsList: any
+  TransactionsDepto: any
+}) {
+  // Initialize state with proper checks
+  const [localBudgets, setLocalBudgets] = useState(Budgets && typeof Budgets === "object" ? Budgets : {})
+  const [localInfoCards, setLocalInfoCards] = useState(
+    Information && typeof Information === "object" ? Information : {},
+  )
+  const [localTransactionStatics, setLocalTransactionStatics] = useState(
+    Transaction && typeof Transaction === "object" ? Transaction : {},
+  )
+  const [localDeptoData, setLocalDeptoData] = useState(DeptoData && typeof DeptoData === "object" ? DeptoData : {})
+  const [localTransactionsList, setLocalTransactionsList] = useState(
+    TransactionsList && typeof TransactionsList === "object" ? TransactionsList : {},
+  )
+  const [localActivity, setLocalActivity] = useState(
+    TransactionsDepto && typeof TransactionsDepto === "object" ? TransactionsDepto : {},
+  ) // Fixed: was using TransactionsList instead of TransactionsDepto
+  const [localYearsAvailable, setLocalYearsAvailable] = useState(
+    AvailableYears && typeof AvailableYears === "object" ? AvailableYears : {},
+  )
 
-// CHECK IF THE DATA IS EMPTY OR NOT
-    const [localBudgets, setLocalBudgets] = useState(
-      Budgets &&  typeof Budgets === "object" ? Budgets : {}
-      );
-      const [localinfoCards, setLocalInfoCards] = useState(
-        Information && typeof Information === "object" ? Information : {}
-      );
-      const [localTransactionStatics, setLocalTransactionStatics] = useState(
-        Transaction && typeof Transaction === "object" ? Transaction : {}
-      );
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
-      const [localDeptoData, setLocalDeptoData] = useState(
-        DeptoData && typeof DeptoData === "object" ? DeptoData : {}
-      );
-      const [localTransactionsList, setLocalTransactionsList] = useState(
-        TransactionsList && typeof TransactionsList === "object" ? TransactionsList : {}
-      );
-      const [localActivity, setLocalActivity] = useState(
-        TransactionsList && typeof TransactionsList === "object" ? TransactionsList : {}
-      );
-      const [localYearsAvailable, setLocalYearsAvailable] = useState(
-        AvailableYears && typeof AvailableYears === "object" ? AvailableYears : {}
-      );
-  const hasError =
-  !Budgets || !Information || !Transaction || !AvailableYears  ;
-  
-  //  CHARGE THE DATA FROM THE INDEXEDDB
+  const hasError = loadError || (!Budgets && !Information && !Transaction && !AvailableYears)
+
+  // Helper function to check if data is empty
+  const isDataEmpty = (data: any) => {
+    if (!data) return true
+    if (Array.isArray(data) && data.length === 0) return true
+    if (typeof data === "object" && Object.keys(data).length === 0) return true
+    return false
+  }
+
+  // Load data from IndexedDB
   useEffect(() => {
-    if(!Budgets || (Array.isArray(Budgets) && Budgets.length === 0)) 
-      {
-      if (typeof window !== "undefined" && window.indexedDB) {
-        getBudgetsStaticsFromDB()
-          .then((budgetsRequisitionsFromDB) => {
-            if (budgetsRequisitionsFromDB) {
-              setLocalBudgets(budgetsRequisitionsFromDB);
-            }
-          })
-          .catch((error) => {
-            console.error("Error fetching data from IndexedDB:", error);
-          });
-      }
-      else{
-        setLocalBudgets(Budgets);
-      }
-      }
-    
-    if(!Information || (Array.isArray(Information) && Information.length === 0)) 
-      {
-      if (typeof window !== "undefined" && window.indexedDB) {
-        getInfoCardsFromDB()
-          .then((infoCardsFromDB) => {
-            if (infoCardsFromDB) {
-              setLocalInfoCards(infoCardsFromDB);
-            }
-          })
-          .catch((error) => {
-            console.error("Error fetching data from IndexedDB:", error);
-          });
-      }
-      else{
-        setLocalInfoCards(Information);
-      }
+    let isMounted = true
+    const loadAllData = async () => {
+      if (typeof window === "undefined" || !window.indexedDB) {
+        if (isMounted) {
+          setLoadError(true)
+          setIsLoading(false)
+        }
+        return
       }
 
-    if(!Transaction || (Array.isArray(Transaction) && Transaction.length === 0)) 
-      {
-      if (typeof window !== "undefined" && window.indexedDB) {
-        getTransactionStaticsFromDB()
-          .then((transactionRequisitionsFromDB) => {
-            if (transactionRequisitionsFromDB) {
-              setLocalTransactionStatics(transactionRequisitionsFromDB);
-            }
-          })
-          .catch((error) => {
-            console.error("Error fetching data from IndexedDB:", error);
-          });
-      }
-      else{
-        setLocalTransactionStatics(Transaction);
-      }
-      }
+      try {
+        setIsLoading(true)
 
-    if(!DeptoData || (Array.isArray(DeptoData) && DeptoData.length === 0)) 
-      {
-      if (typeof window !== "undefined" && window.indexedDB) {
-        getDepartmentStaticsFromDB()
-          .then((DeptoDataRequisitionsFromDB) => {
-            if (DeptoDataRequisitionsFromDB) {
-              setLocalDeptoData(DeptoDataRequisitionsFromDB);
-            }
-          })
-          .catch((error) => {
-            console.error("Error fetching data from IndexedDB:", error);
-          });
-      }
-      }
+        // Load Budgets
+        if (isDataEmpty(Budgets)) {
+          const budgetsFromDB = await getBudgetsStaticsFromDB()
+          if (isMounted && budgetsFromDB) {
+            console.log("Loaded budgets from IndexedDB:", budgetsFromDB)
+            setLocalBudgets(budgetsFromDB)
+          }
+        }
 
-    if(!TransactionsList || (Array.isArray(TransactionsList) && TransactionsList.length === 0)) 
-      {
-      if (typeof window !== "undefined" && window.indexedDB) {
-        getLastTransactionsFromDB()
-          .then((transactionsRequisitionsFromDB) => {
-            if (transactionsRequisitionsFromDB) {
-              setLocalTransactionsList(transactionsRequisitionsFromDB);
-            }
-          })
-          .catch((error) => {
-            console.error("Error fetching data from IndexedDB:", error);
-          });
-      }
-      }
+        // Load Information
+        if (isDataEmpty(Information)) {
+          const infoCardsFromDB = await getInfoCardsFromDB()
+          if (isMounted && infoCardsFromDB) {
+            console.log("Loaded info cards from IndexedDB:", infoCardsFromDB)
+            setLocalInfoCards(infoCardsFromDB)
+          }
+        }
 
-    if(!TransactionsDepto || (Array.isArray(TransactionsDepto) && TransactionsDepto.length === 0))    
-      {
-        if (typeof window !== "undefined" && window.indexedDB) {
-          getLastActivityFromDB()
-            .then((activityRequisitionsFromDB) => {
-              if (activityRequisitionsFromDB) {
-                setLocalActivity(activityRequisitionsFromDB);
-              }
-            })
-            .catch((error) => {
-              console.error("Error fetching data from IndexedDB:", error);
-            });
+        // Load Transaction
+        if (isDataEmpty(Transaction)) {
+          const transactionFromDB = await getTransactionStaticsFromDB()
+          if (isMounted && transactionFromDB) {
+            console.log("Loaded transaction statics from IndexedDB:", transactionFromDB)
+            setLocalTransactionStatics(transactionFromDB)
+          }
+        }
+
+        // Load DeptoData
+        if (isDataEmpty(DeptoData)) {
+          const deptoDataFromDB = await getDepartmentStaticsFromDB()
+          if (isMounted && deptoDataFromDB) {
+            console.log("Loaded department data from IndexedDB:", deptoDataFromDB)
+            setLocalDeptoData(deptoDataFromDB)
+          }
+        }
+
+        // Load TransactionsList
+        if (isDataEmpty(TransactionsList)) {
+          const transactionsListFromDB = await getLastTransactionsFromDB()
+          if (isMounted && transactionsListFromDB) {
+            console.log("Loaded transactions list from IndexedDB:", transactionsListFromDB)
+            setLocalTransactionsList(transactionsListFromDB)
+          }
+        }
+
+        // Load TransactionsDepto
+        if (isDataEmpty(TransactionsDepto)) {
+          const activityFromDB = await getLastActivityFromDB()
+          console.log("Activity loaded from IndexedDB:", activityFromDB);
+          if (isMounted && activityFromDB) {
+            console.log("Loaded last activity from IndexedDB:", activityFromDB)
+            setLocalActivity(activityFromDB)
+          }
+        }
+
+        // Load AvailableYears
+        if (isDataEmpty(AvailableYears)) {
+          const yearsFromDB = await getYearsAvailableFromDB()
+          if (isMounted && yearsFromDB) {
+            console.log("Loaded available years from IndexedDB:", yearsFromDB)
+            setLocalYearsAvailable(yearsFromDB)
+          }
+        }
+      } catch (error) {
+        console.error("Error loading data from IndexedDB:", error)
+        if (isMounted) {
+          setLoadError(true)
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
         }
       }
+    }
 
-    if(!AvailableYears || (Array.isArray(AvailableYears) && AvailableYears.length === 0)) 
-      {
-        if (typeof window !== "undefined" && window.indexedDB) {
-          getYearsAvailableFromDB()
-            .then((yearsRequisitionsFromDB) => {
-              if (yearsRequisitionsFromDB) {
-                setLocalYearsAvailable(yearsRequisitionsFromDB);
-              }
-            })
-            .catch((error) => {
-              console.error("Error fetching data from IndexedDB:", error);
-            });
+    loadAllData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [Budgets, Information, Transaction, DeptoData, TransactionsList, TransactionsDepto, AvailableYears])
+
+  // Save data to IndexedDB
+  useEffect(() => {
+    const saveData = async () => {
+      if (typeof window === "undefined" || !window.indexedDB) return
+
+      try {
+        // Save Budgets
+        if (!isDataEmpty(Budgets)) {
+          const budgetsToSave = {
+            id: "budgets_summary",
+            ...Budgets,
+          }
+          await saveBudgetsStaticsToDB([budgetsToSave])
+          console.log("Saved budgets to IndexedDB")
         }
-      }
 
-  }, [Budgets, Information, Transaction, DeptoData, TransactionsList, TransactionsDepto, AvailableYears]);
+        // Save Information
+        if (!isDataEmpty(Information)) {
+          const infoCardsToSave = {
+            id: "info_cards",
+            ...Information,
+          }
+          await saveInfoCardsToDB([infoCardsToSave])
+          console.log("Saved info cards to IndexedDB")
+        }
 
-  // SAVE THE DATA IN THE INDEXEDDB
-    useEffect(() => {
-      if (Budgets && typeof window !== "undefined" && window.indexedDB) {
-        const budgetsToSave = {
-          id: "budgets_summary", // Un identificador único
-          ...Budgets,
-        };
-        console.log("Saving budgets to IndexedDB:", budgetsToSave);
-    
-        saveBudgetsStaticsToDB([budgetsToSave]).catch((error) => {
-          console.error("Error saving budgets to IndexedDB:", error);
-        });
-      }
-      if (Information && typeof window !== "undefined" && window.indexedDB) {
-        const infoCardsToSave = {
-          id: "info_cards", // Un identificador único
-          ...Information,
-        };
-        console.log("Saving info cards to IndexedDB:", infoCardsToSave);
-    
-        saveInfoCardsToDB([infoCardsToSave]).catch((error) => {
-          console.error("Error saving info cards to IndexedDB:", error);
-        });
-      }
-      if (Transaction && typeof window !== "undefined" && window.indexedDB) {
-        const transactionsToSave = {
-          id: "transactions_summary", // Un identificador único
-          ...Transaction,
-        };
-        console.log("Saving transactions to IndexedDB:", transactionsToSave);
-    
-        saveTransactionStaticsToDB([transactionsToSave]).catch((error) => {
-          console.error("Error saving transactions to IndexedDB:", error);
-        });
-      }
-      if (DeptoData && typeof window !== "undefined" && window.indexedDB) {
-        const DeptoDataToSave = {
-          id: "Depto_summary", // Un identificador único
-          ...DeptoData,
-        };
-        console.log("Saving DeptoData to IndexedDB:", DeptoDataToSave);
-    
-        saveDepartmentStaticsToDB([DeptoDataToSave]).catch((error) => {
-          console.error("Error saving DeptoData to IndexedDB:", error);
-        });
-      }
-      if (TransactionsList && typeof window !== "undefined" && window.indexedDB) {
-        const transactionsToSave = {
-          id: "transactions_list", // Un identificador único
-          ...TransactionsList,
-        };
-        console.log("Saving transactions to IndexedDB:", transactionsToSave);
-    
-        saveLastTransactionsToDB([transactionsToSave]).catch((error) => {
-          console.error("Error saving transactions to IndexedDB:", error);
-        });
-      }
-      if (TransactionsDepto && typeof window !== "undefined" && window.indexedDB) {
-        const transactionsToSave = {
-          id: "lastactivity_Depto", // Un identificador único
-          ...TransactionsDepto,
-        };
-        console.log("Saving transactions to IndexedDB:", transactionsToSave);
-    
-        saveLastActivityToDB(transactionsToSave).catch((error) => {
-          console.error("Error saving transactions to IndexedDB:", error);
-        });
-      }
-      if (AvailableYears && typeof window !== "undefined" && window.indexedDB) {
-        const yearsToSave = {
-          id: "years_available", // Un identificador único
-          ...AvailableYears,
-        };
-        console.log("Saving years to IndexedDB:", yearsToSave);
-    
-        saveYearsAvailableToDB(yearsToSave).catch((error) => {
-          console.error("Error saving years to IndexedDB:", error);
-        });
-      }
-    }, [Budgets, Information, Transaction, DeptoData, TransactionsList, TransactionsDepto, AvailableYears]);
+        // Save Transaction
+        if (!isDataEmpty(Transaction)) {
+          const transactionsToSave = {
+            id: "transactions_summary",
+            ...Transaction,
+          }
+          await saveTransactionStaticsToDB([transactionsToSave])
+          console.log("Saved transactions to IndexedDB")
+        }
 
-    // get the last updated date
-      const date = new Date();
-      const lastUpdated = date.toDateString();
-    // make the large date 
+        // Save DeptoData
+        if (!isDataEmpty(DeptoData)) {
+          const deptoDataToSave = {
+            id: "Depto_summary",
+            ...DeptoData,
+          }
+          await saveDepartmentStaticsToDB([deptoDataToSave])
+          console.log("Saved department data to IndexedDB")
+        }
+
+        // Save TransactionsList
+        if (!isDataEmpty(TransactionsList)) {
+          const transactionsListToSave = {
+            id: "transactions_list",
+            ...TransactionsList,
+          }
+          await saveLastTransactionsToDB([transactionsListToSave])
+          console.log("Saved transactions list to IndexedDB")
+        }
+
+        // Save TransactionsDepto
+        if (!isDataEmpty(TransactionsDepto)) {
+          const activityToSave = {
+            id: "lastactivity_Depto",
+            ...TransactionsDepto,
+          }
+          await saveLastActivityToDB(activityToSave)
+          console.log("Saved last activity to IndexedDB")
+        }
+
+        // Save AvailableYears
+        if (!isDataEmpty(AvailableYears)) {
+          const yearsToSave = {
+            id: "years_available",
+            ...AvailableYears,
+          }
+          console.log(yearsToSave, 'aaaaasave')
+          await saveYearsAvailableToDB(yearsToSave)
+          console.log("Saved available years to IndexedDB")
+        }
+      } catch (error) {
+        console.error("Error saving data to IndexedDB:", error)
+      }
+    }
+
+    saveData()
+  }, [Budgets, Information, Transaction, DeptoData, TransactionsList, TransactionsDepto, AvailableYears])
+
+  // Get the last updated date
+  const date = new Date()
+  const lastUpdated = date.toDateString()
+
+  console.log("Data passed to DashboardCharts:", {
+    Budgets: localBudgets,
+    transaction: localTransactionStatics,
+    years: localYearsAvailable,
+    Info: localInfoCards,
+    DeptoData: localDeptoData,
+    TransactionsList: localTransactionsList,
+    TransactionsDepto: localActivity,
+  })
+
   return (
     <div className="flex bg-background pb-12 h-full">
       <div className="flex-1">
-        <div className="space-y-8 p-6"> 
+        <div className="space-y-8 p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
             <div className="flex items-center gap-2">
@@ -289,33 +279,43 @@ export default function ClientDashboardPage(
             </div>
           </div>
 
-          {/* Mostrar mensaje de error si hay problemas */}
-          {hasError && (
-            <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 mt-0.5" />
+          {/* Loading indicator */}
+          {isLoading && (
+            <div className="p-4 mb-4 bg-blue-50 text-blue-700 rounded-lg flex items-start gap-3">
+              <div className="animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent"></div>
               <div>
-                <p className="font-medium">Connection Error</p>
-                <p className="text-sm">
-                  Could not load the data. Please check your connection or try again later.
-                </p>
+                <p className="font-medium">Loading data...</p>
+                <p className="text-sm">Please wait while we retrieve your dashboard information.</p>
               </div>
             </div>
           )}
 
-          {/* Mostrar contenido solo si no hay errores */}
-          {!hasError && (
-                <DashboardCharts
-                  Budgets={localBudgets}
-                  transaction={localTransactionStatics}
-                  years={localYearsAvailable}
-                  Info={localinfoCards} 
-                  DeptoData={localDeptoData}
-                  TransactionsList={localTransactionsList}
-                  TransactionsDepto={localActivity}
-                />
+          {/* Error message */}
+          {hasError && !isLoading && (
+            <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 mt-0.5" />
+              <div>
+                <p className="font-medium">Connection Error</p>
+                <p className="text-sm">Could not load the data. Please check your connection or try again later.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Dashboard content */}
+          {!isLoading && !hasError && (
+            <DashboardCharts
+              Budgets={localBudgets}
+              transaction={localTransactionStatics}
+              years={localYearsAvailable}
+              Info={localInfoCards}
+              DeptoData={localDeptoData}
+              TransactionsList={localTransactionsList}
+              TransactionsDepto={localActivity}
+            />
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }
+

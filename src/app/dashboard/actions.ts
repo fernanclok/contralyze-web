@@ -29,7 +29,7 @@ export async function getBudgets() {
       //   return { error: "Error connecting to the server", Budgets: {} };
       // }
   
-      return { error: "Error fetching budget info", Budgets: {} };
+      return { Budgets: {}, error: "Error fetching budget info" };
     }
   }
 
@@ -85,7 +85,7 @@ export async function getBudgets() {
       //   return { error: "Error connecting to the server", Budgets: {} };
       // }
   
-      return { error: "Error fetching info cards", Budgets: {} };
+      return {  info: [], error: "Error fetching info cards" };
   }
   }
 
