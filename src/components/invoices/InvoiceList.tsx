@@ -79,7 +79,7 @@ export function InvoiceList({
     
     // Configurar Pusher solo si no hay error de conexión
     if (!hasConnectionError) {
-      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_APP_KEY || '', {
+      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
         cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
       });
       

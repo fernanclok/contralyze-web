@@ -26,7 +26,7 @@ export function useRealtimeTransactions({
   
   // Handler for new transactions
   const handleTransactionCreated = useCallback((transaction: Transaction) => {
-    console.log('Nueva transacción recibida:', transaction);
+    console.log('New transaction received:', transaction);
     
     setTransactions(current => {
       // Avoid duplicates
@@ -38,7 +38,7 @@ export function useRealtimeTransactions({
       
       if (enableNotifications) {
         emmiter.emit('showToast', {
-          message: `Nueva transacción: ${transaction.description || transaction.id}`,
+          message: `New transaction: ${transaction.description || transaction.id}`,
           type: 'info'
         });
       }
@@ -52,7 +52,7 @@ export function useRealtimeTransactions({
   
   // Handler for updated transactions
   const handleTransactionUpdated = useCallback((transaction: Transaction) => {
-    console.log('Transacción actualizada:', transaction);
+    console.log('Transaction updated:', transaction);
     
     setTransactions(current => {
       const transactionExists = current.some(t => t.id === transaction.id);
@@ -60,7 +60,7 @@ export function useRealtimeTransactions({
       
       if (transactionExists && enableNotifications) {
         emmiter.emit('showToast', {
-          message: `Transacción actualizada: ${transaction.description || transaction.id}`,
+          message: `Transaction updated: ${transaction.description || transaction.id}`,
           type: 'info'
         });
       }
@@ -74,7 +74,7 @@ export function useRealtimeTransactions({
   
   // Handler for deleted transactions
   const handleTransactionDeleted = useCallback((data: { id: string }) => {
-    console.log('Transacción eliminada:', data);
+    console.log('Transaction deleted:', data);
     
     setTransactions(current => {
       const transactionExists = current.some(t => t.id === data.id);
@@ -82,7 +82,7 @@ export function useRealtimeTransactions({
       
       if (transactionExists && enableNotifications) {
         emmiter.emit('showToast', {
-          message: `Transacción eliminada: ${data.id}`,
+          message: `Transaction deleted: ${data.id}`,
           type: 'warning'
         });
       }
@@ -97,7 +97,7 @@ export function useRealtimeTransactions({
   // Set up Pusher subscriptions
   useEffect(() => {
     if (!pusher.isConnected && !pusher.isConnecting) {
-      setError(new Error('No hay conexión en tiempo real'));
+      setError(new Error('No real-time connection available'));
       return;
     }
     

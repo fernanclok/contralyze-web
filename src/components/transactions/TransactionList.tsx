@@ -28,6 +28,7 @@ import { emmiter } from "@/lib/emmiter";
 import { Pagination } from '@/components/ui/pagination';
 import { format } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { getTransactionsFromDB, saveTransactionsToDB } from '@/app/utils/indexedDB'; // Importar funciones de IndexedDB
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -72,7 +73,36 @@ export function TransactionList({
 
   const itemsPerPage = 10;
   const isAdmin = userRole === 'admin';
-  
+
+  // Cargar transacciones desde IndexedDB si está offline
+  useEffect(() => {
+    const loadOfflineTransactions = async () => {
+      if (hasConnectionError) {
+        console.log('Cargando transacciones desde IndexedDB...');
+        const offlineTransactions = await getTransactionsFromDB();
+        setAllTransactions(offlineTransactions);
+        applyFilters(offlineTransactions);
+      } else {
+        // Guardar transacciones en IndexedDB si hay conexión
+        await saveTransactionsToDB(transactions);
+      }
+    };
+
+    loadOfflineTransactions();
+  }, [hasConnectionError, transactions]);
+
+  // Guardar transacciones en IndexedDB después de cualquier cambio
+  useEffect(() => {
+    const saveTransactions = async () => {
+      if (!hasConnectionError) {
+        console.log('Guardando transacciones en IndexedDB...');
+        await saveTransactionsToDB(allTransactions);
+      }
+    };
+
+    saveTransactions();
+  }, [allTransactions, hasConnectionError]);
+
   // Configuración de Pusher para actualizaciones en tiempo real
   useEffect(() => {
     console.log("Inicializando con", transactions.length, "transacciones");

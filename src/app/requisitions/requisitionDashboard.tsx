@@ -110,6 +110,8 @@ export default function RequisitionDashboard({
 
   const hasPieData = pieData.datasets[0].data.some((value) => value > 0);
 
+  console.log(localRequisitionsDashboard)
+
   return (
     <>
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-4 mb-6">
