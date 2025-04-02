@@ -6,6 +6,7 @@ import { useState } from "react"
 import Dibises from "./dibises"
 import Link from "next/link"
 import SideModal from "./SideModal"
+import { Badge } from "@/components/ui/badge"
 
 // Función de paginación general
 const usePagination = (data: any[], itemsPerPage: number) => {
@@ -137,7 +138,7 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
                 <tbody className="bg-white divide-y divide-gray-200">
                   {selectedTransactions.map((item, index) => (
                     <tr key={index}>
-                      <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-black">
                         {item.transaction_date
                           ? new Date(item.transaction_date).toLocaleDateString("en-US", {
                               year: "numeric",
@@ -146,27 +147,25 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
                             })
                           : "N/A"}
                       </td>
-                      <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-black">
                         {item.description || "N/A"}
                       </td>
                       <td
-                        className={`px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm font-bold ${
-                          item.amount > 10000 ? "text-red-500" : "text-green-500/50"
-                        }`}
+                        className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-black"
                       >
                         ${item.amount ? Number(item.amount).toLocaleString() : "N/A"}
                       </td>
-                      <td
-                        className={`px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm ${
+                      <Badge
+                        className={`align-center m-2 text-sm ${
                           item.status === "completed"
-                            ? "text-green-500"
-                            : item.status === "Denied"
-                            ? "text-red-500"
-                            : "text-orange-300"
+                            ? "bg-green-100 text-green-800"
+                            : item.status === "cancelled"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
                         {item.status || "N/A"}
-                      </td>
+                      </Badge>
                       <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-gray-500">
                         <button
                           type="button"
@@ -259,17 +258,17 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
                         <div className="text-xs text-gray-500 mt-1">{item.description}</div>
                       </td>
                       <td className="px-2 py-4 whitespace-normal text-sm">
-                        <div
+                        <Badge
                           className={`p-1 rounded-xl flex justify-center items-center ${
-                            item.status === "Completed"
-                              ? "bg-green-100 text-green-700"
-                              : item.status === "Denied"
-                                ? "text-red-700 bg-red-100"
-                                : "text-yellow-600 bg-orange-100"
+                            item.status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : item.status === "cancelled"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
                           }`}
                         >
                           {item.status}
-                        </div>
+                        </Badge>
                         <div className="text-xs text-gray-500 mt-1">
                           {new Date(item.transaction_date).toLocaleDateString("en-US", {
                             year: "numeric",
