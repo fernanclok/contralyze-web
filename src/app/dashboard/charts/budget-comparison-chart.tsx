@@ -101,8 +101,12 @@ const CustomYAxisTick = (props) => {
 
 export function BudgetComparisonChart({ Budgets = { chart_data: [] }, DeptoData  }: { Budgets?: any, DeptoData?: any }) {
   const [data, setData] = useState<BudgetData[]>([])
-    // Asignar DeptoData a departmentRawData
-    const departmentRawData = DeptoData;
+
+  console.log("department data", DeptoData)
+  // normalizar datos deptoData
+  const departmentRawData = Array.isArray(DeptoData) && DeptoData.length === 1 && typeof DeptoData[0] === "object"
+    ? Object.values(DeptoData[0]).filter((item) => typeof item === "object")
+    : DeptoData;
 
     // Transformar los datos para el formato del gráfico
     const groupedDepartmentData = departmentRawData.map((dept: any) => ({
