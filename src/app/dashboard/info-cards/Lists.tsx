@@ -71,7 +71,7 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
     selectedData: selectedTransactions,
     handleNextPage: handleNextTransactionsPage,
     handlePreviousPage: handlePreviousTransactionsPage,
-  } = usePagination(recent_transactions, 9);
+  } = usePagination(recent_transactions, 10);
 
   const {
     currentPage: activityPage,
