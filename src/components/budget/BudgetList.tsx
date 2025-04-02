@@ -491,83 +491,82 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[180px]">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              type="search"
-              placeholder="Search by category or department..."
-              className="pl-8 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3"
-                onClick={() => setSearchTerm('')}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Clear search</span>
-              </Button>
-            )}
-          </div>
-          <div className="w-[160px] min-w-[140px]">
-            <Select 
-              value={filterStatus} 
-              onValueChange={setFilterStatus}
-            >
-              <SelectTrigger className="w-[130px] bg-white text-black">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-white shadow-md">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-[160px] min-w-[140px]">
-            <Select 
-              value={filterDepartment} 
-              onValueChange={setFilterDepartment}
-            >
-              <SelectTrigger className="w-[130px] bg-white text-black">
-                <SelectValue placeholder="Department" />
-              </SelectTrigger>
-              <SelectContent className="bg-white shadow-md">
-                <SelectItem value="all">All Departments</SelectItem>
-                {localDepartments.map(dept => (
-                  <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {(searchTerm || filterStatus !== 'all' || filterDepartment !== 'all') && (
-            <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={() => {
-              setSearchTerm('');
-              setFilterStatus('all');
-              setFilterDepartment('all');
-            }}>
-              <FilterX className="mr-2 h-4 w-4" />
-              Clear filters
-            </Button>
-          )}
-        </div>
-        {isAdmin && (
-          <Button 
-            onClick={() => setIsModalOpen(true)} 
-            className="whitespace-nowrap"
-            disabled={hasConnectionError}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Budget
-          </Button>
-        )}
-      </div>
+     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <div className="flex flex-1 items-center gap-x-2 sm:gap-x-4">
+    <div className="relative flex-1 min-w-[180px]">
+      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+      <Input
+        type="search"
+        placeholder="Search by category or department..."
+        className="pl-8 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+      {searchTerm && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute right-0 top-0 h-full px-3"
+          onClick={() => setSearchTerm('')}
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Clear search</span>
+        </Button>
+      )}
+    </div>
+    <div className="w-[130px]">
+      <Select value={filterStatus} onValueChange={setFilterStatus}>
+        <SelectTrigger className="w-full bg-white text-black">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent className="bg-white shadow-md">
+          <SelectItem value="all">All Status</SelectItem>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="inactive">Inactive</SelectItem>
+          <SelectItem value="expired">Expired</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+    <div className="w-[130px]">
+      <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+        <SelectTrigger className="w-full bg-white text-black">
+          <SelectValue placeholder="Department" />
+        </SelectTrigger>
+        <SelectContent className="bg-white shadow-md">
+          <SelectItem value="all">All Departments</SelectItem>
+          {localDepartments.map(dept => (
+            <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+    {(searchTerm || filterStatus !== 'all' || filterDepartment !== 'all') && (
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="whitespace-nowrap"
+        onClick={() => {
+          setSearchTerm('');
+          setFilterStatus('all');
+          setFilterDepartment('all');
+        }}
+      >
+        <FilterX className="mr-2 h-4 w-4" />
+        Clear filters
+      </Button>
+    )}
+  </div>
+  {isAdmin && (
+    <Button 
+      onClick={() => setIsModalOpen(true)} 
+      className="whitespace-nowrap"
+      disabled={hasConnectionError}
+    >
+      Create Budget
+    </Button>
+  )}
+</div>
+
 
       {/* Departament Budget Summary */}
       {budgetsByDepartment.length > 0 && (

@@ -110,8 +110,6 @@ export default function RequisitionDashboard({
 
   const hasPieData = pieData.datasets[0].data.some((value) => value > 0);
 
-  console.log(localRequisitionsDashboard)
-
   return (
     <>
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-4 mb-6">
@@ -153,12 +151,19 @@ export default function RequisitionDashboard({
             <p className="text-xs text-gray-500">
               {localRequisitionsDashboard.pending_previous_month_requisitions >
               0
-                ? `+${(
-                    ((localRequisitionsDashboard.pending_requisitions -
-                      localRequisitionsDashboard.pending_previous_month_requisitions) /
-                      localRequisitionsDashboard.pending_previous_month_requisitions) *
-                    100
-                  ).toFixed(2)}% from last month`
+                ? (() => {
+                    const difference =
+                      localRequisitionsDashboard.pending_requisitions -
+                      localRequisitionsDashboard.pending_previous_month_requisitions;
+                    const percentageChange =
+                      (difference /
+                        localRequisitionsDashboard.pending_previous_month_requisitions) *
+                      100;
+
+                    return `${
+                      percentageChange > 0 ? "+" : ""
+                    }${percentageChange.toFixed(2)}% from last month`;
+                  })()
                 : "No data from last month"}
             </p>
           </CardContent>

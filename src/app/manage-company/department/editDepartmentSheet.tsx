@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter
 } from "@/components/ui/sheet";
 import {
   Select,
@@ -27,7 +28,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { emmiter } from "@/lib/emmiter";
 
-export function EditDepartmentSheet({ department }: { department: any }) {
+export function EditDepartmentSheet({ department, onDepartmentUpdated }: { department: any; onDepartmentUpdated:() => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isActive, setIsActive] = useState(department.isActive);
   const [state, setState] = useState<any>(null);
@@ -45,6 +46,7 @@ export function EditDepartmentSheet({ department }: { department: any }) {
         type: "success",
       });
       router.refresh();
+      onDepartmentUpdated();
     }
     setState(result);
   };
@@ -124,7 +126,9 @@ export function EditDepartmentSheet({ department }: { department: any }) {
               can not make any action.
             </div>
           )}
-          <SubmitButton />
+          <SheetFooter>
+            <SubmitButton />
+          </SheetFooter>
         </form>
       </SheetContent>
     </Sheet>
