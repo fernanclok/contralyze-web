@@ -19,26 +19,43 @@ import { rejectRequisition } from "@/app/requisitions/actions";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { emmiter } from "@/lib/emmiter";
+import { updateRequisitionInDB } from "@/app/utils/indexedDB";
 
-export function RejectRequisitionSheet({ id, onRequisitionUpdated }: { id: string, onRequisitionUpdated: () => void; }) {
+export function RejectRequisitionSheet({ id, user, requisition, onUpdateRequisition }: { id: string, user: any ,requisition: { requisition_uid: string } ,onUpdateRequisition: (updatedRequisition: any) => void; }) {
   const [isOpen, setIsOpen] = useState(false);
   const [state, setState] = useState<any>(null);
   const router = useRouter();
-
+  
   const handleRejectRequisition = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const result = await rejectRequisition(state, formData);
+  
     if (!result.errors) {
-      setIsOpen(false); // Cierra el modal si no hay errores
+      const updatedRequisition = {
+        ...requisition,
+        status: "Rejected",
+        requisition_uid: requisition.requisition_uid,
+        rejection_reason: formData.get("rejection_reason"),
+        reviewed_by: user, // Asegúrate de incluir el usuario que rechazó
+        updated_at: new Date().toISOString(),
+      };
+  
+      // Actualizar en IndexedDB
+      await updateRequisitionInDB(updatedRequisition);
+  
+      // Actualizar el estado local en RequisitionDetails
+      onUpdateRequisition(updatedRequisition);
+  
+      // Cerrar el modal y mostrar un mensaje de éxito
+      setIsOpen(false);
       emmiter.emit("showToast", {
         message: "Requisition rejected successfully",
         type: "success",
       });
-      router.refresh(); // Refresca la tabla de requisiciones
-      onRequisitionUpdated();
+      router.refresh();
     }
     setState(result);
   };

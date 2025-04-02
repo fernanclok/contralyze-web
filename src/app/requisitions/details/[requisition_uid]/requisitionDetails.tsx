@@ -68,16 +68,13 @@ export default function RequisitionDetails({
     }
   }, [id, requisitionData]);
 
-  const updateRequisitionData = async () => {
-    if (typeof window !== "undefined" && window.indexedDB) {
-      try {
-        const updatedRequisition = await getRequisitionByUIDFromDB(id)
-        setRequisitionData(updatedRequisition || [])
-      } catch (error) {
-        console.error("Error updating local requisition", error)
-      }
-    }
-  }
+  const handleUpdateRequisition = (updatedRequisition: any) => {
+    setRequisitionData((prevData: any) => ({
+      ...prevData,
+      ...updatedRequisition,
+    }));
+    router.refresh()
+  };
 
   const handleApproveRequisition = async () => {
     setLoading(true);
@@ -101,6 +98,8 @@ export default function RequisitionDetails({
   
         // Actualizar el estado local
         setRequisitionData(updatedRequisition);
+
+        router.refresh();
       }
     } catch (error) {
       console.error("Error approving requisition:", error);
@@ -109,7 +108,11 @@ export default function RequisitionDetails({
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
+    if (!status) {
+      return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"; // Color predeterminado
+    }
+  
     switch (status.toLowerCase()) {
       case "approved":
         return "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100";
@@ -189,7 +192,7 @@ export default function RequisitionDetails({
                     </CardDescription>
                   </div>
                   <Badge className={getStatusColor(requisitionData.status)}>
-                    {requisitionData.status}
+                    {requisitionData.status || "Unknown"}
                   </Badge>
                 </div>
               </CardHeader>
@@ -361,7 +364,7 @@ export default function RequisitionDetails({
                           <CheckCircle className="h-4 w-4 mr-2" />
                           {loading ? "Approving..." : "Approve Requisition"}
                         </Button>
-                        <RejectRequisitionSheet id={requisitionData.id} onRequisitionUpdated={updateRequisitionData}/>
+                        <RejectRequisitionSheet id={requisitionData.id} user={user} requisition={requisitionData} onUpdateRequisition={handleUpdateRequisition}/>
                       </>
                     )}
 
