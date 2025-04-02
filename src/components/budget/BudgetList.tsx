@@ -663,7 +663,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {budgets.map((budget) => (
+                {currentItems.map((budget) => (
                   <TableRow key={budget.id}>
                     <TableCell className="font-medium text-black truncate max-w-[180px]" title={budget.category.name}>
                       {budget.category.name}
