@@ -38,9 +38,9 @@ const normalizeYears = (data: any) => {
 
 export function RevenueChart({ transaction, Year }: { transaction: any; Year: any }) {
   const normalizedTransactions = normalizeTransactions(transaction);
-  const normalizedYears = normalizeYears(Year);
+  const normalizedYears: (string | number)[] = normalizeYears(Year) as (string | number)[];
 
-  const [selectedYear, setSelectedYear] = useState(normalizedYears[0]);
+  const [selectedYear, setSelectedYear] = useState<string | number>(normalizedYears[0]);
 
   console.log("Normalized Transactions:", normalizedTransactions);
   console.log("Normalized Years:", normalizedYears);

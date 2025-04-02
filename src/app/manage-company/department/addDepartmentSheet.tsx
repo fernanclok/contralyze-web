@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter
 } from "@/components/ui/sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -19,7 +20,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { emmiter } from "@/lib/emmiter";
 
-export function AddDepartmentSheet() {
+export function AddDepartmentSheet({ onDepartmentUpdated}: { onDepartmentUpdated: () => void}) {
   const [isOpen, setIsOpen] = useState(false);
   const [state, addDepartmentAction] = useActionState(
     async (prevState: any, formData: FormData) => {
@@ -31,6 +32,7 @@ export function AddDepartmentSheet() {
           type: "success",
         });
         router.refresh(); // Refresca la tabla de departamentos
+        onDepartmentUpdated();
       }
       return result;
     },
@@ -54,12 +56,12 @@ export function AddDepartmentSheet() {
           </SheetDescription>
         </SheetHeader>
         <form action={addDepartmentAction} className="space-y-6">
-            {state?.errors?.server && (
-                <Alert variant="destructive">
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{state.errors.server}</AlertDescription>
-                </Alert>
-            )}
+          {state?.errors?.server && (
+            <Alert variant="destructive">
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{state.errors.server}</AlertDescription>
+            </Alert>
+          )}
           <div className="mt-4 space-y-2">
             <Label htmlFor="department_name">Department Name</Label>
             <Input
@@ -86,7 +88,9 @@ export function AddDepartmentSheet() {
               </p>
             )}
           </div>
-          <SubmitButton />
+          <SheetFooter>
+            <SubmitButton />
+          </SheetFooter>
         </form>
       </SheetContent>
     </Sheet>
