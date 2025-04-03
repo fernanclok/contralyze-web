@@ -75,7 +75,7 @@ export function usePusher(
     try {
       // Inicializa Pusher sin autenticación
       pusherRef.current = new Pusher(appKey, {
-        cluster: mergedOptions.cluster,
+        cluster: mergedOptions.cluster || 'us2',
         forceTLS: mergedOptions.forceTLS,
         enabledTransports: mergedOptions.enabledTransports as any,
         disabledTransports: mergedOptions.disabledTransports as any,

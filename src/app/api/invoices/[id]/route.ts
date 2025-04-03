@@ -4,12 +4,12 @@ import axios from 'axios';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("access_token")?.value;
-    const { id } = await Promise.resolve(context.params);
+    const { id } = await params;
 
     if (!token) {
       return NextResponse.json(

@@ -23,29 +23,13 @@ export default function DashboardCharts({ Budgets, transaction, years, Info, Dep
 
 
   return (
-    <>
-     {/* Mostrar mensaje de error si hay problemas */}
-     {hasError && (
-        <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 mt-0.5" />
-          <div>
-            <p className="font-medium">Connection Error</p>
-            <p className="text-sm">
-              Could not load the data. Please check your connection or try again later.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {!hasError && (
         <>
-          {/* Info cards */}
             <InfoCards Info={Info} />
            {/* SubInfoCards */}
            <div className="grid grid-cols-4 gap-4 pt-8 ">
             <Card className="p-3">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm text-gray-400 font-medium">All Budgets</CardTitle>
+                <CardTitle className="text-sm text-gray-600 font-medium">All Budgets</CardTitle>
                 <UsersIcon className="h-5 w-5 text-gray-600" />
               </CardHeader>
               <CardContent>
@@ -54,13 +38,13 @@ export default function DashboardCharts({ Budgets, transaction, years, Info, Dep
                     <ArrowUpIcon className="h-5 w-5 text-green-500" />
                     <span className="text-3xl font-bold text-black">+{Budgets.total_budgets}</span>
                   </div>
-                    <p className="text-sm text-gray-300 font-thin mt-2">All budgets from departments and categories.</p>
+                    <p className="text-sm text-gray-400 font-thin mt-2">All budgets from departments and categories.</p>
                 </div>
               </CardContent>
             </Card>
             <Card className="p-3">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm text-gray-400 font-medium">Total budgets amount.</CardTitle>
+                <CardTitle className="text-sm text-gray-600 font-medium">Total budgets amount.</CardTitle>
                 <BuildingIcon className="h-5 w-5 text-gray-600" />
               </CardHeader>
               <CardContent>
@@ -70,12 +54,12 @@ export default function DashboardCharts({ Budgets, transaction, years, Info, Dep
                     <span className="text-3xl font-bold text-black">+{Budgets.total_budget_amount}</span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-300 font-thin mt-2">All budget expended.</p>
+                <p className="text-sm text-gray-400 font-thin mt-2">All budget expended.</p>
               </CardContent>
             </Card>
             <Card className="p-3">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm text-gray-400 font-medium">Active budgets</CardTitle>
+                <CardTitle className="text-sm text-gray-600 font-medium">Active budgets</CardTitle>
                 <UserIcon className="h-5 w-5 text-gray-600" />
               </CardHeader>
               <CardContent>
@@ -85,12 +69,12 @@ export default function DashboardCharts({ Budgets, transaction, years, Info, Dep
                     <span className="text-3xl font-bold text-black">+{Budgets.total_active_budgets}</span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-300 font-thin mt-2">All active budgets today.</p>
+                <p className="text-sm text-gray-400 font-thin mt-2">All active budgets today.</p>
               </CardContent>
             </Card>
             <Card className="p-3">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm text-gray-400 font-medium">Inactive budgets</CardTitle>
+                <CardTitle className="text-sm text-gray-600 font-medium">Inactive budgets</CardTitle>
                 <UserIcon className="h-5 w-5 text-gray-600" />
               </CardHeader>
               <CardContent>
@@ -100,7 +84,7 @@ export default function DashboardCharts({ Budgets, transaction, years, Info, Dep
                     <span className="text-3xl font-bold text-black">+{Budgets.total_inactive_budgets}</span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-300 font-thin mt-2">Inactive budgets can be expired budgets.</p>
+                <p className="text-sm text-gray-400 font-thin mt-2">Inactive budgets can be expired budgets.</p>
               </CardContent>
             </Card>
           </div>
@@ -155,8 +139,6 @@ export default function DashboardCharts({ Budgets, transaction, years, Info, Dep
             {/* lists */}
               <Lists  TransactionsList={TransactionsList} Activity={TransactionsDepto}/>
         </>
-        )}
-    </>
   );
 }
 

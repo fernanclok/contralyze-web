@@ -350,7 +350,7 @@ export function TransactionList({
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-blue-100 text-blue-800';
     }
   };
@@ -560,9 +560,12 @@ export function TransactionList({
             </Button>
           )}
           
-          {!hasConnectionError && (
+          {hasConnectionError ? (
+             <Button size="sm" className="gap-1 ml-auto" disabled>
+             New Transaction
+           </Button>
+          ) : (
             <Button size="sm" onClick={() => setIsNewTransactionModalOpen(true)} className="gap-1 ml-auto">
-              <PlusCircle className="h-4 w-4" />
               New Transaction
             </Button>
           )}
@@ -622,7 +625,7 @@ export function TransactionList({
             ) : (
               currentTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap text-black">
                     {(() => {
                       try {
                         const date = new Date(transaction.transaction_date);
@@ -645,19 +648,13 @@ export function TransactionList({
                       {getTypeText(transaction.type)}
                     </Badge>
                   </TableCell>
-                  <TableCell className={
-                    transaction.type === 'income' 
-                      ? 'text-green-600' 
-                      : transaction.type === 'expense'
-                        ? 'text-red-600'
-                        : ''
-                  }>
+                  <TableCell className="text-black">
                     {formatCurrency(transaction.amount)}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell max-w-[200px] truncate">
+                  <TableCell className="hidden md:table-cell max-w-[200px] truncate text-black">
                     {transaction.description || 'No description'}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell className="hidden md:table-cell text-black">
                     {transaction.category?.name || 'No category'}
                   </TableCell>
                   <TableCell>

@@ -68,14 +68,16 @@ export function ToastContainer() {
   >([])
 
   useEffect(() => {
-    const handler = (event: { message: string; type: ToastType }) => {
-      const newToast = {
-        id: Date.now().toString(),
-        message: event.message,
-        type: event.type,
-      }
+    const handler = (event: { message: string; type: "error" | "success" | "warning" | "info"; duration?: number }) => {
+      if (event.type === "error" || event.type === "success") {
+        const newToast = {
+          id: Date.now().toString(),
+          message: event.message,
+          type: event.type,
+        }
 
-      setToasts((prev) => [...prev, newToast])
+        setToasts((prev) => [...prev, newToast])
+      }
     }
 
     emmiter.on("showToast", handler)
