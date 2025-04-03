@@ -138,7 +138,6 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
         .then((budgetsFromDB) => {
           if (budgetsFromDB && budgetsFromDB.length > 0) {
             setLocalBudgets(budgetsFromDB);
-            setBudgets(budgetsFromDB);
           }
         })
         .catch((error) => {
