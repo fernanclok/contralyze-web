@@ -58,13 +58,7 @@ export function usePusher(
     enabledTransports: ['ws', 'wss'],
     retryTimeout: 3000,
     maxReconnectionAttempts: 5,
-    authEndpoint: '/api/pusher/auth',
-    auth: {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    }
+    // Elimina la configuración de authEndpoint y auth
   };
   
   const mergedOptions = { ...defaultOptions, ...options };
@@ -79,14 +73,12 @@ export function usePusher(
     setIsConnecting(true);
     
     try {
-      // Initialize Pusher client
+      // Inicializa Pusher sin autenticación
       pusherRef.current = new Pusher(appKey, {
         cluster: mergedOptions.cluster || 'us2',
         forceTLS: mergedOptions.forceTLS,
         enabledTransports: mergedOptions.enabledTransports as any,
         disabledTransports: mergedOptions.disabledTransports as any,
-        authEndpoint: mergedOptions.authEndpoint,
-        auth: mergedOptions.auth
       });
       
       // Set up connection event handlers
@@ -96,52 +88,29 @@ export function usePusher(
         setIsConnecting(false);
         setConnectionError(null);
       });
-      
+      pusherRef.current.connection.bind('disconnected', () => {
+        setIsConnected(false);
+      });
       pusherRef.current.connection.bind('connecting', () => {
         console.log('Connecting to Pusher...');
         setIsConnecting(true);
       });
-      
-      pusherRef.current.connection.bind('disconnected', () => {
-        console.log('Disconnected from Pusher');
-        setIsConnected(false);
-      });
-      
       pusherRef.current.connection.bind('error', (err: Error) => {
-        console.error('Pusher connection error:', err);
         setConnectionError(err);
         setIsConnecting(false);
         setIsConnected(false);
-        
-        // Attempt to reconnect after timeout
-        setTimeout(() => {
-          reconnect();
-        }, mergedOptions.retryTimeout);
       });
       
-      // Clean up on unmount
+      // Limpieza al desmontar
       return () => {
         if (pusherRef.current) {
-          // Unbind all events and disconnect
-          Object.keys(channelsRef.current).forEach(channelName => {
-            const channel = channelsRef.current[channelName];
-            if (channel) {
-              channel.unbind_all();
-              pusherRef.current?.unsubscribe(channelName);
-            }
-          });
-          
           pusherRef.current.disconnect();
           pusherRef.current = null;
-          channelsRef.current = {};
-          callbacksRef.current = {};
         }
       };
     } catch (error) {
-      console.error('Error initializing Pusher:', error);
       setConnectionError(error instanceof Error ? error : new Error(String(error)));
       setIsConnecting(false);
-      return undefined;
     }
   }, [appKey]);
   
@@ -211,35 +180,17 @@ export function usePusher(
   
   // Reconnect to Pusher
   const reconnect = (): void => {
-    if (!pusherRef.current) {
+    if (!pusherRef.current || pusherRef.current.connection.state === 'connected' || pusherRef.current.connection.state === 'connecting') {
+      console.log('Pusher is already connected or connecting. Skipping reconnect.');
       return;
     }
-    
+
     try {
       console.log('Attempting to reconnect to Pusher...');
       setIsConnecting(true);
-      
-      // Disconnect and reinitialize
+
       pusherRef.current.disconnect();
-      
-      // Reconnect
       pusherRef.current.connect();
-      
-      // Resubscribe to all previous channels and events
-      Object.keys(callbacksRef.current).forEach(channelName => {
-        const channel = pusherRef.current?.subscribe(channelName);
-        if (channel) {
-          channelsRef.current[channelName] = channel;
-          
-          // Rebind all events for this channel
-          Object.entries(callbacksRef.current[channelName]).forEach(([eventName, callback]) => {
-            channel.bind(eventName, (data: any) => {
-              console.log(`Received event ${eventName} on channel ${channelName} after reconnect:`, data);
-              callback(data);
-            });
-          });
-        }
-      });
     } catch (error) {
       console.error('Error reconnecting to Pusher:', error);
       setConnectionError(error instanceof Error ? error : new Error(String(error)));

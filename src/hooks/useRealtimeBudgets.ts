@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePusherContext } from '@/contexts/PusherContext';
 import { emmiter } from '@/lib/emmiter';
 
-// Asumiendo que esta es la estructura de Budget basada en el código existente
+// Assuming this is the structure of Budget based on the existing code
 interface Budget {
   id: string;
   category_id: string;
@@ -47,8 +47,7 @@ export function useRealtimeBudgets({
   
   // Handler for new budgets
   const handleBudgetCreated = useCallback((budget: Budget) => {
-    console.log('Nuevo presupuesto recibido:', budget);
-    
+    console.log('New budget received:', budget); // Debug log
     setBudgets(current => {
       // Avoid duplicates
       if (current.some(b => b.id === budget.id)) {
@@ -59,7 +58,7 @@ export function useRealtimeBudgets({
       
       if (enableNotifications) {
         emmiter.emit('showToast', {
-          message: `Nuevo presupuesto: ${budget.category.name} - ${budget.max_amount}`,
+          message: `New budget: ${budget.category.name} - ${budget.max_amount}`,
           type: 'info'
         });
       }
@@ -73,15 +72,14 @@ export function useRealtimeBudgets({
   
   // Handler for updated budgets
   const handleBudgetUpdated = useCallback((budget: Budget) => {
-    console.log('Presupuesto actualizado:', budget);
-    
+    console.log('Updated budget received:', budget); // Debug log
     setBudgets(current => {
       const budgetExists = current.some(b => b.id === budget.id);
       const updated = current.map(b => b.id === budget.id ? budget : b);
       
       if (budgetExists && enableNotifications) {
         emmiter.emit('showToast', {
-          message: `Presupuesto actualizado: ${budget.category.name}`,
+          message: `Budget updated: ${budget.category.name}`,
           type: 'info'
         });
       }
@@ -95,15 +93,14 @@ export function useRealtimeBudgets({
   
   // Handler for deleted budgets
   const handleBudgetDeleted = useCallback((data: { id: string }) => {
-    console.log('Presupuesto eliminado:', data);
-    
+    console.log('Deleted budget received:', data); // Debug log
     setBudgets(current => {
       const budgetExists = current.some(b => b.id === data.id);
       const updated = current.filter(b => b.id !== data.id);
       
       if (budgetExists && enableNotifications) {
         emmiter.emit('showToast', {
-          message: `Presupuesto eliminado: ID ${data.id}`,
+          message: `Budget deleted: ID ${data.id}`,
           type: 'warning'
         });
       }
@@ -118,34 +115,34 @@ export function useRealtimeBudgets({
   // Set up Pusher subscriptions
   useEffect(() => {
     if (!pusher.isConnected && !pusher.isConnecting) {
-      setError(new Error('No hay conexión en tiempo real'));
+      setError(new Error('No real-time connection'));
       return;
     }
     
     setIsLoading(true);
     
-    // Subscribe to budget events
+    // Suscribirse a eventos
     const unsubscribeCreated = pusher.subscribe<Budget>(
-      'private-budgets', 
-      'budget-created', 
+      'budgets',
+      'budget-created',
       handleBudgetCreated
     );
     
     const unsubscribeUpdated = pusher.subscribe<Budget>(
-      'private-budgets', 
-      'budget-updated', 
+      'budgets',
+      'budget-updated',
       handleBudgetUpdated
     );
     
     const unsubscribeDeleted = pusher.subscribe<{ id: string }>(
-      'private-budgets', 
-      'budget-deleted', 
+      'budgets',
+      'budget-deleted',
       handleBudgetDeleted
     );
     
     setIsLoading(false);
     
-    // Clean up subscriptions
+    // Limpieza al desmontar
     return () => {
       unsubscribeCreated();
       unsubscribeUpdated();

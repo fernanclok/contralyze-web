@@ -269,20 +269,19 @@ export function NewTransactionModal({
     const newErrors: typeof errors = {};
 
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      newErrors.amount = 'Please enter a valid amount';
+      newErrors.amount = 'Please enter a valid amount greater than 0';
     }
 
     if (!description?.trim()) {
-      newErrors.description = 'Please enter a description';
+      newErrors.description = 'Description is required';
     }
 
-    // Validar factura si se marcó que tiene una
     if (hasInvoice) {
       if (!invoiceFile) {
         newErrors.invoice = 'Please upload an invoice file';
       }
-      if (!invoiceNumber?.trim()) {
-        newErrors.invoice = 'Please enter an invoice number';
+      if (!invoiceNumber.trim()) {
+        newErrors.invoice = 'Invoice number is required';
       }
       if (invoiceDueDate && invoiceDueDate < transactionDate) {
         newErrors.invoice = 'Due date cannot be before transaction date';

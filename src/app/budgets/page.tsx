@@ -29,6 +29,18 @@ export default async function BudgetsPage() {
   const { categories = [], error: categoriesError } = await getCategories();
   const { departments = [], error: departmentsError } = await getDepartments();
 
+  // Manejo de error 429
+  if (budgetsError?.response?.status === 429 || requestsError?.response?.status === 429) {
+    return (
+      <AuthenticatedLayout userRole={userRole} userName={userName}>
+        <div className="p-4 text-red-700 bg-red-100 rounded-lg">
+          <p className="font-medium">Rate Limit Exceeded</p>
+          <p className="text-sm">Too many requests. Please try again later.</p>
+        </div>
+      </AuthenticatedLayout>
+    );
+  }
+
   // Use real data or empty arrays if errors occurred
   const budgetData =
     Array.isArray(budgets) && budgets.length > 0 ? budgets : [];
@@ -167,8 +179,8 @@ export default async function BudgetsPage() {
           <CardContent className="p-6">
             <Tabs defaultValue="budgets" className="space-y-6">
               <TabsList className="grid w-full grid-cols-2 md:w-auto">
-                <TabsTrigger value="budgets">Budgets</TabsTrigger>
-                <TabsTrigger value="requests">Requests</TabsTrigger>
+                <TabsTrigger value="budgets" key="tab-budgets">Budgets</TabsTrigger>
+                <TabsTrigger value="requests" key="tab-requests">Requests</TabsTrigger>
               </TabsList>
 
               <TabsContent value="budgets" className="mt-0">

@@ -240,35 +240,35 @@ export function NewBudgetModal({
   const handleSubmit = () => {
     if (
       (!categoryId && !isAddingNewCategory) ||
-      (isAddingNewCategory && !newCategoryName) ||
+      (isAddingNewCategory && !newCategoryName.trim()) ||
       !maxAmount ||
+      parseFloat(maxAmount) <= 0 ||
       !startDate ||
       !endDate ||
-      (hasDepartments && !departmentId)
+      (hasDepartments && !departmentId) ||
+      (startDate && endDate && endDate < startDate)
     ) {
-      // Mostrar error de validación
       emmiter.emit('showToast', {
-        message: 'Por favor, completa todos los campos requeridos',
+        message: 'Please complete all required fields with valid data',
         type: 'error'
       });
-      return
+      return;
     }
-
+  
     onSubmit({
       category_id: isAddingNewCategory ? undefined : categoryId,
-      category_name: isAddingNewCategory ? newCategoryName : undefined,
-      category_type: isAddingNewCategory ? newCategoryType : undefined,
+      category_name: isAddingNewCategory ? newCategoryName.trim() : undefined,
+      category_type: isAddingNewCategory ? newCategoryType.trim() : undefined,
       department_id: departmentId,
       max_amount: parseFloat(maxAmount),
-      start_date: startDate!,
-      end_date: endDate!,
+      start_date: startDate,
+      end_date: endDate,
       isNewCategory: isAddingNewCategory,
       periodicity: periodicity,
-    })
-
-    // Reset form after submission
-    resetForm()
-  }
+    });
+  
+    resetForm();
+  };
 
   const resetForm = () => {
     setCategoryId("")
