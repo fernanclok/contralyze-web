@@ -19,6 +19,7 @@ import { CollapsibleCharts } from '@/components/budget/CollapsibleCharts';
 export default async function BudgetsPage() {
   const session = await getSession();
   const userRole = session?.role || "user";
+  const userId = session?.id as string;
   const userName = session ? `${session.userFirstName} ${session.userLastName}`.trim() : "Guest";
   const userDepartmentId = session?.departmentId;
   console.log('Page userDepartmentId:', userDepartmentId);
@@ -28,18 +29,6 @@ export default async function BudgetsPage() {
   const { requests = [], error: requestsError } = await getBudgetRequests();
   const { categories = [], error: categoriesError } = await getCategories();
   const { departments = [], error: departmentsError } = await getDepartments();
-
-  // Manejo de error 429
-  if (budgetsError?.response?.status === 429 || requestsError?.response?.status === 429) {
-    return (
-      <AuthenticatedLayout userRole={userRole} userName={userName}>
-        <div className="p-4 text-red-700 bg-red-100 rounded-lg">
-          <p className="font-medium">Rate Limit Exceeded</p>
-          <p className="text-sm">Too many requests. Please try again later.</p>
-        </div>
-      </AuthenticatedLayout>
-    );
-  }
 
   // Use real data or empty arrays if errors occurred
   const budgetData =
@@ -197,6 +186,7 @@ export default async function BudgetsPage() {
 
               <TabsContent value="requests" className="mt-0">
                 <BudgetRequestList
+                  userId={userId}
                   requests={requestData}
                   categories={categoryOptions}
                   departments={departmentOptions}
