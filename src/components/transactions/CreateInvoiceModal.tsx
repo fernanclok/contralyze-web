@@ -47,8 +47,26 @@ export default function CreateInvoiceModal({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!file || !invoiceNumber || !status || !type) {
-      setError('Please provide all required fields');
+
+    // Validar campos obligatorios
+    if (!file) {
+      setError('Please upload a valid file');
+      return;
+    }
+    if (!invoiceNumber.trim()) {
+      setError('Invoice number is required');
+      return;
+    }
+    if (!status) {
+      setError('Status is required');
+      return;
+    }
+    if (!type) {
+      setError('Type is required');
+      return;
+    }
+    if (dueDate && dueDate < new Date()) {
+      setError('Due date cannot be in the past');
       return;
     }
 
@@ -59,9 +77,9 @@ export default function CreateInvoiceModal({
       const result = await createInvoice({
         transaction_id: transactionId,
         file,
-        invoice_number: invoiceNumber,
+        invoice_number: invoiceNumber.trim(),
         due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined,
-        notes: notes || undefined,
+        notes: notes.trim() || undefined,
         status,
         type
       });
