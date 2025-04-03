@@ -61,13 +61,14 @@ interface BudgetRequest {
   };
 }
 
-export function BudgetRequestList({ requests: initialRequests, categories, departments, userRole, hasConnectionError = false, userDepartmentId }: { 
+export function BudgetRequestList({ requests: initialRequests, categories, departments, userRole, hasConnectionError = false, userDepartmentId, userId }: { 
   requests: BudgetRequest[],
   categories: Category[],
   departments: Department[],
   userRole: string,
   hasConnectionError?: boolean,
-  userDepartmentId?: string
+  userDepartmentId?: string,
+  userId: string // Pasar el userId directamente como prop
 }) {
   const [requests, setRequests] = useState<BudgetRequest[]>(initialRequests);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,7 +79,6 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const router = useRouter();
   
   // Paginación
@@ -95,39 +95,9 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
     }
   }, [isAdmin, userDepartmentId]);
 
-  // Get current user ID from localStorage on component mount
-  useEffect(() => {
-    const getUserId = async () => {
-      try {
-        // Intenta obtener el ID de usuario de localStorage
-        if (typeof window !== 'undefined') {
-          const storedUserId = localStorage.getItem('user_id');
-          
-          if (storedUserId) {
-            setCurrentUserId(storedUserId);
-            return;
-          }
-          
-          // Si no hay ID en localStorage, obtenerlo de la API
-          const response = await fetch('/api/user');
-          const data = await response.json();
-          
-          if (data && data.id) {
-            localStorage.setItem('user_id', data.id);
-            setCurrentUserId(data.id);
-          }
-        }
-      } catch (error) {
-        // Silenciar error - no es crítico
-      }
-    };
-
-    getUserId();
-  }, [requests]);
-
   // Check if the current user is the creator of a request
   const isCreator = (request: BudgetRequest) => {
-    return request.user_id === currentUserId;
+    return request.user_id === userId; // Usar el userId pasado como prop
   };
 
   // Get user display name from various possible fields
@@ -176,11 +146,11 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
 
   // Obtener el nombre del departamento para una solicitud
   const getDepartmentName = (request: BudgetRequest): string => {
-    if (request.department && request.department.name) {
-      return request.department.name;
+    if (request.department?.name) {
+      return request.department.name; // Asegurarse de que department y name existan
     }
     
-    if (request.category && request.category.department_id) {
+    if (request.category?.department_id) {
       const department = departments.find(d => d.id === request.category.department_id);
       return department ? department.name : 'Unknown Department';
     }
@@ -445,7 +415,8 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
 
       // Inicializar Pusher
       const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+        forceTLS: true, // Asegurar conexión segura si es necesario
       });
 
       // Suscribirse al canal de budget requests
@@ -521,13 +492,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
 
     // Department filter (only for admin)
     if (isAdmin && filterDepartment !== 'all') {
-      // Si la categoría no existe, no mostrar el request
-      if (!request.category) return false;
-      
-      // Si el department_id no existe en la categoría, no mostrar el request
-      if (!request.category.department_id) return false;
-      
-      // Si el department_id no coincide con el filtro, no mostrar el request
+      if (!request.category?.department_id) return false; // Validar que category y department_id existan
       if (request.category.department_id !== filterDepartment) {
         return false;
       }
@@ -589,14 +554,14 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
   // Agrupar solicitudes por departamento para estadísticas
   const requestsByDepartment = departments.map(dept => {
     const deptRequests = requests.filter(request => {
-      const requestDeptId = request.department?.id || request.category.department_id;
+      const requestDeptId = request.department?.id || request.category?.department_id; // Asegurarse de que request.category exista
       return requestDeptId === dept.id;
     });
     
     const pendingCount = deptRequests.filter(req => req.status === 'pending').length;
     const approvedCount = deptRequests.filter(req => req.status === 'approved').length;
     const rejectedCount = deptRequests.filter(req => req.status === 'rejected').length;
-    
+
     const totalAmount = deptRequests
       .filter(req => req.status === 'approved')
       .reduce((sum, req) => sum + parseFloat(req.requested_amount.toString()), 0);
@@ -649,8 +614,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
+                <SelectItem value="rejected">Rejected</SelectItem></SelectContent>
             </Select>
           </div>
           {/* Filtro por departamento - Solo visible para administradores */}
@@ -701,7 +665,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
           {requestsByDepartment.map(dept => (
             dept.requestCount > 0 && (
               <div 
-                key={dept.id} 
+                key={`dept-${dept.id}`} // Prefijo para garantizar unicidad
                 className="bg-white rounded-md border p-4 shadow-sm"
                 onClick={() => setFilterDepartment(dept.id)}
               >
@@ -760,7 +724,10 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
               </TableHeader>
               <TableBody>
                 {currentItems.map((request) => (
-                  <TableRow key={request.id} className={isCreator(request) ? "bg-blue-50" : ""}>
+                  <TableRow 
+                    key={`request-${request.id}`} // Prefijo para garantizar unicidad
+                    className={isCreator(request) ? "bg-blue-50" : ""}
+                  >
                     <TableCell className="font-semibold">
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
@@ -779,7 +746,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
                     <TableCell className="text-black truncate max-w-[120px]">
                       {getDepartmentName(request)}
                     </TableCell>
-                    <TableCell className="text-black truncate max-w-[120px]">{request.category.name}</TableCell>
+                    <TableCell className="text-black truncate max-w-[120px]">{request.category?.name || 'No Category'}</TableCell>
                     <TableCell className="text-black whitespace-nowrap">{formatCurrency(request.requested_amount)}</TableCell>
                     <TableCell className="hidden md:table-cell">
                       <div className="text-black truncate max-w-[250px]" title={request.description}>
