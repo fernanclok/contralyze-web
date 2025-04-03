@@ -1,12 +1,12 @@
 export const openDB = () => {
   return new Promise((resolve, reject) => {
     if (typeof window !== "undefined" && window.indexedDB) {
-      const request = indexedDB.open("Contralyze", 9); // Incrementa la versión si haces cambios
+      const request = indexedDB.open("Contralyze", 15); // Increment version if changes are made
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
 
-        // Configuración específica para cada almacén
+        // Specific configuration for each store
         if (!db.objectStoreNames.contains("company")) {
           db.createObjectStore("company", { keyPath: "id" });
         }
@@ -37,7 +37,7 @@ export const openDB = () => {
           });
           requisitionsStore.createIndex("requisition_uid", "requisition_uid", {
             unique: true,
-          }); // Índice para búsquedas por requisition_uid
+          }); // Index for searching by requisition_uid
         } else {
           const requisitionsStore = request.transaction.objectStore(
             "requisitions"
@@ -55,11 +55,39 @@ export const openDB = () => {
           db.createObjectStore("budgets", { keyPath: "id" });
         }
 
+        if (!db.objectStoreNames.contains("budgetsStatics")) {
+          db.createObjectStore("budgetsStatics", { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains("infoCards")) {
+          db.createObjectStore("infoCards", { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains("transactionStatics")) {
+          db.createObjectStore("transactionStatics", { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains("departmentsStatics")) {
+          db.createObjectStore("departmentsStatics", { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains("lastTransactions")) {
+          db.createObjectStore("lastTransactions", { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains("lastActivity")) {
+          db.createObjectStore("lastActivity", { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains("yearsAvailable")) {
+          db.createObjectStore("yearsAvailable", { keyPath: "id" });
+        }
+
         if (!db.objectStoreNames.contains("categories")) {
           db.createObjectStore("categories", { keyPath: "id" });
         }
 
-        // Nuevo object store para transactions
+        // New object store for transactions
         if (!db.objectStoreNames.contains("transactions")) {
           const transactionsStore = db.createObjectStore("transactions", {
             keyPath: "id",
@@ -69,7 +97,7 @@ export const openDB = () => {
           });
         }
 
-        // Nuevo object store para invoices
+        // New object store for invoices
         if (!db.objectStoreNames.contains("invoices")) {
           const invoicesStore = db.createObjectStore("invoices", {
             keyPath: "id",
@@ -98,7 +126,7 @@ export const saveCompanyToDB = (company) => {
         store.put(company);
 
         transaction.oncomplete = () => {
-          console.log("Company saved to IndexedDB:", company); // Log para verificar los datos guardados
+          console.log("Company saved to IndexedDB:", company); // Log to verify saved data
           resolve();
         };
         transaction.onerror = (error) => reject(error);
@@ -114,17 +142,17 @@ export const getCompanyFromDB = () => {
         const transaction = db.transaction(["company"], "readonly");
         const store = transaction.objectStore("company");
 
-        const request = store.get(1);
+        const request = store.get(1); // Si la clave es fija o debes manejar múltiples entradas
 
         request.onsuccess = (event) => {
-          resolve(event.target.result || {}); // Devuelve el objeto o un objeto vacío
+          resolve(event.target.result || null); // Retorna `null` si no hay datos
         };
-
         request.onerror = (error) => reject(error);
       })
       .catch((error) => reject(error));
   });
 };
+
 
 export const saveUsersToDB = (users) => {
   return new Promise((resolve, reject) => {
@@ -216,19 +244,17 @@ export const getDepartmentsFromDB = () => {
 
 export const saveClientsToDB = (clients) => {
   return new Promise((resolve, reject) => {
-    openDB()
-      .then((db) => {
-        const transaction = db.transaction(["clients"], "readwrite");
-        const store = transaction.objectStore("clients");
+    openDB().then((db) => {
+      const transaction = db.transaction(["clients"], "readwrite");
+      const store = transaction.objectStore("clients");
 
-        clients.forEach((client) => {
-          store.put(client);
-        });
+      clients.forEach((client) => {
+        store.put(client);
+      });
 
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = (error) => reject(error);
-      })
-      .catch((error) => reject(error));
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
   });
 };
 
@@ -346,46 +372,17 @@ export const getRequisitionsDashboardFromDB = () => {
 
 export const saveRequisitionsToDB = (requisitions) => {
   return new Promise((resolve, reject) => {
-    openDB()
-      .then((db) => {
-        const transaction = db.transaction(["requisitions"], "readwrite");
-        const store = transaction.objectStore("requisitions");
+    openDB().then((db) => {
+      const transaction = db.transaction(["requisitions"], "readwrite");
+      const store = transaction.objectStore("requisitions");
 
-        requisitions.forEach((requisition) => {
-          console.log("Saving requisition:", requisition); // Log para depuración
-          store.put(requisition);
-        });
+      requisitions.forEach((requisition) => {
+        store.put(requisition);
+      });
 
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = (error) => reject(error);
-      })
-      .catch((error) => reject(error));
-  });
-};
-
-export const getRequisitionsFromDB = () => {
-  return new Promise((resolve, reject) => {
-    openDB()
-      .then((db) => {
-        const transaction = db.transaction(["requisitions"], "readonly");
-        const store = transaction.objectStore("requisitions");
-
-        const requisitions = [];
-        const request = store.openCursor();
-
-        request.onsuccess = (event) => {
-          const cursor = event.target.result;
-          if (cursor) {
-            requisitions.push(cursor.value);
-            cursor.continue();
-          } else {
-            resolve(requisitions);
-          }
-        };
-
-        request.onerror = (error) => reject(error);
-      })
-      .catch((error) => reject(error));
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
   });
 };
 
@@ -418,6 +415,374 @@ export const getRequisitionByUIDFromDB = (requisition_uid) => {
         console.error("Error opening database:", error); // Log para depuración
         reject(error);
       });
+  });
+};
+
+export const getRequisitionsFromDB = () => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["requisitions"], "readonly");
+      const store = transaction.objectStore("requisitions");
+
+      const requisitions = [];
+      const request = store.openCursor();
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          requisitions.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve(requisitions);
+        }
+      };
+
+      request.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
+  });
+};
+
+export const updateRequisitionInDB = (requisition) => {
+  return new Promise((resolve, reject) => {
+    openDB()
+      .then((db) => {
+        const transaction = db.transaction(["requisitions"], "readwrite");
+        const store = transaction.objectStore("requisitions");
+
+        // Usar el índice para buscar por requisition_uid
+        const index = store.index("requisition_uid");
+        const request = index.get(requisition.requisition_uid);
+
+        request.onsuccess = (event) => {
+          const existingRequisition = event.target.result;
+          if (existingRequisition) {
+            // Fusionar los cambios con el objeto existente
+            const updatedRequisition = { ...existingRequisition, ...requisition };
+            store.put(updatedRequisition);
+            resolve(updatedRequisition);
+          } else {
+            console.warn("Requisition not found in IndexedDB:", requisition.requisition_uid);
+            resolve(null);
+          }
+        };
+
+        request.onerror = (error) => {
+          console.error("Error updating requisition in IndexedDB:", error);
+          reject(error);
+        };
+      })
+      .catch((error) => {
+        console.error("Error opening database:", error);
+        reject(error);
+      });
+  });
+};
+
+
+// budgets statics
+export const saveBudgetsStaticsToDB = (budgetsStatics) => {
+  console.log("Received budgetsStatics:", budgetsStatics); // Log inicial
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["budgetsStatics"], "readwrite");
+      const store = transaction.objectStore("budgetsStatics");
+
+      if (!Array.isArray(budgetsStatics)) {
+        console.error("budgetsStatics is not an array:", budgetsStatics);
+        return reject(new Error("budgetsStatics must be an array"));
+      }
+
+      budgetsStatics.forEach((budget, index) => {
+        console.log(`Saving budgetStatics [${index}]:`, budget); // Log para depuración
+        store.put(budget);
+      });
+
+      transaction.oncomplete = () => {
+        console.log("All budgetStatics have been saved successfully."); // Log para confirmar éxito
+        resolve();
+      };
+      transaction.onerror = (error) => {
+        console.error("Error saving budgetStatics to IndexedDB:", error); // Log para errores
+        reject(error);
+      };
+    }).catch((error) => {
+      console.error("Error opening IndexedDB:", error); // Log para errores al abrir la base de datos
+      reject(error);
+    });
+  });
+};
+
+export const getBudgetsStaticsFromDB = () => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["budgetsStatics"], "readonly");
+      const store = transaction.objectStore("budgetsStatics");
+
+      const budgetsStatics = [];
+      const request = store.openCursor();
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          budgetsStatics.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve(budgetsStatics);
+        }
+      };
+
+      request.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
+  });
+};
+
+// info cards dashboard
+export const saveInfoCardsToDB = (infoCards) => {
+  return new Promise((resolve, reject) => {
+    openDB()
+      .then((db) => {
+        const transaction = db.transaction(["infoCards"], "readwrite");
+        const store = transaction.objectStore("infoCards");
+
+        infoCards.forEach((infoCard) => {
+          console.log("Saving infoCard:", infoCard); // Log para depuración
+          store.put(infoCard);
+        });
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (error) => reject(error);
+      })
+      .catch((error) => reject(error));
+  });
+};
+
+export const getInfoCardsFromDB = () => {
+  return new Promise((resolve, reject) => {
+    openDB()
+      .then((db) => {
+        const transaction = db.transaction(["infoCards"], "readonly");
+        const store = transaction.objectStore("infoCards");
+
+        const infoCards = [];
+        const request = store.openCursor();
+
+        request.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor) {
+            console.log("Retrieved infoCard from IndexedDB:", cursor.value); // Log para depuración
+            infoCards.push(cursor.value);
+            cursor.continue();
+          } else {
+            console.log("All infoCards retrieved from IndexedDB:", infoCards); // Confirmación de éxito
+            resolve(infoCards);
+          }
+        };
+
+        request.onerror = (error) => {
+          console.error("Error retrieving infoCards from IndexedDB:", error); // Log de error
+          reject(error);
+        };
+      })
+      .catch((error) => {
+        console.error("Error opening IndexedDB:", error); // Log de error al abrir la base de datos
+        reject(error);
+      });
+  });
+};
+
+// transaction statics
+export const saveTransactionStaticsToDB = (transactionStatics) => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["transactionStatics"], "readwrite");
+      const store = transaction.objectStore("transactionStatics");
+
+      transactionStatics.forEach((transactionStatic) => {
+        store.put(transactionStatic);
+      });
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
+  });
+};
+
+export const getTransactionStaticsFromDB = () => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["transactionStatics"], "readonly");
+      const store = transaction.objectStore("transactionStatics");
+
+      const transactionStatics = [];
+      const request = store.openCursor();
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          transactionStatics.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve(transactionStatics);
+        }
+      };
+
+      request.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
+  });
+};
+
+// department statics
+export const saveDepartmentStaticsToDB = (departmentStatics) => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["departmentsStatics"], "readwrite");
+      const store = transaction.objectStore("departmentsStatics");
+
+      departmentStatics.forEach((departmentStatic) => {
+        store.put(departmentStatic);
+      });
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
+  });
+};
+
+export const getDepartmentStaticsFromDB = () => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["departmentsStatics"], "readonly");
+      const store = transaction.objectStore("departmentsStatics");
+
+      const departmentStatics = [];
+      const request = store.openCursor();
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          departmentStatics.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve(departmentStatics);
+        }
+      };
+
+      request.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
+  });
+};
+
+// last transactions
+export const saveLastTransactionsToDB = (lastTransactions) => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["lastTransactions"], "readwrite");
+      const store = transaction.objectStore("lastTransactions");
+
+      lastTransactions.forEach((transaction) => {
+        store.put(transaction);
+      });
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
+  });
+};
+
+export const getLastTransactionsFromDB = () => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["lastTransactions"], "readonly");
+      const store = transaction.objectStore("lastTransactions");
+
+      const lastTransactions = [];
+      const request = store.openCursor();
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          lastTransactions.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve(lastTransactions);
+        }
+      };
+
+      request.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
+  });
+};
+
+//  last activity
+export const saveLastActivityToDB = (lastActivity) => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["lastActivity"], "readwrite");
+      const store = transaction.objectStore("lastActivity");
+
+      store.put(lastActivity);
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
+  });
+};
+
+export const getLastActivityFromDB = () => {
+  return new Promise((resolve, reject) => {
+    openDB()
+      .then((db) => {
+        const transaction = db.transaction(["lastActivity"], "readonly");
+        const store = transaction.objectStore("lastActivity");
+
+        const request = store.get("lastactivity_Depto"); // Usa el mismo ID que usaste al guardar
+
+        request.onsuccess = (event) => {
+          console.log("Retrieved from IndexedDB:", event.target.result); // Verifica los datos recuperados
+          resolve(event.target.result || {}); // Devuelve el objeto o un objeto vacío
+        };
+
+        request.onerror = (error) => {
+          console.error("Error retrieving last activity from IndexedDB:", error);
+          reject(error);
+        };
+      })
+      .catch((error) => {
+        console.error("Error opening IndexedDB:", error);
+        reject(error);
+      });
+  });
+};
+
+// years available
+export const saveYearsAvailableToDB = (yearsAvailable) => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["yearsAvailable"], "readwrite");
+      const store = transaction.objectStore("yearsAvailable");
+
+      store.put(yearsAvailable);
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
+  });
+};
+
+export const getYearsAvailableFromDB = () => {
+  return new Promise((resolve, reject) => {
+    openDB().then((db) => {
+      const transaction = db.transaction(["yearsAvailable"], "readonly");
+      const store = transaction.objectStore("yearsAvailable");
+
+      const request = store.get('years_available'); // Cambia el ID según sea necesario
+
+      request.onsuccess = (event) => {
+        resolve(event.target.result || {}); // Devuelve el objeto o un objeto vacío
+      };
+
+      request.onerror = (error) => reject(error);
+    }).catch((error) => reject(error));
   });
 };
 

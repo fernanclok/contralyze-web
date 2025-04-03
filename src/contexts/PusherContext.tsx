@@ -49,6 +49,7 @@ export function PusherProvider({
         type: 'success'
       });
     }
+
   }, [pusher.connectionError, pusher.isConnected]);
   
   return (

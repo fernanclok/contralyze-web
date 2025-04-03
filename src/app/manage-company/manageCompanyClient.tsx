@@ -27,7 +27,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { FilterX, Search, X } from "lucide-react";
 import { saveCompanyToDB, getCompanyFromDB, getUsersFromDB, saveUsersToDB, getDepartmentsFromDB, saveDepartmentsToDB } from "@/app/utils/indexedDB";
-import { compareAsc } from "date-fns";
 
 export default function ManageCompanyClient({
   company,
@@ -44,25 +43,27 @@ export default function ManageCompanyClient({
   const [localUsers, setLocalUser] = useState(users || []);
   const [localDepartments, setLocalDepartments] = useState(departments || []);
 
-  console.log(localCompany[0])
   //funcion para obtener el company de indexedDB
   useEffect(() => {
-    if (!company || (Array.isArray(company) && company.length === 0)) {
+    if (!company || Object.keys(company).length === 0) {
       if (typeof window !== "undefined" && window.indexedDB) {
         getCompanyFromDB()
-        .then((companyFromDB) => {
-          if (companyFromDB) {
-            setLocalCompany(companyFromDB)
-          }
-        })
-        .catch((error) => {
-          console.error("Error retrieving requisition from IndexedDB", error);
-        })
+          .then((companyFromDB) => {
+            if (companyFromDB) {
+              setLocalCompany(companyFromDB);
+            } else {
+              console.warn("No company data found");
+            }
+          })
+          .catch((error) => {
+            console.error("Error retrieving company from IndexedDB", error);
+          });
       }
     } else {
-      setLocalCompany(company)
+      setLocalCompany(company);
     }
-  }, [company])
+  }, [company]);
+  
 
   //funcion para guardar el company en indexedDB
   useEffect(() => {
@@ -141,7 +142,7 @@ export default function ManageCompanyClient({
     if (typeof window !== "undefined" && window.indexedDB) {
       try {
         const updatedDepartments = await getDepartmentsFromDB();
-        setLocalUser(updatedDepartments || [])
+        setLocalDepartments(updatedDepartments || [])
       } catch (error) {
         console.error("Error updating local users:", error)
       }
@@ -166,17 +167,16 @@ export default function ManageCompanyClient({
     return matchesSearch && matchesFilter;
   });
 
-  const filteredDepartments = localDepartments.filter((department: any) => {
+  const filteredDepartments = (localDepartments || []).filter((department: any) => {
     const matchesSearch =
-      department.name.toLowerCase().includes(searchDepartments.toLowerCase()) ||
-      department.description
-        .toLowerCase()
-        .includes(searchDepartments.toLowerCase());
+      department.name?.toLowerCase().includes(searchDepartments.toLowerCase()) ||
+      department.description?.toLowerCase().includes(searchDepartments.toLowerCase());
     const matchesFilter =
       filterDepartments === "All Status" ||
       department.isActive === (filterDepartments === "Active");
     return matchesSearch && matchesFilter;
   });
+  
 
   return (
     <>
@@ -250,7 +250,7 @@ export default function ManageCompanyClient({
             Add user
           </Button>
         ) : (
-          <AddUserSheet departments={departments || []} />
+          <AddUserSheet departments={departments || []} onUserUpdated={updateLocalUsers} />
         )}
       </div>
       <div className="rounded-md border">
@@ -287,7 +287,17 @@ export default function ManageCompanyClient({
                   </TableCell>
                   <TableCell>{user.role}</TableCell>
                   <TableCell className="text-right">
-                    <EditUserSheet user={user} departments={departments} />
+                    {hasError ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:bg-primary hover:text-white"
+                        disabled
+                      >
+                      </Button>
+                    ) : (
+                      <EditUserSheet user={user} departments={departments} onUserUpdated={updateLocalUsers} />
+                    )}
                   </TableCell>
                 </TableRow>
               ))
@@ -355,7 +365,7 @@ export default function ManageCompanyClient({
             Add Department
           </Button>
         ) : (
-          <AddDepartmentSheet />
+          <AddDepartmentSheet onDepartmentUpdated={updateLocalDepartments} />
         )}
       </div>
       <div className="rounded-md border">
@@ -390,7 +400,7 @@ export default function ManageCompanyClient({
                   <TableCell className="text-right">
                     {department.name !== "Admin" && (
                       <>
-                        <EditDepartmentSheet department={department} />
+                        <EditDepartmentSheet department={department} onDepartmentUpdated={updateLocalDepartments}/>
                       </>
                     )}
                   </TableCell>

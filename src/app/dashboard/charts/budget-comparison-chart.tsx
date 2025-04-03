@@ -19,7 +19,7 @@ import { CardHeader, CardTitle } from "@/components/ui/card"
 import { WalletMinimal } from "lucide-react"
 
 interface LegendProps {
-  payload: any[]
+  payload?: any[]
   data: any[]
 }
 
@@ -85,7 +85,7 @@ const COLORS = {
 };
 
 // Custom Y-axis tick that groups department names
-const CustomYAxisTick = (props) => {
+const CustomYAxisTick = (props: { x: number; y: number; payload: { value: string } }) => {
   const { x, y, payload } = props
   const parts = payload.value.split("-")
   const department = parts[0]
@@ -101,8 +101,12 @@ const CustomYAxisTick = (props) => {
 
 export function BudgetComparisonChart({ Budgets = { chart_data: [] }, DeptoData  }: { Budgets?: any, DeptoData?: any }) {
   const [data, setData] = useState<BudgetData[]>([])
-    // Asignar DeptoData a departmentRawData
-    const departmentRawData = DeptoData;
+
+  console.log("department data", DeptoData)
+  // normalizar datos deptoData
+  const departmentRawData = Array.isArray(DeptoData) && DeptoData.length === 1 && typeof DeptoData[0] === "object"
+    ? Object.values(DeptoData[0]).filter((item) => typeof item === "object")
+    : DeptoData;
 
     // Transformar los datos para el formato del gráfico
     const groupedDepartmentData = departmentRawData.map((dept: any) => ({
@@ -252,7 +256,9 @@ export function BudgetComparisonChart({ Budgets = { chart_data: [] }, DeptoData 
               <BarChart data={groupedDepartmentData} layout="vertical" margin={{ top: 20, right: 50, left: 120, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                 <XAxis type="number" tickFormatter={(value) => `$${value / 1000}k`} domain={[0, "dataMax + 10000"]} />
-                <YAxis type="category" dataKey="department" tick={<CustomYAxisTick />} width={120} />
+                <YAxis type="category" dataKey="department" tick={<CustomYAxisTick x={0} y={0} payload={{
+                  value: ""
+                }} />} width={120} />
                 <Tooltip
                   formatter={(value) => formatCurrency(Number(value))}
                   labelFormatter={(label) => {
