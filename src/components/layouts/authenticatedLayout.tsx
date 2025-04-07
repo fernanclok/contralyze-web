@@ -68,9 +68,23 @@ const AuthenticatedLayout = ({ children, userRole, userName }: AuthenticatedLayo
   }, []);
 
   const handleLogout = async () => {
-    clearLocalStorage();
-    await logout();
-    router.push("/");
+    // Eliminar todas las bases de datos de IndexedDB
+    const deleteAllDatabases = async () => {
+      if (typeof window !== "undefined" && window.indexedDB) {
+        const databases = await indexedDB.databases(); // Obtener todas las bases de datos
+        databases.forEach((db) => {
+          if (db.name) {
+            indexedDB.deleteDatabase(db.name); // Eliminar cada base de datos
+            console.log(`Deleted IndexedDB database: ${db.name}`);
+          }
+        });
+      }
+    };
+  
+    await deleteAllDatabases(); // Llamar a la función para eliminar las bases de datos
+    clearLocalStorage(); // Limpiar el almacenamiento local
+    await logout(); // Llamar a la función de cierre de sesión
+    router.push("/"); // Redirigir al usuario a la página de inicio
   };
 
   return (
