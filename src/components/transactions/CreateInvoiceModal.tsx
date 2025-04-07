@@ -180,9 +180,9 @@ export default function CreateInvoiceModal({
 
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
-            <Select value={type} onValueChange={setType}>
+            <Select value={type} onValueChange={(value) => setType(value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select type" />
+                <SelectValue>{type || "Select type"}</SelectValue> {/* Mostrar el valor seleccionado */}
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="invoice">Invoice</SelectItem>
@@ -194,9 +194,9 @@ export default function CreateInvoiceModal({
 
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={(value) => setStatus(value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select status" />
+                <SelectValue>{status || "Select status"}</SelectValue> {/* Mostrar el valor seleccionado */}
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pending">Pending</SelectItem>
