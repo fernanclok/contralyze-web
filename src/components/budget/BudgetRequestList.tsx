@@ -29,6 +29,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { getSession } from '@/app/lib/session';
 import { type Department, type Category } from '@/types/budget';
 
+
 interface BudgetRequest {
   id: string;
   user_id: string;
@@ -61,16 +62,26 @@ interface BudgetRequest {
   };
 }
 
-export function BudgetRequestList({ requests: initialRequests, categories, departments, userRole, hasConnectionError = false, userDepartmentId, userId }: { 
-  requests: BudgetRequest[],
-  categories: Category[],
-  departments: Department[],
-  userRole: string,
-  hasConnectionError?: boolean,
-  userDepartmentId?: string,
-  userId: string // Pasar el userId directamente como prop
+export function BudgetRequestList({ 
+  requests: initialRequests, 
+  categories: initialCategories, // Renombrar para evitar conflicto
+  departments: initialDepartments, 
+  userRole, 
+  hasConnectionError = false, 
+  userDepartmentId, 
+  userId 
+}: { 
+  requests: BudgetRequest[], 
+  categories: Category[], 
+  departments: Department[], 
+  userRole: string, 
+  hasConnectionError?: boolean, 
+  userDepartmentId?: string, 
+  userId: string 
 }) {
   const [requests, setRequests] = useState<BudgetRequest[]>(initialRequests);
+  const [departments, setDepartments] = useState<Department[]>(initialDepartments);
+  const [categories, setCategories] = useState<Category[]>(initialCategories); // Agregar estado para categories
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -425,6 +436,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
       // Manejar nuevo budget request (solo para admin)
       if (userRole === 'admin') {
         channel.bind('new-request', (data: { budget_request: BudgetRequest }) => {
+          console.log('Evento recibido: new-request', data);
           setRequests(prev => [data.budget_request, ...prev]);
           emmiter.emit("showToast", {
             message: "New budget request received",
@@ -435,6 +447,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
 
       // Manejar actualizaciones de status (para todos los usuarios)
       channel.bind('request-approved', (data: { budget_request: BudgetRequest }) => {
+        console.log('Evento recibido: request-approved', data);
         setRequests(prev => prev.map(req => 
           req.id === data.budget_request.id ? data.budget_request : req
         ));
@@ -445,6 +458,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
       });
 
       channel.bind('request-rejected', (data: { budget_request: BudgetRequest }) => {
+        console.log('Evento recibido: request-rejected', data);
         setRequests(prev => prev.map(req => 
           req.id === data.budget_request.id ? data.budget_request : req
         ));
@@ -455,6 +469,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
       });
 
       channel.bind('request-updated', (data: { budget_request: BudgetRequest }) => {
+        console.log('Evento recibido: request-updated', data);
         setRequests(prev => prev.map(req => 
           req.id === data.budget_request.id ? data.budget_request : req
         ));
@@ -482,6 +497,54 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
   useEffect(() => {
     setRequests(initialRequests);
   }, [initialRequests]);
+
+  // Helper functions for localStorage
+  const getFromLocalStorage = (key: string) => {
+    try {
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error(`Error reading ${key} from localStorage:`, error);
+      return null;
+    }
+  };
+
+  const saveToLocalStorage = (key: string, value: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Error saving ${key} to localStorage:`, error);
+    }
+  };
+
+  useEffect(() => {
+    // Load departments and categories from localStorage if available
+    const storedDepartments = getFromLocalStorage("departments");
+    const storedCategories = getFromLocalStorage("categories");
+
+    if (storedDepartments) {
+      console.log("Loaded departments from localStorage");
+      setDepartments(storedDepartments);
+    }
+
+    if (storedCategories) {
+      console.log("Loaded categories from localStorage");
+      setCategories(storedCategories); // Ahora setCategories está definido
+    }
+  }, []);
+
+  // Save departments and categories to localStorage when they are updated
+  useEffect(() => {
+    if (departments.length > 0) {
+      saveToLocalStorage("departments", departments);
+    }
+  }, [departments]);
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      saveToLocalStorage("categories", categories);
+    }
+  }, [categories]);
 
   // Filter requests based on status, department and search
   const filteredRequests = useMemo(() => requests.filter(request => {

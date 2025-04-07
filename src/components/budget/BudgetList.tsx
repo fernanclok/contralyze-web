@@ -27,6 +27,7 @@ import { emmiter } from "@/lib/emmiter";
 import { Pagination } from '@/components/ui/pagination';
 import { type Department, type Category } from '@/app/budgets/actions';
 import { getBudgetsFromDB, saveBudgetsToDB, saveCategoriesToDB, saveDepartmentsToDB, getCategoriesFromDB, getDepartmentsFromDB } from '@/app/utils/indexedDB';
+import Pusher from 'pusher-js';
 
 interface Budget {
   id: string;
@@ -80,23 +81,27 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
   // Usar el hook useRealtimeBudgets para manejar los presupuestos en tiempo real
   const { 
     budgets, 
+    setBudgets, // Asegurarse de que setBudgets esté disponible para actualizaciones manuales
     isLoading: isLoadingBudgets,
     error: budgetsError
   } = useRealtimeBudgets({
     initialBudgets,
     onBudgetCreated: (budget) => {
+      console.log("Nuevo presupuesto creado:", budget);
       emmiter.emit('showToast', {
         message: `Nuevo presupuesto creado: ${budget.category.name}`,
         type: 'success'
       });
     },
     onBudgetUpdated: (budget) => {
+      console.log("Presupuesto actualizado:", budget);
       emmiter.emit('showToast', {
         message: `Presupuesto actualizado: ${budget.category.name}`,
         type: 'info'
       });
     },
     onBudgetDeleted: (id) => {
+      console.log("Presupuesto eliminado:", id);
       emmiter.emit('showToast', {
         message: 'Presupuesto eliminado',
         type: 'warning'
@@ -223,6 +228,66 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
         });
     }
   }, [departments, isOffline]);
+
+  // Helper functions for localStorage
+  const getFromLocalStorage = (key: string) => {
+    try {
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error(`Error reading ${key} from localStorage:`, error);
+      return null;
+    }
+  };
+
+  const saveToLocalStorage = (key: string, value: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Error saving ${key} to localStorage:`, error);
+    }
+  };
+
+  useEffect(() => {
+    // Load budgets, departments, and categories from localStorage if available
+    const storedBudgets = getFromLocalStorage("budgets");
+    const storedDepartments = getFromLocalStorage("departments");
+    const storedCategories = getFromLocalStorage("categories");
+
+    if (storedBudgets) {
+      console.log("Loaded budgets from localStorage");
+      setLocalBudgets(storedBudgets);
+    }
+
+    if (storedDepartments) {
+      console.log("Loaded departments from localStorage");
+      setLocalDepartments(storedDepartments);
+    }
+
+    if (storedCategories) {
+      console.log("Loaded categories from localStorage");
+      setLocalCategories(storedCategories);
+    }
+  }, []);
+
+  // Save budgets, departments, and categories to localStorage when they are updated
+  useEffect(() => {
+    if (budgets.length > 0) {
+      saveToLocalStorage("budgets", budgets);
+    }
+  }, [budgets]);
+
+  useEffect(() => {
+    if (departments.length > 0) {
+      saveToLocalStorage("departments", departments);
+    }
+  }, [departments]);
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      saveToLocalStorage("categories", categories);
+    }
+  }, [categories]);
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -522,6 +587,68 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
     };
   }, [pusher.isConnected, userRole, router]);
 
+  useEffect(() => {
+    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
+
+    console.log("Pusher Key:", pusherKey);
+    console.log("Pusher Cluster:", pusherCluster);
+
+    if (!pusherKey || !pusherCluster) {
+      console.error("Pusher configuration is missing. Please check your environment variables.");
+      return;
+    }
+
+    const pusher = new Pusher(pusherKey, {
+      cluster: pusherCluster,
+      forceTLS: true,
+    });
+
+    // Monitorear el estado de la conexión
+    pusher.connection.bind('state_change', (states) => {
+      console.log("Pusher connection state changed:", states);
+    });
+
+    pusher.connection.bind('connected', () => {
+      console.log("Pusher connected successfully.");
+    });
+
+    pusher.connection.bind('disconnected', () => {
+      console.warn("Pusher disconnected.");
+    });
+
+    pusher.connection.bind('error', (err) => {
+      console.error("Pusher connection error:", err);
+    });
+
+    // Cambiar el canal a 'budgets' (público)
+    const channel = pusher.subscribe('budgets');
+
+    channel.bind('budget-created', (data: { budget: Budget }) => {
+      console.log("New budget received:", data.budget);
+      setLocalBudgets((prev) => [data.budget, ...prev]);
+    });
+
+    channel.bind('budget-updated', (data: { budget: Budget }) => {
+      console.log("Budget updated:", data.budget);
+      setLocalBudgets((prev) =>
+        prev.map((budget) =>
+          budget.id === data.budget.id ? data.budget : budget
+        )
+      );
+    });
+
+    channel.bind('budget-deleted', (data: { id: string }) => {
+      console.log("Budget deleted:", data.id);
+      setLocalBudgets((prev) => prev.filter((budget) => budget.id !== data.id));
+    });
+
+    return () => {
+      channel.unbind_all();
+      pusher.unsubscribe('budgets');
+    };
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -548,8 +675,8 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
             )}
           </div>
           <div className="w-[160px] min-w-[140px]">
-            <Select 
-              value={filterStatus} 
+            <Select
+              value={filterStatus}
               onValueChange={setFilterStatus}
             >
               <SelectTrigger className="w-[130px] bg-white text-black">
@@ -564,8 +691,8 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
             </Select>
           </div>
           <div className="w-[160px] min-w-[140px]">
-            <Select 
-              value={filterDepartment} 
+            <Select
+              value={filterDepartment}
               onValueChange={setFilterDepartment}
             >
               <SelectTrigger className="w-[130px] bg-white text-black">
@@ -619,15 +746,15 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
                     <p className="text-xs text-gray-500">
                       Total allocated: {formatCurrency(dept.totalBudget)}
                     </p>
-                    {dept.approvedAmount > 0 && (
-                      <p className="text-xs text-green-600">
-                        Approved: {formatCurrency(dept.approvedAmount)}
-                      </p>
-                    )}
+                    <p className="text-xs text-gray-500">
+                      {dept.budgetCount} active budget{dept.budgetCount !== 1 ? 's' : ''}
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    {dept.budgetCount} active budget{dept.budgetCount !== 1 ? 's' : ''}
-                  </p>
+                  {dept.approvedAmount > 0 && (
+                    <p className="text-xs text-green-600">
+                      Approved: {formatCurrency(dept.approvedAmount)}
+                    </p>
+                  )}
                 </div>
               </div>
             )
@@ -697,7 +824,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
               </TableBody>
             </Table>
           </div>
-          
+
           {/* Componente de paginación */}
           <div className="p-4">
             <Pagination
@@ -717,16 +844,15 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
         categories={categories}
         departments={departments}
         loading={loading}
-        userDepartmentId={userDepartmentId}
       />
 
       <EditBudgetModal 
         open={isEditModalOpen} 
         onOpenChange={setIsEditModalOpen}
         onSubmit={handleUpdateBudget}
-        categories={categories}
-        departments={departments}
         budget={selectedBudget}
+        departments={departments}
+        categories={categories}
         loading={loading}
       />
     </div>
