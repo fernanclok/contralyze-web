@@ -48,6 +48,12 @@ export function useRealtimeBudgets({
   // Handler for new budgets
   const handleBudgetCreated = useCallback((budget: Budget) => {
     console.log('New budget received:', budget); // Debug log
+
+    if (!budget || !budget.category?.name) {
+      console.warn("Invalid budget data received:", budget);
+      return;
+    }
+
     setBudgets(current => {
       // Avoid duplicates
       if (current.some(b => b.id === budget.id)) {
@@ -73,6 +79,12 @@ export function useRealtimeBudgets({
   // Handler for updated budgets
   const handleBudgetUpdated = useCallback((budget: Budget) => {
     console.log('Updated budget received:', budget); // Debug log
+
+    if (!budget || !budget.category?.name) {
+      console.warn("Invalid budget data received:", budget);
+      return;
+    }
+
     setBudgets(current => {
       const budgetExists = current.some(b => b.id === budget.id);
       const updated = current.map(b => b.id === budget.id ? budget : b);

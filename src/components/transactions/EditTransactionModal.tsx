@@ -258,7 +258,7 @@ export function EditTransactionModal({
               setClientId('');
             }}>
               <SelectTrigger id="type" className="w-full bg-white">
-                <SelectValue placeholder="Select type" />
+                <SelectValue>{type || "Select type"}</SelectValue> {/* Mostrar el valor seleccionado */}
               </SelectTrigger>
               <SelectContent className="bg-white shadow-md">
                 <SelectItem value="income">Income</SelectItem>
@@ -323,7 +323,9 @@ export function EditTransactionModal({
             <Label htmlFor="category">Category</Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
               <SelectTrigger id="category" className="w-full bg-white">
-                <SelectValue placeholder="Select category" />
+                <SelectValue>
+                  {categories.find((category) => category.id === categoryId)?.name || "Select category"}
+                </SelectValue> {/* Mostrar el valor seleccionado */}
               </SelectTrigger>
               <SelectContent className="bg-white shadow-md">
                 <SelectItem value="none">None</SelectItem>
@@ -347,7 +349,7 @@ export function EditTransactionModal({
               onValueChange={(value: 'pending' | 'completed' | 'cancelled') => setStatus(value)}
             >
               <SelectTrigger id="status" className="w-full bg-white">
-                <SelectValue placeholder="Select status" />
+                <SelectValue>{status || "Select status"}</SelectValue> {/* Mostrar el valor seleccionado */}
               </SelectTrigger>
               <SelectContent className="bg-white shadow-md">
                 <SelectItem value="completed">Completed</SelectItem>

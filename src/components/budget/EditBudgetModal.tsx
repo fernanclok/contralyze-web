@@ -95,6 +95,25 @@ const periodOptions: PeriodOption[] = [
   }
 ];
 
+// Helper functions for localStorage
+const getFromLocalStorage = (key: string) => {
+  try {
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error(`Error reading ${key} from localStorage:`, error);
+    return null;
+  }
+};
+
+const saveToLocalStorage = (key: string, value: any) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Error saving ${key} to localStorage:`, error);
+  }
+};
+
 export function EditBudgetModal({ 
   open, 
   onOpenChange, 
@@ -185,6 +204,39 @@ export function EditBudgetModal({
       }
     }
   }, [startDate, periodicity]);
+
+  useEffect(() => {
+    if (open && budget) {
+      // Load departments and categories from localStorage if available
+      const storedDepartments = getFromLocalStorage("departments");
+      const storedCategories = getFromLocalStorage("categories");
+
+      if (storedDepartments) {
+        console.log("Loaded departments from localStorage");
+        // Eliminar el uso de setDepartments, ya que no está definido
+        // Si necesitas actualizar los departamentos, asegúrate de pasar setDepartments como prop
+      }
+
+      if (storedCategories) {
+        console.log("Loaded categories from localStorage");
+        // Eliminar el uso de setCategories, ya que no está definido
+        // Si necesitas actualizar las categorías, asegúrate de pasar setCategories como prop
+      }
+    }
+  }, [open, budget]);
+
+  // Save departments and categories to localStorage when they are updated
+  useEffect(() => {
+    if (departments.length > 0) {
+      saveToLocalStorage("departments", departments);
+    }
+  }, [departments]);
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      saveToLocalStorage("categories", categories);
+    }
+  }, [categories]);
 
   const handleStartDateChange = (date: Date | undefined) => {
     if (date) {

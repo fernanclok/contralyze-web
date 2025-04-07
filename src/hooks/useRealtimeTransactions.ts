@@ -93,6 +93,42 @@ export function useRealtimeTransactions({
       return updated;
     });
   }, [onTransactionDeleted, enableNotifications]);
+
+  // Handler for completed transactions
+  const handleTransactionCompleted = useCallback((transaction: Transaction) => {
+    console.log('Transaction marked as completed:', transaction);
+
+    setTransactions(current => {
+      const updated = current.map(t => t.id === transaction.id ? { ...t, status: 'completed' } : t);
+
+      if (enableNotifications) {
+        emmiter.emit('showToast', {
+          message: `Transaction ${transaction.id} marked as completed`,
+          type: 'success'
+        });
+      }
+
+      return updated;
+    });
+  }, [enableNotifications]);
+
+  // Handler for cancelled transactions
+  const handleTransactionCancelled = useCallback((transaction: Transaction) => {
+    console.log('Transaction marked as cancelled:', transaction);
+
+    setTransactions(current => {
+      const updated = current.map(t => t.id === transaction.id ? { ...t, status: 'cancelled' } : t);
+
+      if (enableNotifications) {
+        emmiter.emit('showToast', {
+          message: `Transaction ${transaction.id} marked as cancelled`,
+          type: 'error'
+        });
+      }
+
+      return updated;
+    });
+  }, [enableNotifications]);
   
   // Set up Pusher subscriptions
   useEffect(() => {
@@ -103,39 +139,70 @@ export function useRealtimeTransactions({
     
     setIsLoading(true);
     
-    // Subscribe to transaction events
+    // Suscribirse a eventos de transacciones
     const unsubscribeCreated = pusher.subscribe<Transaction>(
-      'private-transactions', 
-      'transaction-created', 
-      handleTransactionCreated
+      'transactions',
+      'transaction-created',
+      (data) => {
+        console.log('Evento recibido: transaction-created', data);
+        handleTransactionCreated(data.transaction);
+      }
     );
-    
+
     const unsubscribeUpdated = pusher.subscribe<Transaction>(
-      'private-transactions', 
-      'transaction-updated', 
-      handleTransactionUpdated
+      'transactions',
+      'transaction-updated',
+      (data) => {
+        console.log('Evento recibido: transaction-updated', data);
+        handleTransactionUpdated(data.transaction);
+      }
     );
-    
+
     const unsubscribeDeleted = pusher.subscribe<{ id: string }>(
-      'private-transactions', 
-      'transaction-deleted', 
-      handleTransactionDeleted
+      'transactions',
+      'transaction-deleted',
+      (data) => {
+        console.log('Evento recibido: transaction-deleted', data);
+        handleTransactionDeleted(data);
+      }
     );
-    
+
+    const unsubscribeCompleted = pusher.subscribe<Transaction>(
+      'transactions',
+      'transaction-completed',
+      (data) => {
+        console.log('Evento recibido: transaction-completed', data);
+        handleTransactionCompleted(data.transaction);
+      }
+    );
+
+    const unsubscribeCancelled = pusher.subscribe<Transaction>(
+      'transactions',
+      'transaction-cancelled',
+      (data) => {
+        console.log('Evento recibido: transaction-cancelled', data);
+        handleTransactionCancelled(data.transaction);
+      }
+    );
+
     setIsLoading(false);
-    
-    // Clean up subscriptions
+
+    // Limpiar suscripciones al desmontar
     return () => {
       unsubscribeCreated();
       unsubscribeUpdated();
       unsubscribeDeleted();
+      unsubscribeCompleted();
+      unsubscribeCancelled();
     };
   }, [
     pusher.isConnected, 
     pusher.isConnecting, 
     handleTransactionCreated, 
     handleTransactionUpdated, 
-    handleTransactionDeleted
+    handleTransactionDeleted, 
+    handleTransactionCompleted, 
+    handleTransactionCancelled
   ]);
   
   // Update state when initialTransactions changes
