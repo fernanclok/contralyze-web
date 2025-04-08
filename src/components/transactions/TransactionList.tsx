@@ -115,11 +115,6 @@ export function TransactionList({
   // Aplicar filtros cuando cambien los datos o los filtros
   useEffect(() => {
     if (allTransactions.length > 0) {
-      // Información de depuración
-      console.log("userRole:", userRole)
-      console.log("isAdmin:", isAdmin)
-      console.log("userDepartmentId:", userDepartmentId)
-      console.log("Total transactions:", allTransactions.length)
 
       let departmentFilteredTransactions = [...allTransactions]
 
@@ -129,14 +124,9 @@ export function TransactionList({
         const departmentCategoryIds = categories
           .filter((category) => {
             const match = String(category.department_id) === String(userDepartmentId)
-            console.log(
-              `Categoría ${category.name} (${category.id}): department_id=${category.department_id}, userDepartmentId=${userDepartmentId}, match=${match}`,
-            )
             return match
           })
           .map((category) => category.id)
-
-        console.log("Categorías del departamento:", departmentCategoryIds)
 
         // Filtrar transacciones que:
         // 1. Pertenecen directamente al departamento del usuario, O
@@ -147,14 +137,8 @@ export function TransactionList({
             (catId) => String(transaction.category_id) === String(catId),
           )
 
-          console.log(
-            `Transacción ${transaction.id}: department_id=${transaction.department_id}, category_id=${transaction.category_id}, matchesDepartment=${matchesDepartment}, matchesCategory=${matchesCategory}`,
-          )
-
           return matchesDepartment || matchesCategory
         })
-
-        console.log("Transacciones filtradas por departamento:", departmentFilteredTransactions.length)
 
         // Actualizar información de depuración
         setDebugInfo(`
