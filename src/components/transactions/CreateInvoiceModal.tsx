@@ -47,8 +47,26 @@ export default function CreateInvoiceModal({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!file || !invoiceNumber || !status || !type) {
-      setError('Please provide all required fields');
+
+    // Validar campos obligatorios
+    if (!file) {
+      setError('Please upload a valid file');
+      return;
+    }
+    if (!invoiceNumber.trim()) {
+      setError('Invoice number is required');
+      return;
+    }
+    if (!status) {
+      setError('Status is required');
+      return;
+    }
+    if (!type) {
+      setError('Type is required');
+      return;
+    }
+    if (dueDate && dueDate < new Date()) {
+      setError('Due date cannot be in the past');
       return;
     }
 
@@ -59,9 +77,9 @@ export default function CreateInvoiceModal({
       const result = await createInvoice({
         transaction_id: transactionId,
         file,
-        invoice_number: invoiceNumber,
+        invoice_number: invoiceNumber.trim(),
         due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined,
-        notes: notes || undefined,
+        notes: notes.trim() || undefined,
         status,
         type
       });
@@ -81,7 +99,7 @@ export default function CreateInvoiceModal({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <SheetContent className="max-w-md h-screen sm:h-auto sm:max-h-screen overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Create Invoice</SheetTitle>
           <SheetDescription>
@@ -162,9 +180,9 @@ export default function CreateInvoiceModal({
 
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
-            <Select value={type} onValueChange={setType}>
+            <Select value={type} onValueChange={(value) => setType(value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select type" />
+                <SelectValue>{type || "Select type"}</SelectValue> {/* Mostrar el valor seleccionado */}
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="invoice">Invoice</SelectItem>
@@ -176,9 +194,9 @@ export default function CreateInvoiceModal({
 
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={(value) => setStatus(value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select status" />
+                <SelectValue>{status || "Select status"}</SelectValue> {/* Mostrar el valor seleccionado */}
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pending">Pending</SelectItem>

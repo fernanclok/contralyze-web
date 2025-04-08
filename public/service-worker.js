@@ -1,5 +1,5 @@
-const shellCache = "contralyze-cache-v1";
-const dynamicCache = "contralyze-dynamic-v2";
+const shellCache = "contralyze-cache-v3";
+const dynamicCache = "contralyze-dynamic-v3";
 
 const assets = [
     "/manifest.json",
@@ -82,7 +82,7 @@ self.addEventListener("fetch", event => {
       })
       .catch(() => {
         return caches.match(event.request).then(cacheResponse => {
-          return cacheResponse || caches.match('/pages/fallback.html');
+          return cacheResponse || caches.match('/not-found.html');
         });
       })
   );

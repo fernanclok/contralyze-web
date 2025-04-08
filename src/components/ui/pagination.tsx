@@ -27,9 +27,6 @@ export function Pagination({
 
   const renderPageButtons = () => {
     const pageButtons = [];
-    const ellipsis = <Button variant="ghost" size="icon" disabled key="ellipsis">
-      <MoreHorizontal className="h-4 w-4" />
-    </Button>;
 
     // Siempre mostrar primera página
     pageButtons.push(
@@ -58,7 +55,11 @@ export function Pagination({
 
     // Mostrar elipsis al inicio si es necesario
     if (startPage > 2) {
-      pageButtons.push(ellipsis);
+      pageButtons.push(
+        <Button variant="ghost" size="icon" disabled key="ellipsis-start">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      );
     }
 
     // Mostrar páginas intermedias
@@ -77,7 +78,11 @@ export function Pagination({
 
     // Mostrar elipsis al final si es necesario
     if (endPage < totalPages - 1) {
-      pageButtons.push(ellipsis);
+      pageButtons.push(
+        <Button variant="ghost" size="icon" disabled key="ellipsis-end">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      );
     }
 
     // Siempre mostrar última página si hay más de una
@@ -125,4 +130,4 @@ export function Pagination({
       </Button>
     </div>
   );
-} 
+}
