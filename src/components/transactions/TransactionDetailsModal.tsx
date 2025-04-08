@@ -215,7 +215,6 @@ export function TransactionDetailsModal({
             <div className="flex justify-end mb-6">
               <Button
                 onClick={() => setIsCreateInvoiceModalOpen(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4" />
                 Add Invoice

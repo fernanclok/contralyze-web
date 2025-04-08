@@ -80,10 +80,11 @@ export function NewBudgetModal({
   onOpenChange, 
   onSubmit, 
   categories,
-  departments,
+  departments: initialDepartments, // Renombrar para evitar conflicto
   loading = false,
   userDepartmentId
 }: NewBudgetModalProps) {
+  const [departments, setDepartments] = useState<Department[]>(initialDepartments); // Agregar estado para departments
   const [categoryId, setCategoryId] = useState("")
   const [maxAmount, setMaxAmount] = useState("")
   const [startDate, setStartDate] = useState<Date | undefined>(new Date())
@@ -106,9 +107,42 @@ export function NewBudgetModal({
   // Check if there are available departments
   const hasDepartments = departments.length > 0
 
+  // Helper functions for localStorage
+  const getFromLocalStorage = (key: string) => {
+    try {
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error(`Error reading ${key} from localStorage:`, error);
+      return null;
+    }
+  };
+
+  const saveToLocalStorage = (key: string, value: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Error saving ${key} to localStorage:`, error);
+    }
+  };
+
   // Cargar información del usuario cuando se abre el modal
   useEffect(() => {
     if (open) {
+      // Load departments and categories from localStorage if available
+      const storedDepartments = getFromLocalStorage("departments");
+      const storedCategories = getFromLocalStorage("categories");
+
+      if (storedDepartments) {
+        console.log("Loaded departments from localStorage");
+        setDepartments(storedDepartments); // Ahora setDepartments está definido
+      }
+
+      if (storedCategories) {
+        console.log("Loaded categories from localStorage");
+        setFilteredCategories(storedCategories);
+      }
+
       loadUserDepartment();
     }
   }, [open, userDepartmentId]);
@@ -143,6 +177,9 @@ export function NewBudgetModal({
           filterCategoriesByDepartment(departments[0].id);
         }
       }
+
+      // Save departments to localStorage
+      saveToLocalStorage("departments", departments);
     } catch (error) {
       console.error('Error al cargar el departamento del usuario:', error);
       emmiter.emit('showToast', {
@@ -165,6 +202,9 @@ export function NewBudgetModal({
     if (deptId && categories.length > 0) {
       const filtered = categories.filter(cat => cat.department_id === deptId);
       setFilteredCategories(filtered);
+      
+      // Save filtered categories to localStorage
+      saveToLocalStorage("categories", filtered);
       
       // Si hay categorías filtradas, seleccionar la primera por defecto
       if (filtered.length > 0 && !isAddingNewCategory) {
@@ -255,7 +295,7 @@ export function NewBudgetModal({
       return;
     }
   
-    onSubmit({
+    const newBudget = {
       category_id: isAddingNewCategory ? undefined : categoryId,
       category_name: isAddingNewCategory ? newCategoryName.trim() : undefined,
       category_type: isAddingNewCategory ? newCategoryType.trim() : undefined,
@@ -265,8 +305,14 @@ export function NewBudgetModal({
       end_date: endDate,
       isNewCategory: isAddingNewCategory,
       periodicity: periodicity,
-    });
+    };
   
+    // Save new budget to localStorage
+    const budgets = getFromLocalStorage("budgets") || [];
+    budgets.push(newBudget);
+    saveToLocalStorage("budgets", budgets);
+  
+    onSubmit(newBudget);
     resetForm();
   };
 
