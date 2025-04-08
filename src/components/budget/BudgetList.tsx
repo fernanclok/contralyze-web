@@ -80,8 +80,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
 
   // Usar el hook useRealtimeBudgets para manejar los presupuestos en tiempo real
   const { 
-    budgets, 
-    setBudgets, // Asegurarse de que setBudgets esté disponible para actualizaciones manuales
+    budgets,
     isLoading: isLoadingBudgets,
     error: budgetsError
   } = useRealtimeBudgets({
@@ -143,7 +142,6 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
         .then((budgetsFromDB) => {
           if (budgetsFromDB && budgetsFromDB.length > 0) {
             setLocalBudgets(budgetsFromDB);
-            setBudgets(budgetsFromDB);
           }
         })
         .catch((error) => {
@@ -606,7 +604,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
     });
 
     // Monitorear el estado de la conexión
-    pusher.connection.bind('state_change', (states) => {
+    pusher.connection.bind('state_change', (states: { previous: string; current: string }) => {
       console.log("Pusher connection state changed:", states);
     });
 
@@ -618,7 +616,7 @@ export function BudgetList({ budgets: initialBudgets, categories, departments, u
       console.warn("Pusher disconnected.");
     });
 
-    pusher.connection.bind('error', (err) => {
+    pusher.connection.bind('error', (err: Error) => {
       console.error("Pusher connection error:", err);
     });
 

@@ -99,7 +99,7 @@ export function useRealtimeTransactions({
     console.log('Transaction marked as completed:', transaction);
 
     setTransactions(current => {
-      const updated = current.map(t => t.id === transaction.id ? { ...t, status: 'completed' } : t);
+      const updated = current.map(t => t.id === transaction.id ? { ...t, status: 'completed' as 'completed' } : t);
 
       if (enableNotifications) {
         emmiter.emit('showToast', {
@@ -117,7 +117,7 @@ export function useRealtimeTransactions({
     console.log('Transaction marked as cancelled:', transaction);
 
     setTransactions(current => {
-      const updated = current.map(t => t.id === transaction.id ? { ...t, status: 'cancelled' } : t);
+      const updated = current.map(t => t.id === transaction.id ? { ...t, status: 'cancelled' as 'cancelled' } : t);
 
       if (enableNotifications) {
         emmiter.emit('showToast', {
@@ -145,7 +145,7 @@ export function useRealtimeTransactions({
       'transaction-created',
       (data) => {
         console.log('Evento recibido: transaction-created', data);
-        handleTransactionCreated(data.transaction);
+        handleTransactionCreated(data);
       }
     );
 
@@ -154,7 +154,7 @@ export function useRealtimeTransactions({
       'transaction-updated',
       (data) => {
         console.log('Evento recibido: transaction-updated', data);
-        handleTransactionUpdated(data.transaction);
+        handleTransactionUpdated(data);
       }
     );
 
@@ -172,7 +172,7 @@ export function useRealtimeTransactions({
       'transaction-completed',
       (data) => {
         console.log('Evento recibido: transaction-completed', data);
-        handleTransactionCompleted(data.transaction);
+        handleTransactionCompleted(data);
       }
     );
 
@@ -181,7 +181,7 @@ export function useRealtimeTransactions({
       'transaction-cancelled',
       (data) => {
         console.log('Evento recibido: transaction-cancelled', data);
-        handleTransactionCancelled(data.transaction);
+        handleTransactionCancelled(data);
       }
     );
 

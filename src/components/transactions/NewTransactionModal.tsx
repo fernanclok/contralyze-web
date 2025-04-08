@@ -759,7 +759,7 @@ export function NewTransactionModal({
             {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <Select value={status} onValueChange={(value) => setStatus(value as "pending" | "completed" | "cancelled")}>
                 <SelectTrigger id="status" className="w-full bg-white">
                   <SelectValue>
                     {status === "pending" ? "Pending" : status === "completed" ? "Completed" : "Cancelled"}
