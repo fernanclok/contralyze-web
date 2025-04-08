@@ -19,6 +19,7 @@ import { CollapsibleCharts } from '@/components/budget/CollapsibleCharts';
 export default async function BudgetsPage() {
   const session = await getSession();
   const userRole = session?.role || "user";
+  const userId = session?.id as string;
   const userName = session ? `${session.userFirstName} ${session.userLastName}`.trim() : "Guest";
   const userDepartmentId = session?.departmentId;
   console.log('Page userDepartmentId:', userDepartmentId);
@@ -167,8 +168,8 @@ export default async function BudgetsPage() {
           <CardContent className="p-6">
             <Tabs defaultValue="budgets" className="space-y-6">
               <TabsList className="grid w-full grid-cols-2 md:w-auto">
-                <TabsTrigger value="budgets">Budgets</TabsTrigger>
-                <TabsTrigger value="requests">Requests</TabsTrigger>
+                <TabsTrigger value="budgets" key="tab-budgets">Budgets</TabsTrigger>
+                <TabsTrigger value="requests" key="tab-requests">Requests</TabsTrigger>
               </TabsList>
 
               <TabsContent value="budgets" className="mt-0">
@@ -185,6 +186,7 @@ export default async function BudgetsPage() {
 
               <TabsContent value="requests" className="mt-0">
                 <BudgetRequestList
+                  userId={userId}
                   requests={requestData}
                   categories={categoryOptions}
                   departments={departmentOptions}

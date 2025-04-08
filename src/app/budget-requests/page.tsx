@@ -12,26 +12,27 @@ export default async function BudgetRequestsPage() {
   const userRole = session?.role || "user";
   const userName = session ? `${session.userFirstName} ${session.userLastName}`.trim() : "Guest";
   const userDepartmentId = session?.departmentId;
-  
-  // Obtener el ID del usuario actual para filtrar solicitudes
-  const userId = session?.id;
 
-  // Get real data from backend
+  const userId = session?.id as string; // Asegurar que el ID del usuario sea de tipo string
+
+  console.log('BudgetRequests page userDepartmentId:', userDepartmentId);
+
+  // Obtener datos reales del backend
   const { requests = [], error: requestsError } = await getBudgetRequests();
   const { categories = [], error: categoriesError } = await getCategories();
   const { departments = [], error: departmentsError } = await getDepartments();
 
-  // Use real data or empty arrays if errors occurred
+  // Usar datos reales o arrays vacíos si hay errores
   const requestData = Array.isArray(requests) && requests.length > 0 ? requests : [];
   const categoryOptions = Array.isArray(categories) && categories.length > 0 ? categories : [];
   const departmentOptions = Array.isArray(departments) && departments.length > 0 ? departments : [];
 
-  // Filter requests for the current user if not admin
+  // Filtrar solicitudes para el usuario actual si no es admin
   const filteredRequests = userRole === 'admin' 
     ? requestData 
     : requestData.filter(request => request.user_id === userId);
-  
-  // Summary calculations
+
+  // Cálculos de resumen
   const pendingCount = filteredRequests.filter(req => req.status === 'pending').length;
   const approvedCount = filteredRequests.filter(req => req.status === 'approved').length;
   const rejectedCount = filteredRequests.filter(req => req.status === 'rejected').length;
@@ -39,7 +40,7 @@ export default async function BudgetRequestsPage() {
     .filter(req => req.status === 'approved')
     .reduce((sum, req) => sum + parseFloat(req.requested_amount.toString()), 0);
 
-  // Check for API errors
+  // Verificar errores de API
   const hasError = !!requestsError || !!categoriesError || !!departmentsError;
 
   return (
@@ -142,16 +143,15 @@ export default async function BudgetRequestsPage() {
         <Card>
           <CardContent className="p-6">
             <BudgetRequestList 
-              requests={filteredRequests} 
+              requests={filteredRequests}
               categories={categoryOptions}
               departments={departmentOptions}
-              userRole={userRole} 
-              hasConnectionError={!!requestsError}
-              userDepartmentId={userDepartmentId}
-            />
+              userRole={userRole}
+              hasConnectionError={!!requestsError} 
+              userId={userId}            />
           </CardContent>
         </Card>
       </div>
     </AuthenticatedLayout>
   );
-} 
+}

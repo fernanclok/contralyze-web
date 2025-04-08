@@ -1,7 +1,14 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter
+} from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowUpRight, ArrowDownRight, Calendar, CreditCard, Hash, User, Building, Tag } from "lucide-react"
@@ -43,25 +50,22 @@ export default function TransactionModal({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto bg-white p-0">
-        <div
-          className={`w-full p-6 py-14 ${isIncome ? "bg-gradient-to-r from-emerald-500 to-teal-600" : "bg-gradient-to-r from-rose-500 to-pink-600"}`}
-        >
-          <SheetHeader className="text-white mb-4">
-            <div className="flex items-center justify-between">
-              <SheetTitle className="text-2xl font-bold text-white">Transaction Details</SheetTitle>
-              <Badge className={`${typeColor} uppercase font-semibold`}>{transaction.type}</Badge>
+      <SheetContent className="overflow-y-auto">
+          <SheetHeader>
+            <div className="flex items-center">
+              <SheetTitle className="text-2xl font-bold">Transaction Details</SheetTitle>
+              <Badge className={`${typeColor} uppercase font-semibold ml-2`}>{transaction.type}</Badge>
             </div>
-            <SheetDescription className="text-white/80">Reference: {transaction.reference_number}</SheetDescription>
+            <SheetDescription className="text-gray-500">Reference: {transaction.reference_number}</SheetDescription>
           </SheetHeader>
 
-          <Card className="bg-white/10 backdrop-blur-sm border-0 shadow-lg">
+          <Card className="m-2">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-white/70 text-sm">Amount</p>
+                <p className="text-sm text-black">Amount</p>
                 <div className="flex items-center">
                   <TypeIcon className={`mr-1 ${isIncome ? "text-emerald-300" : "text-rose-300"}`} size={20} />
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-2xl font-bold text-black">
                     {formatCurrency(Number.parseFloat(transaction.amount))}
                   </p>
                 </div>
@@ -72,9 +76,8 @@ export default function TransactionModal({
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-2 space-y-6">
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-2">TRANSACTION INFORMATION</h3>
             <div className="space-y-3">
@@ -158,10 +161,9 @@ export default function TransactionModal({
           </div>
         </div>
 
-        <SheetFooter className="px-6 pb-6 pt-2">
-          <Button
+        <SheetFooter>
+          <Button className="mt-2"
             onClick={() => onOpenChange(false)}
-            className={`w-full ${isIncome ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"}`}
           >
             Close
           </Button>

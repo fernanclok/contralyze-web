@@ -143,7 +143,7 @@ export default function InfoCards({Info}: {Info: any}) {
                 <CalendarDays className="text-gray-400 w-4 h-4" />
                 <p className="text-gray-400 text-sm ">
                     <strong>Target</strong> {target_date_formatted}
-                </p>`
+                </p>
             </div>
           </CardContent>
          
@@ -205,7 +205,7 @@ export default function InfoCards({Info}: {Info: any}) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-end space-y-0 pb-2">
             <CardTitle className="flex justify-center items-center text-sm font-medium w-fit bg-green-200/50 p-2 rounded-lg ">
-              <DollarSignIcon className="h-4 w-4 text-black  " />
+              <DollarSignIcon className="h-4 w-4 text-black" />
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -248,7 +248,6 @@ export default function InfoCards({Info}: {Info: any}) {
           </CardContent>
         </Card>
       </div>
-      
     </>
   )
 }

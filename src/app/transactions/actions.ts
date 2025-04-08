@@ -13,6 +13,7 @@ export interface Transaction {
   user_id: string;
   supplier_id?: string;
   client_id?: string;
+  department_id?: string;
   transaction_date: string;
   status: 'pending' | 'completed' | 'cancelled';
   payment_method?: string;

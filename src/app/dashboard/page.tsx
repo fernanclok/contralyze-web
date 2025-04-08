@@ -52,7 +52,6 @@ export default async function ServerDashboardPage() {
   } 
 
 
-  console.log('aaaaaaaaaaaaa', availableYearsData)
   const user = session || null;
   const userRole = session?.role || "user";
   const userName = session
