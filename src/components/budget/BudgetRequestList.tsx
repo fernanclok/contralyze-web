@@ -436,7 +436,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
   };
 
   // Efecto para Pusher
-  useEffect(() => {
+  useEffect(() => {   
     try {
       if (!process.env.NEXT_PUBLIC_PUSHER_KEY || !process.env.NEXT_PUBLIC_PUSHER_CLUSTER) {
         console.error('Pusher configuration is missing');
