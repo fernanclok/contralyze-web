@@ -12,7 +12,6 @@ export default async function BudgetRequestsPage() {
   const userRole = session?.role || "user";
   const userName = session ? `${session.userFirstName} ${session.userLastName}`.trim() : "Guest";
   const userDepartmentId = session?.departmentId;
-  console.log('BudgetRequests page userDepartmentId:', userDepartmentId);
   
   // Obtener el ID del usuario actual para filtrar solicitudes
   const userId = session?.id;

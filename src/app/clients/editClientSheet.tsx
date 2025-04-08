@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter
 } from "@/components/ui/sheet";
 import {
   Select,
@@ -138,7 +139,9 @@ export function EditClientSheet({
               </SelectContent>
             </Select>
           </div>
-          <SubmitButton />
+          <SheetFooter>
+            <SubmitButton />
+          </SheetFooter>
         </form>
       </SheetContent>
     </Sheet>

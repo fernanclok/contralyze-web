@@ -642,7 +642,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
               value={filterStatus} 
               onValueChange={setFilterStatus}
             >
-              <SelectTrigger className="bg-white">
+              <SelectTrigger className="w-full bg-white text-black">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="bg-white shadow-md">
@@ -660,7 +660,7 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
                 value={filterDepartment} 
                 onValueChange={setFilterDepartment}
               >
-                <SelectTrigger className="bg-white">
+                <SelectTrigger className="w-full bg-white text-black">
                   <SelectValue placeholder="Department" />
                 </SelectTrigger>
                 <SelectContent className="bg-white shadow-md">
@@ -689,7 +689,6 @@ export function BudgetRequestList({ requests: initialRequests, categories, depar
             className="whitespace-nowrap"
             disabled={hasConnectionError}
           >
-            <PlusCircle className="mr-2 h-4 w-4" />
             New Request
           </Button>
         )}

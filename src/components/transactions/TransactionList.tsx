@@ -560,9 +560,12 @@ export function TransactionList({
             </Button>
           )}
           
-          {!hasConnectionError && (
+          {hasConnectionError ? (
+             <Button size="sm" className="gap-1 ml-auto" disabled>
+             New Transaction
+           </Button>
+          ) : (
             <Button size="sm" onClick={() => setIsNewTransactionModalOpen(true)} className="gap-1 ml-auto">
-              <PlusCircle className="h-4 w-4" />
               New Transaction
             </Button>
           )}

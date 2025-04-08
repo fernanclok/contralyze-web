@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter
 } from "@/components/ui/sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -110,9 +111,9 @@ export function AddClientSheet({ onClientUpdated }: { onClientUpdated: () => voi
                 <p className="text-sm text-red-500">{state.errors.address}</p>
                 )}
             </div>
-          <div className="mt-6">
-            <SubmitButton />
-          </div>
+            <SheetFooter>
+              <SubmitButton />
+            </SheetFooter>
         </form>
       </SheetContent>
     </Sheet>

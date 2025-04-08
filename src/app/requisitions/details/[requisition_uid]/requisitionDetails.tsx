@@ -30,7 +30,7 @@ import {
 import { useReactToPrint } from "react-to-print";
 import { RejectRequisitionSheet } from "./rejectRequisitionSheet";
 import { approveRequisition } from "@/app/requisitions/actions";
-import { getRequisitionByUIDFromDB } from "@/app/utils/indexedDB";
+import { getRequisitionByUIDFromDB,updateRequisitionInDB  } from "@/app/utils/indexedDB";
 
 export default function RequisitionDetails({
   requisition,
@@ -68,20 +68,51 @@ export default function RequisitionDetails({
     }
   }, [id, requisitionData]);
 
+  const handleUpdateRequisition = (updatedRequisition: any) => {
+    setRequisitionData((prevData: any) => ({
+      ...prevData,
+      ...updatedRequisition,
+    }));
+    router.refresh()
+  };
+
   const handleApproveRequisition = async () => {
     setLoading(true);
     setError(null);
-    const result = await approveRequisition(requisitionData.id);
-    setLoading(false);
+  
+    try {
+      // Aprobar la requisición en el servidor
+      const result = await approveRequisition(requisitionData.id);
+  
+      if (result.errors) {
+        setError(result.errors);
+      } else {
+        // Actualizar la requisición en IndexedDB
+        const updatedRequisition = {
+          ...requisitionData,
+          status: "approved",
+          reviewed_by: user,
+          updated_at: new Date().toISOString(),
+        };
+        await updateRequisitionInDB(updatedRequisition);
+  
+        // Actualizar el estado local
+        setRequisitionData(updatedRequisition);
 
-    if (result.errors) {
-      setError(result.errors);
-    } else {
-      router.refresh();
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Error approving requisition:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
+    if (!status) {
+      return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"; // Color predeterminado
+    }
+  
     switch (status.toLowerCase()) {
       case "approved":
         return "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100";
@@ -161,7 +192,7 @@ export default function RequisitionDetails({
                     </CardDescription>
                   </div>
                   <Badge className={getStatusColor(requisitionData.status)}>
-                    {requisitionData.status}
+                    {requisitionData.status || "Unknown"}
                   </Badge>
                 </div>
               </CardHeader>
@@ -333,7 +364,7 @@ export default function RequisitionDetails({
                           <CheckCircle className="h-4 w-4 mr-2" />
                           {loading ? "Approving..." : "Approve Requisition"}
                         </Button>
-                        <RejectRequisitionSheet id={requisitionData.id} />
+                        <RejectRequisitionSheet id={requisitionData.id} user={user} requisition={requisitionData} onUpdateRequisition={handleUpdateRequisition}/>
                       </>
                     )}
 

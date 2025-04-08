@@ -266,7 +266,7 @@ export function EditBudgetModal({
               </div>
             </div>
           )}
-          
+
           {/* Category selection */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -351,7 +351,9 @@ export function EditBudgetModal({
             <Label>Period</Label>
             <div className="flex flex-col md:flex-row gap-4">
               <div className="w-full">
-                <Label htmlFor="start-date" className="text-xs text-gray-500">Start Date</Label>
+                <Label htmlFor="start-date" className="text-xs text-gray-500">
+                  Start Date
+                </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -373,14 +375,17 @@ export function EditBudgetModal({
                 </Popover>
               </div>
               <div className="w-full">
-                <Label htmlFor="end-date" className="text-xs text-gray-500">End Date</Label>
+                <Label htmlFor="end-date" className="text-xs text-gray-500">
+                  End Date
+                </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal mt-1 bg-white",
-                        periodicity !== "custom" && "opacity-70 cursor-not-allowed"
+                        periodicity !== "custom" &&
+                          "opacity-70 cursor-not-allowed"
                       )}
                       disabled={periodicity !== "custom"}
                     >
@@ -395,7 +400,16 @@ export function EditBudgetModal({
                         selected={endDate}
                         onSelect={setEndDate}
                         initialFocus
-                        disabled={startDate ? [{ from: new Date(0), to: addDays(startDate, -1) }] : undefined}
+                        disabled={
+                          startDate
+                            ? [
+                                {
+                                  from: new Date(0),
+                                  to: addDays(startDate, -1),
+                                },
+                              ]
+                            : undefined
+                        }
                       />
                     </PopoverContent>
                   )}
@@ -411,15 +425,22 @@ export function EditBudgetModal({
         </div>
 
         <SheetFooter className="flex justify-between sm:justify-end gap-2 mt-8">
-          <Button variant="outline" onClick={handleClose} disabled={loading} className="flex-1 sm:flex-none">
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading} className="flex-1 sm:flex-none">
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Update Budget
+          <Button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="flex-1 sm:flex-none"
+          >
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <span className="ml-2">Updating...</span>
+              </div>
+            ) : (
+              "Update Budget"
+            )}
           </Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
-  )
-} 
+  );
+}
