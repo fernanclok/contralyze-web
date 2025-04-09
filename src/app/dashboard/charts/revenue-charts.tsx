@@ -37,7 +37,7 @@ const normalizeYears = (data: any) => {
 };
 
 export function RevenueChart({ transaction, Year }: { transaction: any; Year: any }) {
-  const normalizedTransactions = normalizeTransactions(transaction);
+  const normalizedTransactions = transaction;
   const normalizedYears: (string | number)[] = normalizeYears(Year) as (string | number)[];
 
   const [selectedYear, setSelectedYear] = useState<string | number>(normalizedYears[0]);
@@ -46,15 +46,16 @@ export function RevenueChart({ transaction, Year }: { transaction: any; Year: an
   console.log("Normalized Years:", normalizedYears);
   console.log("Selected Year:", selectedYear);
 
-  const filteredData = normalizedTransactions
-    .filter((item: any) => item.year === selectedYear) // Filtrar por año seleccionado
-    .map((item: any) => {
-      const month = months.find((m) => m.key === item.month);
-      return {
-        month: month?.month || "Unknown", // Nombre del mes (e.g., "Jan", "Feb")
-        revenue: item.total, // Total ya convertido a número
-      };
-    });
+  // Asegurarse de que todos los meses estén presentes
+  const filteredData = months.map((month) => {
+    const dataForMonth = normalizedTransactions.find(
+      (item: any) => item.year === selectedYear && item.month === month.key
+    );
+    return {
+      month: month.month, // Nombre del mes (e.g., "Jan", "Feb")
+      revenue: dataForMonth ? dataForMonth.total : 0, // Si no hay datos, asignar 0
+    };
+  });
 
   return (
     <>

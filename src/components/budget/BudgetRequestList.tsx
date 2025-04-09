@@ -86,7 +86,7 @@ export function BudgetRequestList({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BudgetRequest | null>(null);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('pending');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
