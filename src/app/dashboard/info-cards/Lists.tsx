@@ -53,8 +53,8 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
     return []; // Si no es un formato válido, devuelve un array vacío
   };
 
-  const recent_transactions = normalizeData(TransactionsList);
-  const activity = normalizeData(Activity);
+  const recent_transactions = TransactionsList ? normalizeData(TransactionsList) : [] // Normaliza TransactionsList;
+  const activity = Activity ? normalizeData(Activity) : [] // Normaliza Activity;
 
   const handleOpenModal = (transaction: any) => {
     setSelectedTransaction(transaction) // Establece la transacción seleccionada
@@ -81,6 +81,7 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
     handleNextPage: handleNextActivityPage,
     handlePreviousPage: handlePreviousActivityPage,
   } = usePagination(activity, 3);
+
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
