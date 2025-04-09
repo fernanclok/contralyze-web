@@ -86,7 +86,7 @@ export function BudgetRequestList({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BudgetRequest | null>(null);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('pending');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -417,7 +417,7 @@ export function BudgetRequestList({
   };
 
   // Efecto para Pusher
-  useEffect(() => {
+  useEffect(() => {   
     try {
       if (!process.env.NEXT_PUBLIC_PUSHER_KEY || !process.env.NEXT_PUBLIC_PUSHER_CLUSTER) {
         console.error('Pusher configuration is missing');
@@ -788,7 +788,6 @@ export function BudgetRequestList({
                 {currentItems.map((request) => (
                   <TableRow 
                     key={`request-${request.id}`} // Prefijo para garantizar unicidad
-                    className={isCreator(request) ? "bg-blue-50" : ""}
                   >
                     <TableCell className="font-semibold">
                       <div className="flex flex-col">

@@ -53,8 +53,8 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
     return []; // Si no es un formato válido, devuelve un array vacío
   };
 
-  const recent_transactions = normalizeData(TransactionsList);
-  const activity = normalizeData(Activity);
+  const recent_transactions = TransactionsList ? normalizeData(TransactionsList) : [] // Normaliza TransactionsList;
+  const activity = Activity ? normalizeData(Activity) : [] // Normaliza Activity;
 
   const handleOpenModal = (transaction: any) => {
     setSelectedTransaction(transaction) // Establece la transacción seleccionada
@@ -81,6 +81,7 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
     handleNextPage: handleNextActivityPage,
     handlePreviousPage: handlePreviousActivityPage,
   } = usePagination(activity, 3);
+
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -140,20 +141,26 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
                     <tr key={index}>
                       <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-black">
                         {item.transaction_date
-                          ? new Date(item.transaction_date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })
+                          ? new Date(item.transaction_date).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )
                           : "N/A"}
                       </td>
                       <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-black">
                         {item.description || "N/A"}
                       </td>
-                      <td
-                        className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-black"
-                      >
-                        ${item.amount ? Number(item.amount).toLocaleString() : "N/A"}
+                      <td className="px-6 py-5 whitespace-normal md:whitespace-nowrap text-sm text-black">
+                        {item.amount
+                          ? new Intl.NumberFormat("en-US", {
+                              style: "currency",
+                              currency: "USD",
+                            }).format(item.amount)
+                          : "N/A"}
                       </td>
                       <Badge
                         className={`align-center m-2 text-sm ${
@@ -202,121 +209,136 @@ export default function Lists({ TransactionsList, Activity }: { TransactionsList
         </Card>
 
         <div className="lg:col-span-1 h-fit">
-                {/* DIBISES CARD */}
+          {/* DIBISES CARD */}
           <div className="mb-4">
             <Dibises />
           </div>
           <Card>
-          <CardHeader className="flex flex-row items-center justify-start gap-4 pb-2">
-            <UsersIcon className="h-4 w-4 text-black" />
-            <CardTitle className="text-xl sm:text-2xl text-gray-600 font-bold w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <span>Activity</span>
-              <Link
-                href={"/transactions"}
-                className="flex justify-center items-center bg-gray-100 border border-gray-200 p-1 rounded-lg shadow-md"
-              >
-                <CalendarDays className="h-5 w-5 text-gray-600" />
-                <p className="text-base text-gray-400 px-2">View all</p>
-              </Link>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="shadow-xl rounded-lg p-2 overflow-x-auto">
-              <table className="w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    >
-                      Dept
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    >
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {selectedActivity.map((item, index) => (
-                    <tr key={index}>
-                      <td className="px-2 py-4 whitespace-normal text-sm">
-                        <div className="flex items-center gap-2">
-                          <div className={`p-2 rounded-lg ${index % 2 === 0 ? "bg-green-100" : "bg-blue-100"}`}>
-                            <ShoppingCart className="h-4 w-4 text-gray-600" />
+            <CardHeader className="flex flex-row items-center justify-start gap-4 pb-2">
+              <UsersIcon className="h-4 w-4 text-black" />
+              <CardTitle className="text-xl sm:text-2xl text-gray-600 font-bold w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span>Activity</span>
+                <Link
+                  href={"/transactions"}
+                  className="flex justify-center items-center bg-gray-100 border border-gray-200 p-1 rounded-lg shadow-md"
+                >
+                  <CalendarDays className="h-5 w-5 text-gray-600" />
+                  <p className="text-base text-gray-400 px-2">View all</p>
+                </Link>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="shadow-xl rounded-lg p-2 overflow-x-auto">
+                <table className="w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th
+                        scope="col"
+                        className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      >
+                        Dept
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      >
+                        Status
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      >
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {selectedActivity.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-2 py-4 whitespace-normal text-sm">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`p-2 rounded-lg ${
+                                index % 2 === 0 ? "bg-green-100" : "bg-blue-100"
+                              }`}
+                            >
+                              <ShoppingCart className="h-4 w-4 text-gray-600" />
+                            </div>
+                            <span className="font-bold text-gray-800 underline">
+                              {item.department}
+                            </span>
                           </div>
-                          <span className="font-bold text-gray-800 underline">{item.department}</span>
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">{item.description}</div>
-                      </td>
-                      <td className="px-2 py-4 whitespace-normal text-sm">
-                        <Badge
-                          className={`p-1 rounded-xl flex justify-center items-center ${
-                            item.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : item.status === "cancelled"
+                          <div className="text-xs text-gray-500 mt-1">
+                            {item.description}
+                          </div>
+                        </td>
+                        <td className="px-2 py-4 whitespace-normal text-sm">
+                          <Badge
+                            className={`p-1 rounded-xl flex justify-center items-center ${
+                              item.status === "completed"
+                                ? "bg-green-100 text-green-800"
+                                : item.status === "cancelled"
                                 ? "bg-red-100 text-red-800"
                                 : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {item.status}
-                        </Badge>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {new Date(item.transaction_date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </div>
-                      </td>
-                      <td className="px-2 py-4 whitespace-normal text-sm text-gray-500">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenModal(item)}
-                          className="w-full flex justify-center items-center"
-                        >
-                          <Eye className="h-5 w-5 text-gray-600" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="flex justify-between mt-4">
-                <button
-                  onClick={handlePreviousActivityPage}
-                  disabled={activityPage === 1}
-                  className="px-4 py-2 text-gray-600 rounded disabled:opacity-50"
-                  title="Previous activity"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={handleNextActivityPage}
-                  disabled={activityPage === activityTotalPages}
-                  className="px-4 py-2 text-gray-600 rounded disabled:opacity-50"
-                  title="Next Activity"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
+                            }`}
+                          >
+                            {item.status}
+                          </Badge>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {new Date(item.transaction_date).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-2 py-4 whitespace-normal text-sm text-gray-500">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenModal(item)}
+                            className="w-full flex justify-center items-center"
+                          >
+                            <Eye className="h-5 w-5 text-gray-600" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="flex justify-between mt-4">
+                  <button
+                    onClick={handlePreviousActivityPage}
+                    disabled={activityPage === 1}
+                    className="px-4 py-2 text-gray-600 rounded disabled:opacity-50"
+                    title="Previous activity"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={handleNextActivityPage}
+                    disabled={activityPage === activityTotalPages}
+                    className="px-4 py-2 text-gray-600 rounded disabled:opacity-50"
+                    title="Next Activity"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
-            </div>
-          </CardContent>
+            </CardContent>
           </Card>
         </div>
       </div>
 
       {/* Renderiza el EditTransactionModal */}
-      <SideModal open={isModalOpen} onOpenChange={setIsModalOpen} transaction={selectedTransaction} />
-      </>
-  )
+      <SideModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        transaction={selectedTransaction}
+      />
+    </>
+  );
 }
 
