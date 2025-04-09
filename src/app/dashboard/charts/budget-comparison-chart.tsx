@@ -102,7 +102,6 @@ const CustomYAxisTick = (props: { x: number; y: number; payload: { value: string
 export function BudgetComparisonChart({ Budgets = { chart_data: [] }, DeptoData  }: { Budgets?: any, DeptoData?: any }) {
   const [data, setData] = useState<BudgetData[]>([])
 
-  console.log("department data", DeptoData)
   // normalizar datos deptoData
   const departmentRawData = Array.isArray(DeptoData) && DeptoData.length === 1 && typeof DeptoData[0] === "object"
     ? Object.values(DeptoData[0]).filter((item) => typeof item === "object")
