@@ -119,160 +119,166 @@ export default function RequisitionsList({
 
   return (
     <>
-    <div className="w-full flex justify-between items-center mb-4">
-            {/* Search and filter container */}
-            <div className="flex items-center gap-4 w-2/3">
-              <div className="relative w-1/3">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="search"
-                  placeholder="Search requisition..."
-                  className="pl-8 w-full"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Select value={filter} onValueChange={setFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All status">All status</SelectItem>
-                    <SelectItem value="Approved">Approved</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-                {/* select to filter by priority */}
+      <div className="w-full flex justify-between items-center mb-4">
+        {/* Search and filter container */}
+        <div className="flex items-center gap-4 w-2/3">
+          <div className="relative w-1/3">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="search"
+              placeholder="Search requisition..."
+              className="pl-8 w-full"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All status">All status</SelectItem>
+                <SelectItem value="Approved">Approved</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+            {/* select to filter by priority */}
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Priorities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All priorities">All priorities</SelectItem>
+                <SelectItem value="Low">Low</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+                <SelectItem value="Urgent">Urgent</SelectItem>
+              </SelectContent>
+            </Select>
+            {/* select to filter by department only if the user is admin */}
+            {user.role === "admin" && (
+              <>
                 <Select
-                  value={priorityFilter}
-                  onValueChange={setPriorityFilter}
+                  value={departmentFilter}
+                  onValueChange={setDepartmentFilter}
                 >
                   <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Priorities" />
+                    <SelectValue placeholder="Department" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All priorities">All priorities</SelectItem>
-                    <SelectItem value="Low">Low</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="High">High</SelectItem>
-                    <SelectItem value="Urgent">Urgent</SelectItem>
+                  <SelectContent className="bg-white shadow-md">
+                    <SelectItem value="All departments">
+                      All departments
+                    </SelectItem>
+                    {departments.map((deparment: any) => (
+                      <SelectItem key={deparment.id} value={deparment.name}>
+                        {deparment.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                {/* select to filter by department only if the user is admin */}
-                {user.role === "admin" && (
-                  <>
-                    <Select
-                      value={departmentFilter}
-                      onValueChange={setDepartmentFilter}
-                    >
-                      <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Department" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white shadow-md">
-                        <SelectItem value="All departments">All departments</SelectItem>
-                       {departments.map((deparment: any) => (
-                          <SelectItem key={deparment.id} value={deparment.name}>
-                            {deparment.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </>
-                )}
-              </div>
-              {(filter !== "All status" || priorityFilter !== "All priorities" || departmentFilter !== "All departments") && (
-                <Button
-                variant="ghost"
-                size="sm"
-                className="whitespace-nowrap"
-                  onClick={() => {
-                    setFilter("All status");
-                    setPriorityFilter("All priorities");
-                    setDepartmentFilter("All departments");
-                  }}
-                >
-                  <FilterX className="h-4 w-4" />
-                  Clear filters
-                </Button>
-              )}
-            </div>
+              </>
+            )}
           </div>
+          {(filter !== "All status" ||
+            priorityFilter !== "All priorities" ||
+            departmentFilter !== "All departments") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={() => {
+                setFilter("All status");
+                setPriorityFilter("All priorities");
+                setDepartmentFilter("All departments");
+              }}
+            >
+              <FilterX className="h-4 w-4" />
+              Clear filters
+            </Button>
+          )}
+        </div>
+      </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead className="hidden md:table-cell">Request Date</TableHead>
-                  <TableHead>Title</TableHead>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead className="hidden md:table-cell">
+                Request Date
+              </TableHead>
+              <TableHead>Title</TableHead>
+              {user.role === "admin" && (
+                <TableHead className="hidden md:table-cell">
+                  Department
+                </TableHead>
+              )}
+              <TableHead className="hidden lg:table-cell">Priority</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredRequisitions.length > 0 ? (
+              filteredRequisitions.map((req: any) => (
+                <TableRow key={req.id}>
+                  <TableCell className="font-medium">
+                    {req.requisition_uid}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {req.request_date}
+                  </TableCell>
+                  <TableCell>{req.title}</TableCell>
                   {user.role === "admin" && (
-                    <TableHead className="hidden md:table-cell">
-                      Department
-                    </TableHead>
-                  )}
-                  <TableHead className="hidden lg:table-cell">
-                    Priority
-                  </TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRequisitions.length > 0 ? (
-                  filteredRequisitions.map((req: any) => (
-                    <TableRow key={req.id}>
-                      <TableCell className="font-medium">{req.requisition_uid}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {req.request_date}
-                      </TableCell>
-                      <TableCell>{req.title}</TableCell>
-                      {user.role === "admin" && (
-                        <TableCell className="hidden md:table-cell">
-                          {req.department.name}
-                        </TableCell>
-                      )}
-                      <TableCell className="hidden lg:table-cell">
-                        <Badge className={getPriorityColor(req.priority)}>
-                          {req.priority}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(req.status)}>
-                          {req.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                      ${req.total_amount}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/requisitions/details/${req.requisition_uid}`}>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="hover:bg-primary hover:text-white"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="text-center py-6 text-gray-500"
-                    >
-                      No requisitions found.
+                    <TableCell className="hidden md:table-cell">
+                      {req.department.name}
                     </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  )}
+                  <TableCell className="hidden lg:table-cell">
+                    <Badge className={getPriorityColor(req.priority)}>
+                      {req.priority}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(req.status)}>
+                      {req.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(req.total_amount)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Link href={`/requisitions/details/${req.requisition_uid}`}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:bg-primary hover:text-white"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={8}
+                  className="text-center py-6 text-gray-500"
+                >
+                  No requisitions found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </>
   );
 }
