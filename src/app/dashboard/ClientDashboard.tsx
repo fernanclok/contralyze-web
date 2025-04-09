@@ -256,16 +256,6 @@ export default function ClientDashboardPage({
   const date = new Date()
   const lastUpdated = date.toDateString()
 
-  console.log("Data passed to DashboardCharts:", {
-    Budgets: localBudgets,
-    transaction: localTransactionStatics,
-    years: localYearsAvailable,
-    Info: localInfoCards,
-    DeptoData: localDeptoData,
-    TransactionsList: localTransactionsList,
-    TransactionsDepto: localActivity,
-  })
-
   return (
     <div className="flex bg-background pb-12 h-full">
       <div className="flex-1">

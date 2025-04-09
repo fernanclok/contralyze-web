@@ -106,47 +106,76 @@ export default function InfoCards({Info}: {Info: any}) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">Emergency Fund</div>
-                <nav className="flex justify-center gap-2 items-center rounded-lg w-full">
-                    <div
-                        className={`flex justify-center gap-2 items-center text-xs p-2 my-3 rounded-lg w-full ${getStatusColor(
-                            infoData.changes.emergency_fund.previous_status
-                        )}`}
-                        >
-                        {getStatusIcon(infoData.changes.emergency_fund.previous_status)}
-                        <p className="text-sm font-semibold">
-                            {infoData.changes.emergency_fund.previous_status === "unchanged"
-                            ? "Unchanged"
-                            : `${infoData.changes.emergency_fund.percentage} % `}
-                        </p> {" "}
-                        from last update.
-                    </div>
-                </nav>
-                <div className="w-ful rounded-full mt-2">
-                <div className="flex justify-between items-center p-2">
-                    <p className="text-gray-400 text-sm font-thin">Progress</p>
-                    <p className="text-gray-500 font-bold text-base">{Math.min((infoData.emergency_fund / (infoData.total_budget_amount * 0.1)) * 100, 100).toFixed(2)}%</p>
-                </div>
-                <div
-                    className="bg-green-500 text-xs font-medium text-white text-center p-0.5 leading-none rounded-full transition-all duration-300"
-                    style={{
-                      width: `${Math.min((infoData.emergency_fund / (infoData.total_budget_amount * 0.1)) * 100, 100).toFixed(2)}%`,
-                    }}
-                ></div>
-                </div>
-                <p className="text-base text-gray-400 mt-2">
-                <strong>${infoData.emergency_fund}</strong> is  {((infoData.emergency_fund / infoData.total_budget_amount) * 100).toFixed(2)}% of total budget.
+            <nav className="flex justify-center gap-2 items-center rounded-lg w-full">
+              <div
+                className={`flex justify-center gap-2 items-center text-xs p-2 my-3 rounded-lg w-full ${getStatusColor(
+                  infoData.changes.emergency_fund.previous_status
+                )}`}
+              >
+                {getStatusIcon(infoData.changes.emergency_fund.previous_status)}
+                <p className="text-sm font-semibold">
+                  {infoData.changes.emergency_fund.previous_status ===
+                  "unchanged"
+                    ? "Unchanged"
+                    : `${infoData.changes.emergency_fund.percentage} % `}
+                </p>{" "}
+                from last update.
+              </div>
+            </nav>
+            <div className="w-ful rounded-full mt-2">
+              <div className="flex justify-between items-center p-2">
+                <p className="text-gray-400 text-sm font-thin">Progress</p>
+                <p className="text-gray-500 font-bold text-base">
+                  {Math.min(
+                    (infoData.emergency_fund /
+                      (infoData.total_budget_amount * 0.1)) *
+                      100,
+                    100
+                  ).toFixed(2)}
+                  %
                 </p>
-                <p className="text-sm text-gray-500">
-                (${(infoData.total_budget_amount * 0.1).toFixed(2)}). This bar shows how much of the goal has been achieved.
-                </p>
-                <div className="flex justify-start gap-2 items-center mt-3">
-                <CalendarDays className="text-gray-400 w-4 h-4" />
-                <p className="text-gray-400 text-sm ">
-                    <strong>Target</strong> {target_date_formatted}
-                </p>
+              </div>
+              <div
+                className="bg-green-500 text-xs font-medium text-white text-center p-0.5 leading-none rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(
+                    (infoData.emergency_fund /
+                      (infoData.total_budget_amount * 0.1)) *
+                      100,
+                    100
+                  ).toFixed(2)}%`,
+                }}
+              ></div>
+            </div>
+            <p className="text-base text-gray-400 mt-2">
+              <strong>
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                }).format(infoData.emergency_fund)}
+              </strong>{" "}
+              is{" "}
+              {(
+                (infoData.emergency_fund / infoData.total_budget_amount) *
+                100
+              ).toFixed(2)}
+              % of total budget.
+            </p>
+            <p className="text-sm text-gray-500">
+              (
+              {new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+              }).format(infoData.total_budget_amount * 0.1)}
+              ). This bar shows how much of the goal has been achieved.
+            </p>
+            <div className="flex justify-start gap-2 items-center mt-3">
+              <CalendarDays className="text-gray-400 w-4 h-4" />
+              <p className="text-gray-400 text-sm ">
+                <strong>Target</strong> {target_date_formatted}
+              </p>
             </div>
           </CardContent>
-         
         </Card>
         {/* Expenses */}
         <Card>
@@ -158,39 +187,65 @@ export default function InfoCards({Info}: {Info: any}) {
           <CardContent>
             <div className="text-2xl font-bold text-black">Expenses</div>
             <nav className="flex justify-center gap-2 items-center rounded-lg w-full">
-                <div
-                        className={`flex justify-center text-xs gap-2 items-center p-2 my-3 rounded-lg w-full ${getStatusColor(
-                            infoData.changes.total_expenses.previous_status
-                        )}`}
-                        >
+              <div
+                className={`flex justify-center text-xs gap-2 items-center p-2 my-3 rounded-lg w-full ${getStatusColor(
+                  infoData.changes.total_expenses.previous_status
+                )}`}
+              >
                 {getStatusIcon(infoData.changes.total_expenses.previous_status)}
                 <p className="text-sm font-semibold">
-                    {infoData.changes.total_expenses.previous_status === "unchanged"
+                  {infoData.changes.total_expenses.previous_status ===
+                  "unchanged"
                     ? "Unchanged"
                     : `${infoData.changes.total_expenses.percentage} %`}
-                </p> {" "}
+                </p>{" "}
                 from last update.
-                </div>
+              </div>
             </nav>
             <div className="w-ful rounded-full mt-2">
               <div className="flex justify-between items-center p-2">
                 <p className="text-gray-400 text-sm font-thin">Progress</p>
                 <p className="text-gray-500 font-bold text-base">
-                  {Math.min((infoData.total_expenses / infoData.total_budget_amount) * 100, 100).toFixed(2)}%
+                  {Math.min(
+                    (infoData.total_expenses / infoData.total_budget_amount) *
+                      100,
+                    100
+                  ).toFixed(2)}
+                  %
                 </p>
               </div>
               <div
                 className="bg-yellow-500 text-xs font-medium text-white text-center p-0.5 leading-none rounded-full transition-all duration-300"
                 style={{
-                  width: `${Math.min((infoData.total_expenses / infoData.total_budget_amount) * 100, 100).toFixed(2)}%`,
+                  width: `${Math.min(
+                    (infoData.total_expenses / infoData.total_budget_amount) *
+                      100,
+                    100
+                  ).toFixed(2)}%`,
                 }}
               ></div>
             </div>
             <p className="text-base text-gray-400 mt-2">
-              <strong>${infoData.total_expenses}</strong> is {((infoData.total_expenses / infoData.total_budget_amount) * 100).toFixed(2)}% of the total budget.
+              <strong>
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                }).format(infoData.total_expenses)}
+              </strong>{" "}
+              is{" "}
+              {(
+                (infoData.total_expenses / infoData.total_budget_amount) *
+                100
+              ).toFixed(2)}
+              % of the total budget.
             </p>
             <p className="text-sm text-gray-500">
-              (${infoData.total_budget_amount.toFixed(2)}). This bar shows how much of the total budget has been spent.
+              (
+              {new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+              }).format(infoData.total_budget_amount)}
+              ). This bar shows how much of the total budget has been spent.
             </p>
             <div className="flex justify-start gap-2 items-center mt-3">
               <CalendarDays className="text-gray-400 w-4 h-4" />
@@ -199,7 +254,6 @@ export default function InfoCards({Info}: {Info: any}) {
               </p>
             </div>
           </CardContent>
-          
         </Card>
         {/* Budgets */}
         <Card>
@@ -210,22 +264,24 @@ export default function InfoCards({Info}: {Info: any}) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-black">Budgets</div>
-                <nav className="flex justify-center gap-2 items-center rounded-lg">
-                    <div
-                        className={`flex justify-center gap-2 items-center text-xs p-2 my-3 rounded-lg w-full ${getStatusColor(
-                            infoData.changes.total_budget_amount.previous_status
-                        )}`}
-                        >
-                        {getStatusIcon(infoData.changes.total_budget_amount.previous_status)}
-                        <p className="text-sm font-semibold">
-                            {infoData.changes.total_budget_amount.previous_status === "unchanged"
-                            ? "Unchanged"
-                            : `${infoData.changes.total_budget_amount.percentage} %`}
-                        </p> {" "}
-                        from last update.
-                    </div>
-                    
-                </nav>
+            <nav className="flex justify-center gap-2 items-center rounded-lg">
+              <div
+                className={`flex justify-center gap-2 items-center text-xs p-2 my-3 rounded-lg w-full ${getStatusColor(
+                  infoData.changes.total_budget_amount.previous_status
+                )}`}
+              >
+                {getStatusIcon(
+                  infoData.changes.total_budget_amount.previous_status
+                )}
+                <p className="text-sm font-semibold">
+                  {infoData.changes.total_budget_amount.previous_status ===
+                  "unchanged"
+                    ? "Unchanged"
+                    : `${infoData.changes.total_budget_amount.percentage} %`}
+                </p>{" "}
+                from last update.
+              </div>
+            </nav>
             {/* <div className="w-full rounded-full mt-2">
               <div className="flex justify-between items-center p-2">
                 <p className="text-gray-400 text-sm font-thin">Progress</p>
@@ -237,7 +293,13 @@ export default function InfoCards({Info}: {Info: any}) {
               ></div>
             </div> */}
             <p className="text-base text-gray-400 mt-2">
-              <strong>${infoData.total_budget_amount}</strong> for Budgets
+              <strong>
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                }).format(infoData.total_budget_amount)}
+              </strong>{" "}
+              for Budgets
             </p>
             <div className="flex justify-start gap-2 items-center mt-3">
               <CalendarDays className="text-gray-400 w-4 h-4" />
@@ -249,6 +311,6 @@ export default function InfoCards({Info}: {Info: any}) {
         </Card>
       </div>
     </>
-  )
+  );
 }
 

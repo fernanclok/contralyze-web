@@ -220,7 +220,9 @@ export default function AddRequisition() {
                       className="w-full justify-start text-left font-normal mt-1 bg-white text-black"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4 text-gray-500" />
-                      {requestDate ? format(requestDate, "yyyy-MM-dd") : "Select date"}
+                      {requestDate
+                        ? format(requestDate, "yyyy-MM-dd")
+                        : "Select date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-white">
@@ -245,9 +247,9 @@ export default function AddRequisition() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-black">Requested Articles</CardTitle>
+            <CardTitle className="text-black">Requested Items</CardTitle>
             <CardDescription className="text-gray-500">
-              Add the articles that you want request.
+              Add the Items that you want request.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -352,14 +354,17 @@ export default function AddRequisition() {
               <div className="text-right">
                 <p className="text-sm text-gray-500">Estimated total:</p>
                 <p className="text-xl font-bold">
-                  ${calculateTotal().toFixed(2)}
-                </p>{" "}
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(calculateTotal())}
+                </p>
               </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-end">
-              <SubmitButton />
-            </CardFooter>
+            <SubmitButton />
+          </CardFooter>
         </Card>
 
         {/* <Card className="mt-8">

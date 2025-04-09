@@ -130,7 +130,7 @@ export default function ManageSuppliersClient({
                   </p>
                 )}
               </CardContent>
-              <CardFooter>
+              {/* <CardFooter>
                 <p className="text-gray-500">
                   You have <strong className="text-black">5</strong>{" "}
                   transactions with this supplier. You can see more info in{" "}
@@ -141,7 +141,7 @@ export default function ManageSuppliersClient({
                     transactions
                   </Link>
                 </p>
-              </CardFooter>
+              </CardFooter> */}
             </Card>
           ))}
         </div>

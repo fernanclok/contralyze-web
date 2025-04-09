@@ -311,13 +311,19 @@ export default function RequisitionDetails({
                           <div className="md:col-span-3 flex flex-col">
                             <span className="text-black">Price</span>
                             <span className="text-gray-500">
-                              {item.price.toFixed(2)}
+                              {new Intl.NumberFormat("en-US", {
+                                style: "currency",
+                                currency: "USD",
+                              }).format(item.price)}
                             </span>
                           </div>
                           <div className="md:col-span-3 flex flex-col">
                             <span className="text-black">Subtotal</span>
                             <span className="text-gray-500">
-                              {(item.quantity * item.price).toFixed(2)}
+                              {new Intl.NumberFormat("en-US", {
+                                style: "currency",
+                                currency: "USD",
+                              }).format(item.quantity * item.price)}
                             </span>
                           </div>
                         </div>
@@ -364,7 +370,12 @@ export default function RequisitionDetails({
                           <CheckCircle className="h-4 w-4 mr-2" />
                           {loading ? "Approving..." : "Approve Requisition"}
                         </Button>
-                        <RejectRequisitionSheet id={requisitionData.id} user={user} requisition={requisitionData} onUpdateRequisition={handleUpdateRequisition}/>
+                        <RejectRequisitionSheet
+                          id={requisitionData.id}
+                          user={user}
+                          requisition={requisitionData}
+                          onUpdateRequisition={handleUpdateRequisition}
+                        />
                       </>
                     )}
 
@@ -430,7 +441,10 @@ export default function RequisitionDetails({
                 <div className="flex justify-between pt-2 border-t mt-2">
                   <span className="font-medium text-black">Total:</span>
                   <span className="font-bold text-gray-500">
-                    {requisitionData.total_amount}
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(requisitionData.total_amount)}
                   </span>
                 </div>
               </CardContent>

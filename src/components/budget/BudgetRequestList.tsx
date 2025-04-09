@@ -788,7 +788,6 @@ export function BudgetRequestList({
                 {currentItems.map((request) => (
                   <TableRow 
                     key={`request-${request.id}`} // Prefijo para garantizar unicidad
-                    className={isCreator(request) ? "bg-blue-50" : ""}
                   >
                     <TableCell className="font-semibold">
                       <div className="flex flex-col">

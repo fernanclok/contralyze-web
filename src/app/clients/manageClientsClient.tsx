@@ -132,14 +132,14 @@ export default function ManageClientsClient({
                   </p>
                 )}
               </CardContent>
-              <CardFooter>
+              {/* <CardFooter>
                 <p className="text-gray-500">
                   You have <strong className="text-black">5</strong> transactions with this client. You can see more info in{" "}
                   <Link href={`/transactions/${client.id}`} className="hover:underline">
                     transactions
                   </Link>
                 </p>
-              </CardFooter>
+              </CardFooter> */}
             </Card>
           ))}
         </div>
